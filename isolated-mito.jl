@@ -57,6 +57,7 @@ paramDOX = Params(
 prob = ODEProblem(isolated_model, u0, tspan, paramDOX)
 doxSol = solve(prob, Rodas5(); reltol=1e-9, abstol=1e-9, dt=0.01, progress=true, dtmax=3000.0)
 
+
 plot(doxSol, vars=(0, nameLUT[:adp_m]), label="[ADP]m", lw=1)
 plot(doxSol, vars=(0, [nameLUT[:Q_n], nameLUT[:QH2_n]]), lw=1, label=["Q_n" "QH2_n"])
 plot(doxSol, vars=(0, [nameLUT[:b1], nameLUT[:b2], nameLUT[:b3], nameLUT[:b4]]), lw=1)
@@ -65,8 +66,14 @@ plot(doxSol, vars=(0, [nameLUT[:sox_i], nameLUT[:sox_m]]), lw=1, label=["sox_i" 
 plot(doxSol, vars=(0, nameLUT[:sox_i]), lw=1, label=["sox_i"])
 plot(doxSol, vars=(0, nameLUT[:gsh_i]), lw=1)
 
-plot(doxSol, vars=(0, nameLUT[:dpsi]), label="Mitochondrial Potential", lw=1, legend=:topleft)
-yticks!(0:10:180)
+pyplot()
+plot(doxSol, vars=(0, nameLUT[:dpsi]), label="Mitochondrial Potential", lw=1, legend=:left, xaxis = ("time (ms)"))
+savefig("fig1.png")
+
+ts = 0.0:1000.0:2e5
+doxSol(ts,idxs=2)
+plot(doxSol(ts,idxs=2).t, doxSol(ts,idxs=2).u, legend=:false, xtickfont =font(20, "Courier"))
+savefig("fig1-1.png")
 
 plot(doxSol, vars=(0, [nameLUT[:Q_n], nameLUT[:QH2_n]]), lw=1, label=["Q_n" "QH2_n"])
 
@@ -79,9 +86,18 @@ plot!(t-> ecme_dox(doxSol(t), param, t)[rateMap[:vATPase]], doxSol.t[1], doxSol.
 plot!(t-> ecme_dox(doxSol(t), param, t)[rateMap[:vSL]], doxSol.t[1], doxSol.t[end], label="vSL")
 plot!(ylims=(-0.003, 0.001), legend=:bottomright)
 
+
 plot(doxSol, vars=(0, [nameLUT[:sox_i], nameLUT[:sox_m]]), lw=1, label=["sox_i" "sox_m"])
+savefig("ros-burst.png")
 plot!(doxSol, vars=(0, [nameLUT[:Q_n], nameLUT[:QH2_n], nameLUT[:Qdot_p]]), lw=1, label=["Q_n" "QH2_n" "Qdot_p"], legend=:right)
+savefig("ros-burst-with-Q.png")
 
 plot()
+plot(t-> ecme_dox(doxSol(t), param, t)[rateMap[:vc1]], doxSol.t[1], doxSol.t[end], label="vc1")
 plot!(t-> ecme_dox(doxSol(t), param, t)[rateMap[:vROSC1]], doxSol.t[1], doxSol.t[end], label="vROSC1")
 plot!(t-> ecme_dox(doxSol(t), param, t)[rateMap[:vROSC3]], doxSol.t[1], doxSol.t[end], label="vROSC3")
+ylims!(-1.1e-5, 3e-5)
+savefig("vROS.png")
+using JLD2
+
+@save "mito.jld2" doxSol
