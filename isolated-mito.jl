@@ -68,7 +68,7 @@ pATPase = plot(t-> ecme_dox(doxSol(t), paramDOX, t)[rateMap[:vATPase]], doxSol.t
      label="vATPase", ylims=(-0.003, 0.0005), xaxis = ("time (ms)"), yaxis=("ATP synthase rate (mM/ms)"), legend=:false)
 savefig(pATPase, "atpase.png")
 
-pROS = plot(doxSol, vars=(0, [nameLUT[:sox_i], nameLUT[:sox_m]]), lw=1, label=["sox_i" "sox_m"], xaxis = ("time (ms)"), yaxis=("Concentration (mM)"))
+pROS = plot(doxSol, vars=(0, [nameLUT[:sox_i], nameLUT[:sox_m]]), lw=1, label=["superoxide_cyto" "superoxide_mito"], xaxis = ("time (ms)"), yaxis=("Concentration (mM)"))
 savefig(pROS, "ros-burst.png")
 plot!(pROS, doxSol, vars=(0, [nameLUT[:Q_n], nameLUT[:QH2_n], nameLUT[:Qdot_p], nameLUT[:Q_p], nameLUT[:QH2_p]]), lw=1, label=["Q_n" "QH2_n" "Qdot_p" "Q_p" "QH2_p"], legend=:right, xaxis = ("time (ms)"))
 savefig(pROS, "ros-burst-with-Q.png")

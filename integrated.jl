@@ -57,7 +57,6 @@ plot(solPacing, vars=(0, [nameLUT[:sox_i], nameLUT[:sox_m]]), lw=1, label=["sox_
 plot(solPacing, vars=(0, nameLUT[:sox_i]), lw=1, label=["sox_i"])
 plot(solPacing, vars=(0, nameLUT[:gsh_i]), lw=1)
 
-solPacing[nameLUT[:adp_i],:]
 plot()
 plot(t-> ecme_dox(solPacing(t), param, t)[rateMap[:iKatp]], solPacing.t[1], solPacing.t[end], label="iKatp")
 plot!(solPacing.t, 8 .- solPacing[nameLUT[:adp_i],:], label="ATPi")
