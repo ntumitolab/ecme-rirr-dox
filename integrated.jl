@@ -15,6 +15,9 @@ param = Params(
   pSODi = SODParams(ET=1.43E-3 * 0.65),
   BCL=1000.0)
 
+using JLD2
+JLD2.@load "pacing.jld2" solPacing
+
 @unpack A_CAP_V_MYO_F = param
 
 tspan = (0.0, 10000.0)
@@ -33,8 +36,10 @@ for (u,t) in tuples(integrator)
 end
 
 solPacing = solve(prob, Rodas5(); reltol=1e-9, abstol=1e-9, dt=0.01, progress=true, tstops=tspan[1]:1000.0:tspan[end])
-plot(solPacing, vars=(0, nameLUT[:vm]), label="Membrane Potential", lw=1)
-plot(solPacing, vars=(0, nameLUT[:dpsi]), label="Mitochondrial Potential", lw=1)
+pVolt = plot(solPacing, vars=(0, nameLUT[:vm]), label="Membrane Potential", lw=1)
+plot!(pVolt, solPacing, vars=(0, nameLUT[:dpsi]), label="Mitochondrial Potential", lw=1, xlabel="time(ms)", ylabel = "Voltage (mV)")
+savefig(pVolt, "voltage.png")
+
 plot(solPacing, vars=(0, [nameLUT[:adp_i], nameLUT[:adp_m]]), label=["ADPi" "ADPm"], lw=1)
 plot(solPacing, vars=(0, nameLUT[:nadh]), label="[NADH]", lw=1)
 plot(solPacing, vars=(0, nameLUT[:ca_m]), label="[Ca]m", lw=1)
@@ -52,8 +57,13 @@ plot(solPacing, vars=(0, [nameLUT[:sox_i], nameLUT[:sox_m]]), lw=1, label=["sox_
 plot(solPacing, vars=(0, nameLUT[:sox_i]), lw=1, label=["sox_i"])
 plot(solPacing, vars=(0, nameLUT[:gsh_i]), lw=1)
 
-
+solPacing[nameLUT[:adp_i],:]
 plot()
+plot(t-> ecme_dox(solPacing(t), param, t)[rateMap[:iKatp]], solPacing.t[1], solPacing.t[end], label="iKatp")
+plot!(solPacing.t, 8 .- solPacing[nameLUT[:adp_i],:], label="ATPi")
+plot!(solPacing, vars=(0, nameLUT[:adp_i]), lw=1, label="ADPi", xlabel="Time (ms)", ylabel=" uA/uF or mM")
+savefig("katp.png")
+
 plot!(t-> ecme_dox(solPacing(t), param, t)[rateMap[:vANT]], solPacing.t[1], solPacing.t[end], label="vANT")
 plot!(t-> ecme_dox(solPacing(t), param, t)[rateMap[:vATPase]], solPacing.t[1], solPacing.t[end], label="vATPase")
 plot!(t-> ecme_dox(solPacing(t), param, t)[rateMap[:vSL]], solPacing.t[1], solPacing.t[end], label="vSL")
