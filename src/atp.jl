@@ -2,14 +2,14 @@ using Parameters
 import .Utils: mM, kHz, μA, μM, cm², mm, mmr, hill, iVT, pow_s
 
 "Creatine kinase and creatine shuttle parameters"
-@with_kw struct CK
-    KCK_IN = 1.4E-4kHz              # Rate constant of creatine kinase (cytosolic)
-    KCK_MT = 1.33E-6kHz             # Rate constant of creatine kinase (juxta-mitochondrial)
-    KTR_CR = 2E-3kHz                # Diffusion rate of creatine phosphate
-    KEQ = 0.0095                    # Eqilibrium constant of creatine kinase (PCr-forming)
-    V_ATPASE_CYTO = 1E-5mM * kHz    # Basal consumption of cytosolic ATP
-    ΣCR = 25.0mM                    # Pool of creatine and creatine phosphate
-    ΣATPc = 8.0mM                   # Pool of ATP and ADP
+@with_kw struct CK{R}
+    KCK_IN::R = 1.4E-4kHz              # Rate constant of creatine kinase (cytosolic)
+    KCK_MT::R = 1.33E-6kHz             # Rate constant of creatine kinase (juxta-mitochondrial)
+    KTR_CR::R = 2E-3kHz                # Diffusion rate of creatine phosphate
+    KEQ::R = 0.0095                    # Eqilibrium constant of creatine kinase (PCr-forming)
+    V_ATPASE_CYTO::R = 1E-5mM * kHz    # Basal consumption of cytosolic ATP
+    ΣCR::R = 25.0mM                    # Pool of creatine and creatine phosphate
+    ΣATPc::R = 8.0mM                   # Pool of ATP and ADP
 end
 
 "CK shuttle rates"
@@ -31,15 +31,15 @@ end
 
 "Na-K ATPase (NKA) parameters"
 @with_kw struct NKA
-    k_o = 5.4mM
-    na_o = 140.0mM
-    IMAX0 = 3.147μA / cm²   # Max Na-K ATPase current
-    KM_NA = 10.0mM          # Na half-saturate constant of Na-K ATPase
-    KM_K = 1.5mM            # K half-saturate constant of Na-K ATPase
-    KM_ATP = 8μM            # ATP half-saturate constant of Na-K ATPase
-    KI_ADP = 100μM          # ADP half-saturate constant of Na-K ATPase
-    F_NA = expm1(na_o / 67.3mM) / 7  # Factor of extracellular sodium
-    IMAX = mm(k_o, KM_K) * IMAX0
+    k_o::R = 5.4mM
+    na_o::R = 140.0mM
+    IMAX0::R = 3.147μA / cm²   # Max Na-K ATPase current
+    KM_NA::R = 10.0mM          # Na half-saturate constant of Na-K ATPase
+    KM_K::R = 1.5mM            # K half-saturate constant of Na-K ATPase
+    KM_ATP::R = 8μM            # ATP half-saturate constant of Na-K ATPase
+    KI_ADP::R = 100μM          # ADP half-saturate constant of Na-K ATPase
+    F_NA::R = expm1(na_o / 67.3mM) / 7  # Factor of extracellular sodium
+    IMAX::R = mm(k_o, KM_K) * IMAX0
 end
 
 "Na-K ATPase (NKA) current"
@@ -55,11 +55,11 @@ end
 
 "Plasma membrane calcium ATPase (PMCA) parameters"
 @with_kw struct PMCA
-    IMAX = 0.575μA / cm²  # Max PMCA current
-    KM_CA = 0.5μM         # Ca half-saturation constant
-    KM1_ATP = 12μM        # ATP 1st half-saturation constant
-    KM2_ATP = 230μM       # ATP 2nd half-saturation constant (mM)
-    KI_ADP = 1.0mM        # ADP half-inhibition constant (mM)
+    IMAX::R = 0.575μA / cm²  # Max PMCA current
+    KM_CA::R = 0.5μM         # Ca half-saturation constant
+    KM1_ATP::R = 12μM        # ATP 1st half-saturation constant
+    KM2_ATP::R = 230μM       # ATP 2nd half-saturation constant (mM)
+    KI_ADP::R = 1.0mM        # ADP half-inhibition constant (mM)
 end
 
 function i_pca(ca_i, atp_i, adp_i, p::PMCA)
@@ -73,15 +73,15 @@ end
 
 "SER Ca ATPase (SERCA) parameters"
 @with_kw struct SERCA
-    VF = 2.989E-4mM * kHz   # Max forward rate
-    VR = 3.179E-4mM * kHz   # Max reverse rate
-    KMF_CA = 0.24μM         # Michaelis constant for Ca of forward reaction
-    KMR_CA = 1.64269mM      # Michaelis constant for Ca of reverse reaction
-    NFB = 1.4               # Cooperativity of forward reaction
-    NRB = 1.0               # Cooperativity of reverse reaction
-    KM_ATP = 10μM           # Michaelis constant for ATP (mM)
-    KI1_ADP = 140μM         # 1st michaelis constant for ADP (mM)
-    KI2_ADP = 5.1mM         # 2nd michaelis constant for ADP (mM)
+    VF::R = 2.989E-4mM * kHz   # Max forward rate
+    VR::R = 3.179E-4mM * kHz   # Max reverse rate
+    KMF_CA::R = 0.24μM         # Michaelis constant for Ca of forward reaction
+    KMR_CA::R = 1.64269mM      # Michaelis constant for Ca of reverse reaction
+    NFB::R = 1.4               # Cooperativity of forward reaction
+    NRB::R = 1.0               # Cooperativity of reverse reaction
+    KM_ATP::R = 10μM           # Michaelis constant for ATP (mM)
+    KI1_ADP::R = 140μM         # 1st michaelis constant for ADP (mM)
+    KI2_ADP::R = 5.1mM         # 2nd michaelis constant for ADP (mM)
 end
 
 "SERCA calcium flux (jUp)"

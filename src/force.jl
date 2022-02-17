@@ -2,40 +2,40 @@ using Parameters
 import .Utils: mM, μm, kHz, mm, mmr, μM
 
 "Myofibril force generation, troponin and crossbridge (XB) parameters"
-@with_kw struct MyoFibril
-    ΣLTRPN = 0.07mM             # Total pool of low affinity troponin ca binding sites
-    ΣHTRPN = 0.14mM             # Total pool of high affinity troponin ca binding sites
-    K_P_LTRPN = 100.0kHz / mM   # Forward constant of low-affinity troponin sites
-    K_M_LTRPN = 4e-2kHz         # Backward constant of low-affinity troponin sites
-    K_P_HTRPN = 100.0kHz / mM   # Forward constant of high-affinity troponin sites
-    K_M_HTRPN = 3.3e-4kHz       # Backward constant of high-affinity troponin sites
-    K_PN_TROP = 0.04kHz         # Troponin rate constant (permissive -> nonpermissive)
-    SL = 2.15                   # Sarcomere length (μm)
-    F_XB = 0.05kHz              # Transition rate from weak to strong cross bridge
-    G_MIN = 0.1kHz              # Minimum transition rate from strong to weak cross bridge
-    G_OFF = 0.01kHz
-    V_MAX_AM = 7.2E-3mM / kHz   # Maximal rate of ATP hydrolysis by myofibrils (AM ATPase) 
-    KM_ATP_AM = 0.03mM          # ATP half saturation constant of AM ATPase
-    KI_ADP_AM = 0.26mM          # ADP inhibition constant of AM ATPase
-    ζ = 0.1                     # Conversion factor normalizing to  physiological force (N/mm²)
-    G01 = 1 * G_MIN
-    G12 = 2 * G_MIN
-    G23 = 3 * G_MIN
-    F01 = 3 * F_XB
-    F12 = 10 * F_XB
-    F23 = 7 * F_XB
-    ΣPATHS = G01 * G12 * G23 + F01 * G12 * G23 + F01 * F12 * G23 + F01 * F12 * F23
-    P1_MAX = F01 * G12 * G23 / ΣPATHS
-    P2_MAX = F01 * F12 * G23 / ΣPATHS
-    P3_MAX = F01 * F12 * F23 / ΣPATHS
-    Φ = 1 + (2.3 - SL) / ((2.3 - 1.7)^1.6)
-    G01_SL = Φ * G01
-    G12_SL = Φ * G12
-    G23_SL = Φ * G23
-    G01_OFF = Φ * G_OFF
-    N_TROP = 3.5 * SL - 2.0
-    K_CA_TRPN = K_M_LTRPN / K_P_LTRPN  # Activation factor for calcium of low affinity troponin sites
-    K½_TRPN = mm(1.7μM - 0.8μM * (SL - 1.7) / 0.6, K_CA_TRPN)
+@with_kw struct MyoFibril{R}
+    ΣLTRPN::R = 0.07mM             # Total pool of low affinity troponin ca binding sites
+    ΣHTRPN::R = 0.14mM             # Total pool of high affinity troponin ca binding sites
+    K_P_LTRPN::R = 100.0kHz / mM   # Forward constant of low-affinity troponin sites
+    K_M_LTRPN::R = 4e-2kHz         # Backward constant of low-affinity troponin sites
+    K_P_HTRPN::R = 100.0kHz / mM   # Forward constant of high-affinity troponin sites
+    K_M_HTRPN::R = 3.3e-4kHz       # Backward constant of high-affinity troponin sites
+    K_PN_TROP::R = 0.04kHz         # Troponin rate constant (permissive -> nonpermissive)
+    SL::R = 2.15                   # Sarcomere length (μm)
+    F_XB::R = 0.05kHz              # Transition rate from weak to strong cross bridge
+    G_MIN::R = 0.1kHz              # Minimum transition rate from strong to weak cross bridge
+    G_OFF::R = 0.01kHz
+    V_MAX_AM::R = 7.2E-3mM / kHz   # Maximal rate of ATP hydrolysis by myofibrils (AM ATPase) 
+    KM_ATP_AM::R = 0.03mM          # ATP half saturation constant of AM ATPase
+    KI_ADP_AM::R = 0.26mM          # ADP inhibition constant of AM ATPase
+    ζ::R = 0.1                     # Conversion factor normalizing to  physiological force (N/mm²)
+    G01::R = 1 * G_MIN
+    G12::R = 2 * G_MIN
+    G23::R = 3 * G_MIN
+    F01::R = 3 * F_XB
+    F12::R = 10 * F_XB
+    F23::R = 7 * F_XB
+    ΣPATHS::R = G01 * G12 * G23 + F01 * G12 * G23 + F01 * F12 * G23 + F01 * F12 * F23
+    P1_MAX::R = F01 * G12 * G23 / ΣPATHS
+    P2_MAX::R = F01 * F12 * G23 / ΣPATHS
+    P3_MAX::R = F01 * F12 * F23 / ΣPATHS
+    Φ::R = 1 + (2.3 - SL) / ((2.3 - 1.7)^1.6)
+    G01_SL::R = Φ * G01
+    G12_SL::R = Φ * G12
+    G23_SL::R = Φ * G23
+    G01_OFF::R = Φ * G_OFF
+    N_TROP::R = 3.5 * SL - 2.0
+    K_CA_TRPN::R = K_M_LTRPN / K_P_LTRPN  # Activation factor for calcium of low affinity troponin sites
+    K½_TRPN::R = mm(1.7μM - 0.8μM * (SL - 1.7) / 0.6, K_CA_TRPN)
 end
 
 # Contractile force (N/mm^2)
@@ -52,7 +52,8 @@ end
 
 # Calculates the rates of the troponin and crossbridge (xb) system 
 function xb_system(p0, p1, p2, p3, n1, ltr_ca, htr_ca, ca_i, p::MyoFibril)
-    @unpack K_PN_TROP, ΣLTRPN, ΣHTRPN, K½_TRPN, N_TROP = p
+    @unpack K_PN_TROP, ΣLTRPN, ΣHTRPN, K½_TRPN, N_TROP, F01, F12, F23, G01_SL, G12_SL, G23_SL, G01_OFF = p
+    @unpack K_P_LTRPN, K_M_LTRPN, K_P_HTRPN, K_M_HTRPN = p
     # Cross bridge
     k_np_trop = K_PN_TROP * (ltr_ca / (ΣLTRPN * K½_TRPN))^N_TROP
     n0 = one_m(p0 + p1 + p2 + p3 + n1)
