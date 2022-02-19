@@ -1,5 +1,5 @@
 using Parameters
-import .Utils: mM, kHz, μA, μM, cm², mm, mmr, hill, iVT, pow_s
+import .Utils: mM, kHz, μA, μM, cm², hill, hillr, iVT, pow_s
 
 "Creatine kinase and creatine shuttle parameters"
 @with_kw struct CK{R}
@@ -21,7 +21,7 @@ function ck_system(atp_i, adp_i, atp_ic, crp_i, crp_ic, p::CK)
     vck_cyto = KCK_IN * (atp_ic * cr_ic - adp_ic * crp_ic / KEQ)
     vck_mito = KCK_MT * (atp_i * cr_i - adp_i * crp_i / KEQ)
     vtr_crp = KTR_CR * (crp_i - crp_ic)
-    v_aptase_cyto = V_ATPASE_CYTO * mm(atp_ic, 10μM)
+    v_aptase_cyto = V_ATPASE_CYTO * hill(atp_ic, 10μM)
     return (;
         d_atp_in_ck = -vck_mito,
         d_atp_ic = -vck_cyto - v_aptase_cyto,
@@ -30,7 +30,7 @@ function ck_system(atp_i, adp_i, atp_ic, crp_i, crp_ic, p::CK)
 end
 
 "Na-K ATPase (NKA) parameters"
-@with_kw struct NKA
+@with_kw struct NKA{R}
     k_o::R = 5.4mM
     na_o::R = 140.0mM
     IMAX0::R = 3.147μA / cm²   # Max Na-K ATPase current
@@ -39,7 +39,7 @@ end
     KM_ATP::R = 8μM            # ATP half-saturate constant of Na-K ATPase
     KI_ADP::R = 100μM          # ADP half-saturate constant of Na-K ATPase
     F_NA::R = expm1(na_o / 67.3mM) / 7  # Factor of extracellular sodium
-    IMAX::R = mm(k_o, KM_K) * IMAX0
+    IMAX::R = hill(k_o, KM_K) * IMAX0
 end
 
 "Na-K ATPase (NKA) current"
@@ -47,14 +47,14 @@ function i_nak(na_i, atp_i, adp_i, vm, p::NKA, evfrt = exp(vm * iVT))
     @unpack KM_ATP, KI_ADP, KM_NA, IMAX, F_NA = p
     f_na = hill(na_i, KM_NA, 1.5)
     f_nak_inv = 1.0 + 0.1245 * exp(-0.1iVT * vm) + 0.0365 * F_NA / evfrt
-    f_atp = mm(atp_i * mmr(adp_i, KI_ADP), KM_ATP)
+    f_atp = hill(atp_i * hillr(adp_i, KI_ADP), KM_ATP)
     return IMAX * f_na * f_atp / f_nak_inv
 end
 
 (p::NKA)(na_i, atp_i, adp_i, vm, evfrt = exp(vm * iVT)) = i_nak(na_i, atp_i, adp_i, vm, p, evfrt)
 
 "Plasma membrane calcium ATPase (PMCA) parameters"
-@with_kw struct PMCA
+@with_kw struct PMCA{R}
     IMAX::R = 0.575μA / cm²  # Max PMCA current
     KM_CA::R = 0.5μM         # Ca half-saturation constant
     KM1_ATP::R = 12μM        # ATP 1st half-saturation constant
@@ -62,17 +62,18 @@ end
     KI_ADP::R = 1.0mM        # ADP half-inhibition constant (mM)
 end
 
+"Plasma membrane calcium pump current"
 function i_pca(ca_i, atp_i, adp_i, p::PMCA)
     @unpack KM1_ATP, KI_ADP, KM2_ATP, KM_CA, IMAX = p
-    f_atp = mm(atp_i * mmr(adp_i, KI_ADP), KM1_ATP) + mm(atp_i, KM2_ATP)
-    f_ca = mm(ca_i, KM_CA)
+    f_atp = hill(atp_i * hillr(adp_i, KI_ADP), KM1_ATP) + hill(atp_i, KM2_ATP)
+    f_ca = hill(ca_i, KM_CA)
     return IMAX * f_atp * f_ca
 end
 
 (p::PMCA)(ca_i, atp_i, adp_i) = i_pca(ca_i, atp_i, adp_i, p)
 
 "SER Ca ATPase (SERCA) parameters"
-@with_kw struct SERCA
+@with_kw struct SERCA{R}
     VF::R = 2.989E-4mM * kHz   # Max forward rate
     VR::R = 3.179E-4mM * kHz   # Max reverse rate
     KMF_CA::R = 0.24μM         # Michaelis constant for Ca of forward reaction

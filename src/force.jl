@@ -1,5 +1,5 @@
 using Parameters
-import .Utils: mM, μm, kHz, mm, mmr, μM
+import .Utils: mM, μm, kHz, hill, hillr, μM
 
 "Myofibril force generation, troponin and crossbridge (XB) parameters"
 @with_kw struct MyoFibril{R}
@@ -35,7 +35,7 @@ import .Utils: mM, μm, kHz, mm, mmr, μM
     G01_OFF::R = Φ * G_OFF
     N_TROP::R = 3.5 * SL - 2.0
     K_CA_TRPN::R = K_M_LTRPN / K_P_LTRPN  # Activation factor for calcium of low affinity troponin sites
-    K½_TRPN::R = mm(1.7μM - 0.8μM * (SL - 1.7) / 0.6, K_CA_TRPN)
+    K½_TRPN::R = hill(1.7μM - 0.8μM * (SL - 1.7) / 0.6, K_CA_TRPN)
 end
 
 # Contractile force (N/mm^2)
@@ -46,7 +46,7 @@ force_norm(p1, p2, p3, n1, p::MyoFibril) = (p1 + p2 + p3 + n1) / (p.P1_MAX + p.P
 # ATP hydrolysis rate by myofibrils
 function v_am(p0, p1, p2, atp_i, adp_i, p::MyoFibril)
     @unpack V_MAX_AM, F01, F12, F23, KM_ATP_AM, KI_ADP_AM = p
-    f_atp = mm(atp_i * mmr(adp_i, KI_ADP_AM), KM_ATP_AM)
+    f_atp = hill(atp_i * hillr(adp_i, KI_ADP_AM), KM_ATP_AM)
     return V_MAX_AM / (F01 + F12 + F23) * (F01 * p0 + F12 * p1 + F23 * p2) * f_atp
 end
 

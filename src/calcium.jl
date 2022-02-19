@@ -1,7 +1,7 @@
 # Good old CICR
 
 using Parameters
-import .Utils: μA, cm², mM, kHz, mV, cm, Hz, one_m, expit, ghkVm, mmr
+import .Utils: μA, cm², mM, kHz, mV, cm, Hz, one_m, expit, ghkVm, hill, hillr
 
 "Calcium buffering parameters"
 @with_kw struct CaBuffer{R}
@@ -10,7 +10,7 @@ import .Utils: μA, cm², mM, kHz, mV, cm, Hz, one_m, expit, ghkVm, mmr
 end
 
 # Calcium buffering factor
-β_ca(ca, KM, ET) = mm((ca + KM)^2, KM * ET)
+β_ca(ca, KM, ET) = hill((ca + KM)^2, KM * ET)
 β_ca(ca, p::CaBuffer) = β_ca(ca, p.KM_CA, p.ET)
 (p::CaBuffer)(ca) = β_ca(ca, p)
 
@@ -88,7 +88,7 @@ function i_cal(y_ca, o, vm, k_i, k_o, ca_o, p::LCC)
     @unpack P_CA, P_K, I_CA_HALF = p
     iCaMax = ghkVm(P_CA, vm, 0.001, 0.341 * ca_o, 2)
     iCaL = 6 * y_ca * o * iCaMax
-    iCaK = mmr(iCaMax, I_CA_HALF) * y_ca * o * ghkVm(P_K, vm, k_i, k_o, 1)
+    iCaK = hillr(iCaMax, I_CA_HALF) * y_ca * o * ghkVm(P_K, vm, k_i, k_o, 1)
     return (; iCaL, iCaK)
 end
 

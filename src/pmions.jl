@@ -1,6 +1,6 @@
 # Sarcolemmal membrane ionic currents 
 using Parameters
-import .Utils: exprel, expit, p_one, mm, cm², mS, mV, mM, cm, Hz, μM, nernst, nernstNaK
+import .Utils: exprel, expit, p_one, hill, cm², mS, mV, mM, cm, Hz, μM, nernst, nernstNaK
 
 "Fast sodium current (INa)"
 @with_kw struct INa{R}
@@ -62,7 +62,7 @@ end
     σ::R = 0.6 / (μm^2)          # Channel density
     P₀::R = 0.91                # Max channel open probability
     γ₀::R = 35.375E-9mS * (k_o / 5.4mM)^0.24   # Unitary conductance per KATP channel
-    GMAX::R = σ * P₀ * FT * γ₀
+    G_KATP::R = σ * P₀ * FT * γ₀
 end
 
 "Time-independent potassium current"
@@ -70,7 +70,7 @@ function i_k1(ΔvK, p::IK)
     v = ΔvK / mV
     α = 1.02 * expit(-0.2385 * (v - 59.215))
     β = (0.4912 * exp(0.28032 * (v + 5.476)) + exp(0.06175 * (v - 594.31))) * expit(0.5143 * (v + 4.753))
-    return p.G_K1 * mm(α, β) * ΔvK
+    return p.G_K1 * hill(α, β) * ΔvK
 end
 
 "Time-dependent delayed rectifier K current system"
@@ -84,7 +84,7 @@ end
 "Time-dependent delayed rectifier K current"
 function i_k(x_k, vm, na_i, k_i, na_o, p::IK)
     @unpack G_K, P_NA_K, k_o = p
-    ek = nernstNaK(k_o, na_o, k_i, na_i, P_NA_K)
+    ek = nernst(na_o * P_NA_K + k_o, na_i * P_NA_K + k_i)
     x1 = expit(-(vm - 40mV) / 40mV)
     return G_K * x1 * x_k^2 * (vm - ek)
 end
@@ -98,9 +98,9 @@ end
 function i_katp(adp_i, atp_i, vm, na_i, mg_i, ΔvK, p::IK)
     @unpack KM_MG, KM_NA, δMGfrt, δNAfrt, G_KATP = p
     adp = adp_i / mM
-    f_mg = mm(KM_MG, mg_i * exp(δMGfrt * vm))       # Inhibition by magnesium
+    f_mg = hill(KM_MG, mg_i * exp(δMGfrt * vm))       # Inhibition by magnesium
     f_na = hill(KM_NA, na_i * exp(δNAfrt * vm), 2)  # Inhibition by sodium
-    km_atp = 35.8mM + 17.9mM * pow_s(1000adp, 0.256)
+    km_atp = 35.8mM + 17.9mM * pow_s(adp * inv(μM), 0.256)
     h = 1.3 + 0.74 * exp(-adp)                      # Hill factor
     f_atp = hillr(atp_i, km_atp, h)                 # Inhibition by ATP
     iKatp = G_KATP * f_mg * f_na * f_atp * ΔvK
@@ -125,25 +125,23 @@ function i_naca(vm, na_i, ca_i, na_o, ca_o, p::NCX, vfrt = vm * iVT)
     f_ca = ca_i / ca_o
     a_eta = exp(η * vfrt)
     a_etam1 = exp((1 - η) * vfrt)
-    return vmax * (a_eta * f_na - a_etam1 * f_ca) * mmr(a_etam1 * K_SAT)
+    return vmax * (a_eta * f_na - a_etam1 * f_ca) * hillr(a_etam1 * K_SAT)
 end
 
 (p::NCX)(vm, na_i, ca_i, na_o, ca_o, vfrt = vm * iVT) = i_naca(vm, na_i, ca_i, na_o, ca_o, p, vfrt)
 
 "Non-specific Ca-activated Na current"
-@with_kw struct NSCa
-    P_NA = 1.75E-7cm * Hz
-    P_K = 0cm * Hz
-    KM_CA = 1.2μM
+@with_kw struct NSNa{R}
+    P_NA::R = 1.75E-7cm * Hz
+    KM_CA::R = 1.2μM
 end
 
-function i_nsna(vm, na_i, ca_i, na_o, p::NSCaNa)
+function i_nsna(vm, na_i, ca_i, na_o, p::NSNa)
     @unpack P_NA, KM_CA = p
-    fCa = 0.75 * hill(ca_i, KM_CA, 3)
-    return fCa * ghkVm(P_NA, vm, na_i, na_o, 1)
+    return 0.75 * hill(ca_i, KM_CA, 3) * ghkVm(P_NA, vm, na_i, na_o, 1)
 end
 
-(p::NSCaNa)(vm, na_i, ca_i, na_o) = i_nsna(vm, na_i, ca_i, na_o, p)
+(p::NSNa)(vm, na_i, ca_i, na_o) = i_nsna(vm, na_i, ca_i, na_o, p)
 
 "Background Na current"
 i_nab(ΔvNa, G = 3.22E-3mS / cm²) = G * ΔvNa

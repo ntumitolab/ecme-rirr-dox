@@ -45,6 +45,8 @@ const V_NSR = 1.4pL
 const V_JSR = 0.16pL
 const V_SS = 0.495E-3pL
 const R_VMT_VMYO = V_MT / V_MYO           # Ratio of mitochondrial matrix to cytosolic ion diffusion space
+const A_CAP_V_MYO_F = A_CAP / (V_MYO * F) # conversion factor from current (μA/cm²) to traslocation rate (mM/ms)
+const A_CAP_V_SS_F = A_CAP / (V_SS * F)
 
 # Dissociation constants
 const KWATER = 1E-14 * Molar^2
@@ -128,7 +130,7 @@ Returns AXPn-, HAXP, MgAXP, poly (the denominator polynomial)
 =#
 _poly(h⁺, iKA) = p_one(h⁺ * iKA)
 function _breakdown_axp(axp, h, mg, iKA, iKMG)
-    poly = one(h⁺) + h⁺ * iKA + mg * iKMG
+    poly = p_one(h⁺ * iKA + mg * iKMG)
     axpn = axp / poly
     haxp = axpn * h * iKA
     mgaxp = axp - axpn - haxp
