@@ -91,7 +91,7 @@ function j_up(ca_i, ca_nsr, atp_i, adp_i, p::SERCA)
     fb = pow_s(ca_i / KMF_CA, NFB)
     rb = pow_s(ca_nsr / KMR_CA, NRB)
     f_atp_inv = KM_ATP / atp_i * p_one(adp_i / KI1_ADP) + p_one(adp_i / KI2_ADP)
-    return f_atp * (VF * fb - VR * rb) / (p_one(fb + rb) * f_atp_inv)
+    return (VF * fb - VR * rb) / (p_one(fb + rb) * f_atp_inv)
 end
 
 (p::SERCA)(ca_i, ca_nsr, atp_i, adp_i) = j_up(ca_i, ca_nsr, atp_i, adp_i, p)

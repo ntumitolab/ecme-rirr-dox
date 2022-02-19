@@ -66,8 +66,8 @@ end
 "Ryanodine receptor"
 @with_kw struct RyR{R}
     R_RYR::R = 3.6kHz
-    N::R = 4
-    M::R = 3
+    N::Int = 4
+    M::Int = 3
     KA_P::R = 1.125E10kHz / mM^4
     KA_M::R = 0.576kHz
     KB_P::R = 4.05E6kHz / mM^3

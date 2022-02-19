@@ -2,7 +2,7 @@ using Parameters
 using LabelledArrays
 using DifferentialEquations
 
-import .Utils: mM, μM, Molar, ms, mV, μA, cm², iVT, p_one, iCM, A_CAP_V_MYO_F, A_CAP_V_SS_F
+import .Utils: mM, μM, Molar, ms, mV, μA, cm², iVT, p_one, iCM, A_CAP_V_MYO_F, A_CAP_V_SS_F, V_NSR, V_MYO, V_JSR, V_SS
 
 @with_kw struct CMCParams{R}
     iStim::R = 0.0μA / cm² # External stimulus current
@@ -31,12 +31,12 @@ import .Utils: mM, μM, Molar, ms, mV, μA, cm², iVT, p_one, iCM, A_CAP_V_MYO_F
     pNSNa = NSNa()
     pMyo = MyoFibril()
     atp_i::R = 7.9
-    adp_i::R = 8.0 - ATP_C
+    adp_i::R = 8.0 - atp_i
     crp_i::R = 5.0
-    cr_i::R = 25.0 - CRP_I
+    cr_i::R = 25.0 - crp_i
 end
 
-function build_uo(t;
+function build_u0(t = 0;
     vm = -87.28mV,          # Sarcolemmal membrane potential
     m_na = 0.0327,          # Fast Na gating (activation)
     h_na = 0.9909,          # Fast Na gating (inactivation)
@@ -116,9 +116,15 @@ function build_uo(t;
     )
 end
 
-function build_pacing_callbacks(tspan; period = 1000ms, duration = 0.5ms, strength = -80.0μA / cm²)
-    start_stimulus = (u, t, integrator) -> integrator.p = CMCParams(iStim = strength)
-    end_stimulus = (u, t, integrator) -> integrator.p = CMCParams(iStim = zero(strength))
+function build_pacing_callbacks(tspan; period = 1000ms, duration = 0.5ms, strength = -80.0μA / cm², proposed_dt = 1ms)
+    start_stimulus = (u, t, integrator) -> begin
+        integrator.p = CMCParams(iStim = strength)
+        set_proposed_dt!(integrator, proposed_dt)
+    end
+    end_stimulus = (u, t, integrator) -> begin
+        integrator.p = CMCParams(iStim = zero(strength))
+        set_proposed_dt!(integrator, proposed_dt)
+    end
     start_callback = FunctionCallingCallback(start_stimulus, funcat = tspan[1]:period:tspan[2])
     end_callback = FunctionCallingCallback(end_stimulus, funcat = (tspan[1]+duration):period:tspan[2])
     return CallbackSet(start_callback, end_callback)
@@ -130,10 +136,11 @@ function model!(du, u, p::CMCParams, t)
     @unpack vm = u
     vfrt = vm * iVT
     evfrtm1 = expm1(vfrt)
+    evfrt = p_one(evfrtm1)
 
     # CICR
-    @unpack pLCC, pRYR, R_TR, R_XFER, k_o, ca_o = p
-    @unpack c0, c1, c2, c3, c4, o_lcc, cca0, cca1, cca2, cca3, y_ca, vm, k_i, ca_nsr, ca_jsr, ca_i, ca_ss = u
+    @unpack pLCC, pRyR, R_TR, R_XFER, k_o, ca_o = p
+    @unpack c0, c1, c2, c3, c4, o_lcc, cca0, cca1, cca2, cca3, y_ca, vm, k_i, ca_nsr, ca_jsr, ca_i, ca_ss, po1, po2, pc2 = u
     rates = lcc_system(c0, c1, c2, c3, c4, o_lcc, cca0, cca1, cca2, cca3, ca_ss, vm, pLCC)
     du.c0 = rates.d_c0
     du.c1 = rates.d_c1
@@ -146,12 +153,12 @@ function model!(du, u, p::CMCParams, t)
     du.cca2 = rates.d_cca2
     du.cca3 = rates.d_cca3
     du.y_ca = d_yca(y_ca, vm)
-    rates = ryr_system(po1, po2, pc2, ca_ss, pRYR)
+    rates = ryr_system(po1, po2, pc2, ca_ss, pRyR)
     du.po1 = rates.d_po1
     du.po2 = rates.d_po2
     du.pc2 = rates.d_pc2
 
-    jRel = j_rel(po1, po2, ca_jsr, ca_ss, pRYR)
+    jRel = j_rel(po1, po2, ca_jsr, ca_ss, pRyR)
     jTr = R_TR * (ca_nsr - ca_jsr)
     jXfer = R_XFER * (ca_ss - ca_i)
 
@@ -209,11 +216,12 @@ function model!(du, u, p::CMCParams, t)
     # Ion pumps
     @unpack ca_i, ca_nsr, na_i, vm = u
     @unpack adp_i, atp_i, pNKA, pPMCA, pSERCA = p
-    iNaK = i_nak(na_i, atp_i, adp_i, vm, evfrtm1, pNKA)
+    iNaK = i_nak(na_i, atp_i, adp_i, vm, pNKA, evfrt)
     iPCa = i_pca(ca_i, atp_i, adp_i, pPMCA)
     jUp = j_up(ca_i, ca_nsr, atp_i, adp_i, pSERCA)
 
     # Remaining ODEs
+    @unpack iStim = p
     du.vm = -iCM * (iNa + iCaL + iK + iK1 + iKp + iNaCa + iNaK + iNsNa + iPCa + iCaB + iNaB + iStim + iKatp + iCaK)
     du.na_i = -A_CAP_V_MYO_F * (iNa + iNaB + iNsNa + 3 * (iNaCa + iNaK))
     du.k_i = -A_CAP_V_MYO_F * (iK + iK1 + iKp + iKatp + iStim - 2 * iNaK + iCaK)
@@ -223,8 +231,9 @@ function model!(du, u, p::CMCParams, t)
     # du.crp_ic = 0  # CrP is fixed
 
     @unpack pCSQN, pCMDN = p
+    @unpack ca_i, ca_nsr, ca_jsr, ca_ss = u
     du.ca_i = β_ca(ca_i, pCMDN) * (jXfer - jUp - jTrpn - 0.5 * A_CAP_V_MYO_F * (iPCa + iCaB - 2 * iNaCa))
-    du.ca_nsr = β_ca(ca_nsr, pCSQN) / V_NSR * (V_MYO * jUp - V_JSR * jTr)
+    du.ca_nsr = (V_MYO * jUp - V_JSR * jTr) / V_NSR
     du.ca_jsr = β_ca(ca_jsr, pCSQN) * (jTr - jRel)
     du.ca_ss = β_ca(ca_ss, pCMDN) * (V_JSR / V_SS * jRel - V_MYO / V_SS * jXfer - 0.5 * iCaL * A_CAP_V_SS_F)
 

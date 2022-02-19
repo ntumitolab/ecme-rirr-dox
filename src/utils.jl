@@ -157,7 +157,7 @@ nernstNaK(k_o, na_o, k_i, na_i, P_NA_K) = nernst(na_o * P_NA_K + k_o, na_i * P_N
 Δp(ΔΨ, ΔpH) = ΔΨ - VT * log(10) * ΔpH
 
 # GHK flux equation
-ghk(px, x_i, x_o, zvfrt, ezvfrtm1 = expm1(zvfrt), z = 1) = px * z * F * (p_one(ezvfrtm1) * x_i - x_o) * expreL(zvfrt, ezvfrtm1)
+ghk(px, x_i, x_o, zvfrt, ezvfrtm1 = expm1(zvfrt), z = 1) = px * z * F * (p_one(ezvfrtm1) * x_i - x_o) * exprel(zvfrt, ezvfrtm1)
 
 # GHK flux equation from voltage across the membrane
 function ghkVm(px, vm, x_i, x_o, z = 1)
