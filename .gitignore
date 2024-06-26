@@ -25,3 +25,7 @@ docs/site/
 
 # VSCode settings
 .vscode/
+
+# Generated files
+*.gz
+*.csv
