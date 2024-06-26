@@ -4,6 +4,7 @@ authors = ["Wen-Wei Tseng <sosiristseng@gmail.com>"]
 version = "0.2.0"
 
 [deps]
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
 LogExpFunctions = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
