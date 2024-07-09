@@ -143,7 +143,6 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
         VMAX_C2 = 250mM / minute  # Maximal rate of SDH = complex II
         KM_Q_C2 = 0.6           # MM constant for CoQ
         KI_OAA_C2 = 0.15mM      # MM constant for OAA
-        FAC_SUC_C2 = 0.085
         KI_FUM_C2 = 1.3mM       # MM constant for fumarate
         KM_SUC_C2 = 0.03mM      # MM constant for succinate
     end
@@ -261,8 +260,10 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
     end
 
     @variables begin
+        QH2(t)
         QH2_n(t)
         QH2_p(t)
+        Q(t)
         Q_n(t)
         Q_p(t)
         Qdot_p(t)
@@ -289,7 +290,7 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
         v2 = KD_Q * (QH2_n - QH2_p) # QH2 diffusion
         # v3 = QH2 to FeS
         Qo_avail = (C3_CONC - Qdot_p) / C3_CONC
-        v3 = K03_C3 * MYXOTHIAZOLE * (KEQ3_C3 * Qo_avail * fes_ox * FAC_PH * QH2_p - fes_rd * Qdot_p)
+        v3 = K03_C3 * MYXOTHIAZOLE * (KEQ3_C3 * Qo_avail * fes_ox * QH2_p - fes_rd * Qdot_p)
         # v4 = Qdot_p and bH
         el4 = exp(-iVT * α_C3 * δ₁_C3 * dpsi)
         er4 = exp(iVT * α_C3 * (1 - δ₁_C3) * dpsi)
@@ -313,17 +314,23 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
         # Redox reaction between cytc1 and cytc
         v33 = K33_C3 * (KEQ33_C3 * cytc1_rd * cytc_ox - cytc1_ox * cytc_rd)
         [
-            D(Q_n) ~ v5 - v7_ox - v7_rd - v1,
-            D(Qdot_n) ~ v7_ox + v7_rd - v8_ox - v8_rd,
-            D(QH2_n) ~ v8_ox + v8_rd - v2 + v1,
-            D(QH2_p) ~ v2 - v3,
+            QH2 ~ QH2_n + QH2_p,
+            QH2_n ~ QH2_p,
+            Q ~ Q_n + Q_p,
+            Q_n ~ Q_p,
+            D(Q) ~ -v7_ox - v7_rd - v1 + v10 + v4_ox + v4_rd,
+            # D(Q_n) ~ v5 - v7_ox - v7_rd - v1,
+            # D(Qdot_n) ~ v7_ox + v7_rd - v8_ox - v8_rd,
+            D(QH2) ~ v8_ox + v8_rd + v1 - v3,
+            # D(QH2_n) ~ v8_ox + v8_rd - v2 + v1,
+            # D(QH2_p) ~ v2 - v3,
             D(Qdot_p) ~ v3 - v10 - v4_ox - v4_rd,
             # D(Q_p) ~ v10 + v4_ox + v4_rd - v5,
-            Q_T ~ Q_n + Qdot_n + QH2_n + QH2_p + Qdot_p + Q_p,
+            Q_T ~ Q + QH2 + Qdot_n + Qdot_p,
             D(b1) ~ v7_ox + v8_ox - v4_ox,
             D(b2) ~ v4_ox + v7_rd + v8_rd - v6,
             D(b3) ~ v6 - v4_rd - v7_ox - v8_ox,
-            # d_b4 = v4_rd - v7_rd - v8_rd
+            # D(b4) ~ v4_rd - v7_rd - v8_rd
             C3_CONC ~ b1 + b2 + b3 + b4,
             D(fes_ox) ~ v9 - v3,
             C3_CONC ~ fes_ox + fes_rd,
