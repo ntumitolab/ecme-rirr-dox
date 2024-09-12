@@ -6,7 +6,7 @@ using DataFrames
 using CSV
 using ECMEDox
 using ECMEDox: second, nernst, mM, Hz
-Plots.default(lw=2, size=(600, 600), fmt=:png)
+Plots.default(lw=2, size=(600, 600))
 
 tend = 1000.0second
 bcl = 1second
@@ -22,7 +22,7 @@ prob0 = ODEProblem(sys, u0, tend, [DOX => 0.260mM, ρC4 => 0.325mM])
 prob1 = ODEProblem(sys, u0, tend, [DOX => 0.260mM, ρC4 => 0.5mM])
 prob2 = ODEProblem(sys, u0, tend, [DOX => 0.260mM, ρC3 => 0.5mM])
 alg = FBDF()
-@time sol0 = solve(prob0, alg; reltol=1e-7, abstol=1e-7, progress=true, maxiters=1e8, saveat=0.0005)
+@time sol0 = solve(prob0, alg; reltol=1e-7, abstol=1e-7, progress=true, maxiters=1e8)
 @time sol1 = solve(prob1, alg; reltol=1e-7, abstol=1e-7, progress=true, maxiters=1e8, saveat=0.0005)
 @time sol2 = solve(prob2, alg; reltol=1e-7, abstol=1e-7, progress=true, maxiters=1e8, saveat=0.0005)
 
