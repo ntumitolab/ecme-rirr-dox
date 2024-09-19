@@ -23,8 +23,8 @@ prob1 = ODEProblem(sys, u0, tend, [DOX => 0.260mM, ρC4 => 0.5mM])
 prob2 = ODEProblem(sys, u0, tend, [DOX => 0.260mM, ρC3 => 0.5mM])
 alg = FBDF()
 @time sol0 = solve(prob0, alg; reltol=1e-7, abstol=1e-7, progress=true, maxiters=1e8)
-@time sol1 = solve(prob1, alg; reltol=1e-7, abstol=1e-7, progress=true, maxiters=1e8, saveat=0.0005)
-@time sol2 = solve(prob2, alg; reltol=1e-7, abstol=1e-7, progress=true, maxiters=1e8, saveat=0.0005)
+@time sol1 = solve(prob1, alg; reltol=1e-7, abstol=1e-7, progress=true, maxiters=1e8)
+@time sol2 = solve(prob2, alg; reltol=1e-7, abstol=1e-7, progress=true, maxiters=1e8)
 
 df = DataFrame(sol2)
 
