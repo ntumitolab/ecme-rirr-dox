@@ -1,13 +1,19 @@
-# TCA cycle rates[^Wei2011]
+# TCA cycle rates
+
+## Conservation relationship
+
+$$
+[CIT] = \Sigma_{CAC} - [ISOC] - [\alpha KG]-[SCoA] - [SUC] - [FUM] - [MAL] - [OAA]
+$$
+
+| Parameter      | Value    | Unit | Description                            |
+| -------------- | -------- | ---- | -------------------------------------- |
+| $\Sigma_{CAC}$ | 1.300    | mM   | Sum of TCA cycle intermediates         |
 
 ## Citrate synthase (CS)
 
 $$
-\begin{aligned}
-J_{CS} &= \frac{k_{cat} E_T AB}{(1+A)(1+B)}  \\
-A &= [AcCoA] / K_m^{AcCoA} \\
-B &= [OAA] / K_m^{OAA}
-\end{aligned}
+J_{CS} = \frac{k_{cat} E_T ([AcCoA] / K_m^{AcCoA})([OAA] / K_m^{OAA})}{(1+[AcCoA] / K_m^{AcCoA})(1+[OAA] / K_m^{OAA})}
 $$
 
 | Parameter        | Value   | Unit | Description                         |
@@ -16,24 +22,18 @@ $$
 | $E_T$            | 0.4     | mM   | Enzyme concentration of CS          |
 | $K_m^{AcCoA}$    | 0.0126  | mM   | Michaelis constant for AcCoA        |
 | $K_m^{OAA}$      | 6.4E-4  | mM   | Michaelis constant for OAA          |
-| $[AcCoA]$        | 1       | mM   | Acetyl CoA concentration            |
-| $k_{cat}$ (cell) | 0.15891 | Hz   | Catalytic constant (cellular model) |
+| $[AcCoA]$        | 0.1     | mM   | Acetyl CoA concentration            |
 
 ## Aconitase (ACO)
 
 $$
-\begin{aligned}
-J_{ACO} &= k_f ([CIT] - [ISOC] / K_{eq})  \\
-\ [CIT] &= \Sigma_{CAC} - [ISOC] - [\alpha KG]-[SCoA] - [SUC] - [FUM] - [MAL] - [OAA]
-\end{aligned}
+J_{ACO} = k_f ([CIT] - [ISOC] / K_{eq}^{ACO})
 $$
 
 | Parameter      | Value    | Unit | Description                            |
 | -------------- | -------- | ---- | -------------------------------------- |
-| $k_f$          | 0.11688  | Hz   | Forward rate constant of ACO           |
-| $K_{eq}$       | 2.22     | -    | Equilibrium constant of ACO            |
-| $\Sigma_{CAC}$ | 1.300    | mM   | Sum of TCA cycle intermediates         |
-| $k_f$ (cell)   | 0.078959 | Hz   | Forward rate constant (cellular model) |
+| $k_f$          | 0.1  | Hz   | Forward rate constant of ACO           |
+| $K_{eq}^{ACO}$       | 2.22     | -    | Equilibrium constant of ACO            |
 
 ## Isocitrate dehydrogenase, NADH-producing (IDH3)
 
@@ -50,7 +50,7 @@ $$
 
 | Parameter        | Value | Unit | Description                       |
 | ---------------- | ----- | ---- | --------------------------------- |
-| $k_{cat}$        | 11880 | Hz   | Rate constant of IDH3             |
+| $k_{cat}$        | 535   | Hz   | Rate constant of IDH3             |
 | $E_T$            | 0.109 | mM   | Concentration of IDH3             |
 | $K_{H1}$         | 1E-6  | mM   | Ionization constant of IDH3       |
 | $K_{H2}$         | 9E-4  | mM   | Ionization constant of IDH3       |
@@ -60,7 +60,6 @@ $$
 | $K_A$            | 0.62  | mM   | Activation constant by ADP        |
 | $K_{CA}$         | 5E-4  | mM   | Activation constant for calcium   |
 | $K_{NADH}$       | 0.19  | mM   | Inhibition constant by NADH       |
-| $k_{cat}$ (cell) | 535   | Hz   | Rate constant (cellular model)    |
 
 ## Alpha-ketoglutarate dehydrogenase (KGDH)
 
@@ -76,7 +75,7 @@ $$
 
 | Parameter        | Value  | Unit | Description                    |
 | ---------------- | ------ | ---- | ------------------------------ |
-| $k_{cat}$        | 13.2   | Hz   | Rate constant of KGDH          |
+| $k_{cat}$        | 17.9   | Hz   | Rate constant of KGDH          |
 | $E_T$            | 0.5    | mM   | Concentration of KGDH          |
 | $K_{H1}$         | 4E-5   | mM   | Ionization constant of KGDH    |
 | $K_{H2}$         | 7E-5   | mM   | Ionization constant of KGDH    |
@@ -85,7 +84,6 @@ $$
 | $n$              | 1.2    | -    | Hill coefficient for αKG       |
 | $K_{MG}$         | 0.0308 | mM   | Activation constant for Mg     |
 | $K_{CA}$         | 1.5E-4 | mM   | Activation constant for Ca     |
-| $k_{cat}$ (cell) | 17.9   | Hz   | Rate constant (cellular model) |
 
 ## Succinate-CoA ligase (SL)
 
@@ -98,10 +96,9 @@ $$
 
 | Parameter    | Value   | Unit    | Description                            |
 | ------------ | ------- | ------- | -------------------------------------- |
-| $k_f$        | 2.8E-5  | mM * Hz | Forward rate constant of SL            |
-| $K_{eq}$     | 3.115   | -       | Equilibrium constant of SL             |
-| [CoA]        | 0.020   | mM      | Coenzyme A concentration               |
-| $k_f$ (cell) | 2.84E-5 | mM * Hz | Forward rate constant (cellular model) |
+| $k_f$        | 28.4  | 1/mM*s | Forward rate constant of SL            |
+| $K_{eq}$     | 3.115mM | -    | Equilibrium constant of SL             |
+| [CoA]        | 0.020   | mM   | Coenzyme A concentration               |
 
 ## Succinate dehydrogenase (SDH)
 
@@ -110,14 +107,13 @@ See OXPHOS part: complex II (Succinate dehydrogenase).
 ## Fumarate hydratase (FH)
 
 $$
-J_{FH} = k_f ([FUM] - [MAL] / K_{eq})
+J_{FH} = k_f ([FUM] - [MAL] / K_{eq}^{FH})
 $$
 
 | Parameter    | Value | Unit | Description                            |
 | ------------ | ----- | ---- | -------------------------------------- |
 | $k_f$        | 8.3   | Hz   | Forward rate constant                  |
-| $K_{eq}$     | 1.0   | -    | Equilibrium constant                   |
-| $k_f$ (cell) | 8.4   | Hz   | Forward rate constant (cellular model) |
+| $K_{eq}^{FH}$| 1.0   | -    | Equilibrium constant                   |
 
 ## Malate dehydrogenase (MDH)
 
@@ -133,7 +129,7 @@ $$
 
 | Parameter        | Value    | Units | Description                          |
 | ---------------- | -------- | ----- | ------------------------------------ |
-| $k_{cat}$        | 124.2    | Hz    | Rate constant                        |
+| $k_{cat}$        | 125.9    | Hz    | Rate constant                        |
 | $E_T$            | 0.154    | mM    |                                      |
 | $K_{H1}$         | 1.131E-5 | mM    | Ionization constant                  |
 | $K_{H2}$         | 26.7     | mM    | Ionization constant                  |
@@ -143,7 +139,6 @@ $$
 | $K_{NAD}$        | 0.2244   | mM    | Michaelis constant for NAD           |
 | $K_{MAL}$        | 1.493    | mM    | Michaelis constant for malate        |
 | $K_{OAA}$        | 0.031    | mM    | Inhibition constant for oxaloacetate |
-| $k_{cat}$ (cell) | 125.9    | Hz    | Rate constant for cellular model     |
 
 ## Aspartate aminotransferase (AAT)
 
@@ -153,25 +148,21 @@ $$
 
 | Parameter    | Value  | Units | Description                            |
 | ------------ | ------ | ----- | -------------------------------------- |
-| $k_f$        | 21.4   | Hz    | Forward rate constant                  |
-| $k_{ASP}$    | 0.0015 | Hz    | Rate constant of aspartate consumption |
+| $k_f$        | 21.7   | 1/mM*s| Forward rate constant                  |
+| $k_{ASP}$    | 0.0015 | 1/s   | Rate constant of aspartate consumption |
 | $K_{eq}$     | 6.6    |       | Equilibrium constant                   |
 | [GLU]        | 30.000 | mM    | Glutamate concentration                |
-| $k_f$ (cell) | 21.7   | Hz    | Forward rate constant (cellular model) |
 
-## ODEs specifically to the Citric acid cycle (CAC)
+## ODEs in the citric acid cycle
 
 $$
 \begin{aligned}
 \frac{d [ISOC]}{dt} &= J_{ACO} -J_{IDH3} -J_{IDH2}  \\
 \frac{d [\alpha KG]}{dt} &= J_{IDH3} + J_{IDH2} - J_{KGDH} + J_{AAT}  \\
-\frac{d[SCoA]}{dt} &= J_{KGDH} - J_{SL}  \\
+\frac{d [SCoA]}{dt} &= J_{KGDH} - J_{SL}  \\
 \frac{d [SUC]}{dt} &= J_{SL} - J_{SDH} \\
 \frac{d [FUM]}{dt} &= J_{SDH} - J_{FH}  \\
-\frac{d[MAL]}{dt} &= J_{FH} - J_{MDH}  \\
+\frac{d [MAL]}{dt} &= J_{FH} - J_{MDH}  \\
 \frac{d [OAA]}{dt} & = J_{MDH} - J_{CS} - J_{AAT}  \\
-\frac{d [NADH]_m}{dt} &= -J_{C1} + J_{IDH} + J_{KGDH} + J_{MDH} - J_{THD}  \\
 \end{aligned}
 $$
-
-[^Wei2011]: Wei AC, Aon MA, O'Rourke B, Winslow RL, Cortassa S. Mitochondrial energetics, pH regulation, and ion dynamics: a computational-experimental approach. Biophys J. 2011;100(12):2894-903. [PMC3123977](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3123977/)

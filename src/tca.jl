@@ -15,7 +15,7 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
 		KF_ACO = 0.1Hz # Adjusted
 		KEQ_ACO = 2.22
 
-		### IDH (Isocitrte dehydrogenase)
+		### IDH3 (Isocitrate dehydrogenase, NADH-producing)
 		KI_NADH_IDH = 0.19mM
 		KCAT_IDH = 535Hz
 		ET_IDH = 0.109mM
@@ -40,7 +40,7 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
 
 		### SL (Succinyl-coA lyase)
 		COA = 0.02mM
-		KF_SL = 0.0284/ms
+		KF_SL = 0.0284/(mM * ms)
 		KEQ_SL = 3.115mM
 
 		### FH (Fumarate hydrase) parameters

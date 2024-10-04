@@ -1,20 +1,4 @@
-# General things
-
-## Functions
-
-Nernst potential
-
-$$
-E_N(X_o, X_i, z_X) := \frac{RT}{Fz_X} ln(\frac{X_o}{X_i}) \approx \frac{26.7mV}{z_X} ln(\frac{X_o}{X_i}) 
-$$
-
-Hill function
-
-$$
-Hill(x, k, n) := \frac{x^n}{x^n + k^n}
-$$
-
-## General parameters
+# General parameters
 
 | Parameter       | Value                  | Unit                  | Desc.                                    |
 | --------------- | ---------------------- | --------------------- | ---------------------------------------- |

@@ -1,8 +1,8 @@
 # Cytosolic calcium dynamics
 
-## L-type Ca current (ICa & ICaK)[^Cortassa2006]
+## L-type Ca current (ICa & ICaK)
 
-Common pool of subspace calcium model
+"Common pool" subspace calcium model.
 
 $$
 \begin{aligned}
@@ -59,20 +59,12 @@ $$
 | $P_{K}^{LCC}$  | $1.11 \cdot 10^{-11}$ | $cm/s$           | L-type Ca2+ channel permeability to K+     |
 | $I_{Ca, half}$ | $-0.4583$             | $\mu A \ cm^{2}$ | ICa level that reduces equation Pk by half |
 
-## Ryanodine receptor (calcium release, Jrel)[^Cortassa2006]
-
-With optimization from Plank et al. (2008)
+## Ryanodine receptor calcium release flux (Jrel)
 
 $$
 \begin{aligned}
 P_{C1} &= 1 - P_{O1} - P_{O2} - P_{C2}  \\
-\\
-If \ [Ca^{2+}]_{ss} &\ge [Ca^{2+}]_{ss}^{*} : \\
-P_{O1} &:= (P_{O1} + P_{C1}) Hill(k_a^+[Ca^{2+}]_{ss}^n, k_a^-, 1)  \\
-v_{o1c1} &= 0  \\
-If \ [Ca^{2+}]_{ss} &< [Ca^{2+}]_{ss}^{*} : \\
 v_{o1c1} &= -k_a^-P_{O1} + k_a^+[Ca^{2+}]_{ss}^n P_{C1} \\
-\\
 v_{o1o2} &= k_b^+ [Ca^{2+}]_{ss}^m P_{O1} - k_b^- P_{O2} \\
 v_{o1c2} &= k_c^+ P_{O1} - k_c^- P_{C2} \\
 \dot{P_{O1}}  &= -v_{o1c1} - v_{o1o2} - v_{o1c2}  \\
@@ -84,26 +76,27 @@ $$
 
 | Parameter | Value                  | Units               | Description               |
 | --------- | ---------------------- | ------------------- | ------------------------- |
-| $v_1$     | $3600$                 | Hz                  | RyR flux channel constant |
+| $r_{RyR}$ | $3600$                 | $\text{Hz}$         | RyR flux channel constant |
 | $n$       | $4$                    |                     | Cooperativity parameter   |
 | $m$       | $3$                    |                     | Cooperativity parameter   |
-| $k_a^+$   | $1.215 \cdot 10^{13} $ | $\text{Hz mM}^{-4}$ | RyR rate constant         |
+| $k_a^+$   | $1.215 \cdot 10^{13}$ | $\text{Hz/mM}^{4}$  | RyR rate constant         |
 | $k_a^-$   | $576$                  | $\text{Hz}$         | RyR rate constant         |
-| $k_b^+$   | $4.05 \cdot 10^{6} $   | $\text{Hz mM}^{-3}$ | RyR rate constant         |
+| $k_b^+$   | $4.05 \cdot 10^{6}$   | $\text{Hz/mM}^{3}$   | RyR rate constant         |
 | $k_b^-$   | $1930$                 | $\text{Hz}$         | RyR rate constant         |
 | $k_c^+$   | $100$                  | $\text{Hz}$         | RyR rate constant         |
 | $k_c^-$   | $0.8$                  | $\text{Hz}$         | RyR rate constant         |
 
-## Plama membrane calcium ATPase (PMCA) current (IpCa)[^Cortassa2006]
+## Plasma membrane calcium ATPase (PMCA) current (IpCa)
 
 Modified rate expression incorporating the ATP-dependence of pump activity.
-Plama membrane calcium ATPase (PMCA) rate exhibits two different K0.5 values for ATP
+Plasma membrane calcium ATPase (PMCA) rate exhibits two different K0.5 values for ATP.
 
 $$
 \begin{aligned}
-f_{ATP} &= Hill([ATP]_i  \cdot Hill(K_{i,ADP}^{PMCA}, [ADP]_i, 1), K_{M1,ATP}^{PMCA}, 1) + Hill([ATP]_i, K_{M2,ATP}^{PMCA}, 1)  \\
-f_{Ca} &= Hill([Ca^{2+}]_i, \ K_{M, Ca}^{PMCA}, 1) \\
 I_{pCa} &= I_{max}^{PMCA}  \cdot f_{Ca}  \cdot f_{ATP} \\
+f_{ATP} &= \frac{[ATP]_i}{[ATP]_i + K_{M2,ATP}^{PMCA}} + \frac{[ATP]_i}{[ATP]_i + K_{M1,ATP}^{PMCA} / f{ADP}} \\
+f_{ADP} &= \frac{K_{i,ADP}^{PMCA}}{K_{i,ADP}^{PMCA} + [ADP]_i} \\
+f_{Ca} &= \frac{[Ca^{2+}]_i}{[Ca^{2+}]_i +  K_{M, Ca}^{PMCA}} \\
 \end{aligned}
 $$
 
@@ -115,7 +108,7 @@ $$
 | $K_{ATP2}^{PMCA}$ | $0.23$  | $mM$                  | Second ATP half-saturation constant for sarcolemmal Ca2+ pump |
 | $K_{ADP}^{PMCA}$  | $1.0$   | $mM$                  | ADP inhibition constant for sarcolemmal Ca2+ pump             |
 
-## SERCA calcium pump (Jup)[^Cortassa2006]
+## SERCA calcium pump (Jup)
 
 Michaelis-Menten dependence of enzyme activity with respect to ATP and mixed-type inhibition of the enzyme by ADP.
 
@@ -126,17 +119,15 @@ $$
 J_{up} &= \frac{V_{f}^{up}f_b-V_{r}^{up}r_b}{(1 + f_b + r_b)f_{ATP}^{SERCA}} \\
 f_b &= \left( \frac{[Ca^{2+}]_i}{K_{fb}} \right)^{N_{fb}} \\
 r_b &= \left( \frac{[Ca^{2+}]_{NSR}}{K_{rb}} \right)^{N_{rb}} \\
-f_{ATP}^{SERCA} &= K_{m,up}^{ATP} / ([ATP]_i  \cdot Hill(K_{i1, up}, [ADP]_i, 1)) + Hill(K_{i2, up}, [ADP]_i, )^{-1}  \\
+f_{ATP}^{SERCA} &= \frac{K_{m,up}^{ATP}}{[ATP]_i} ( \frac{[ADP]_i}{K_{i1, up}} + 1) + \frac{[ADP]_i}{K_{i2, up}} + 1 \\
 \end{aligned}
 $$
-
-[^Cortassa2006]: Cortassa S, Aon MA, O'Rourke B, et al. A computational model integrating electrophysiology, contraction, and mitochondrial bioenergetics in the ventricular myocyte. Biophys J. 2006;91(4):1564-89. [PMC1518641](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1518641/)
 
 | Parameter            | Value     | Units   | Description                                    |
 | -------------------- | --------- | ------- | ---------------------------------------------- |
 | $V_{max, f}^{SERCA}$ | $0.2989$  | $mM/s$  | SERCA forward rate parameter                   |
 | $V_{max, b}^{SERCA}$ | $0.3179$  | $mM/s$  | SERCA reverse  rate parameter                  |
-| $K_{f}^{SERCA}$      | $0.24$    | $\mu M$ | Forward Ca2+ half-saturation constant of SERCA |
+| $K_{f}^{SERCA}$      | $0.24 \cdot 10^{-3}$ | $mM$ | Forward Ca2+ half-saturation constant of SERCA |
 | $K_{r}^{SERCA}$      | $1.64269$ | $mM$    | Reverse Ca2+ half-saturation constant of SERCA |
 | $N_{f}^{SERCA}$      | $1.4$     |         | Forward cooperativity constant of SERCA        |
 | $N_{r}^{SERCA}$      | $1.0$     |         | Reverse  cooperativity constant of SERCA       |
@@ -150,12 +141,8 @@ $$
 | --------------- | -------- | ------------------- | ---------------------------------------------------- |
 | $\tau_{tr}$     | $574.7$  | Hz                  | Time constant for transfer from subspace to myoplasm |
 | $\tau_{xfer}$   | $9090$   | Hz                  | Time constant for transfer from NSR to JSR           |
-| $K_{m}^{CMDN}$  | $2.38$   | $\mu M$             | Ca2+ half saturation constant for calmodulin         |
+| $K_{m}^{CMDN}$  | $2.38 \cdot 10^{-3}$   | $mM$             | Ca2+ half saturation constant for calmodulin         |
 | $K_{m}^{CSQN}$  | $0.8$    | $mM$                | Ca2+ half saturation constant for calsequestrin      |
-| $h_{trpn}^{+}$  | $100000$ | $\text{Hz mM}^{-1}$ | Ca2+ on-rate for troponin high-affinity sites        |
-| $h_{trpn}^{-}$  | $0.33$   | $\text{Hz}$         | Ca2+ off-rate for troponin high-affinity sites       |
-| $l_{trpn}^{+}$  | $100000$ | $\text{Hz mM}^{-1}$ | Ca2+ on-rate for troponin low-affinity sites         |
-| $l_{trpn}^{-}$  | $40$     | $\text{Hz}$         | Ca2+ off-rate for troponin low-affinity sites        |
 | $\Sigma[HTRPN]$ | $0.14$   | $mM$                | Total troponin high-affinity sites                   |
 | $\Sigma[LTRPN]$ | $0.07$   | $mM$                | Total troponin low-affinity sites                    |
 | $\Sigma[CMDN]$  | $0.05$   | $mM$                | Total myoplasmic calmodulin concentration            |
@@ -165,8 +152,8 @@ $$
 
 $$
 \begin{aligned}
-β_i &= Hill((K_m^{CMDN} + [Ca^{2+}]_i)^2, K_m^{CMDN}  \cdot  [CMDN]_{tot}, 1)  \\
-β_{SR} &= Hill((K_m^{CSQN} + [Ca^{2+}]_{SR})^2, K_m^{CSQN}  \cdot  [CSQN]_{tot}, 1)  \\
+β_i &= \frac{(K_m^{CMDN} + [Ca^{2+}]_i)^2}{ (K_m^{CMDN} + [Ca^{2+}]_i)^2 + K_m^{CMDN}  \cdot  [CMDN]_{tot}} \\
+β_{SR} &= \frac{(K_m^{CSQN} + [Ca^{2+}]_{SR})^2}{(K_m^{CSQN} + [Ca^{2+}]_{SR})^2 + K_m^{CSQN}  \cdot  [CSQN]_{tot}} \\
 \frac{d[Ca^{2+}]_i}{dt} &= \beta_i(J_{xfer}\frac{V_{ss}}{V_{myo}} - J_{up} - J_{trpn} - (I_{Ca,b} -2I_{NaCa} + I_{pCa})\frac{A_{cap}}{2V_{myo}F} + (V_{NaCa} - V_{uni})\frac{V_{mito}}{V_{myo}}) \\
 \frac{d[Ca^{2+}]_{SR}}{dt} &= \beta_{SR}(J_{up}\frac{V_{myo}}{V_{SR}} - J_{rel}\frac{V_{ss}}{V_{SR}}) \\
 \end{aligned}

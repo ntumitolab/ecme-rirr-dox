@@ -1,12 +1,12 @@
 # OXPHOS
 
-## Complex I model[^Gauthier2013A]
+## Complex I model
 
-Assuming single electron transfer for each cycle.
+Assuming single electron transfer for each redox reaction.
 
 $$
 \begin{aligned}
-\nu &= \text{exp}((\Delta\Psi_m - \Delta\Psi_B) / V_T) \\
+\nu &= \exp((\Delta\Psi_m - \Delta\Psi_B) F/ RT) \\
 a_{12} &= k_{12} ([H^+]_m)^2 \\
 a_{21} &= k_{21} \\
 a_{65} &= k_{65} ([H^+]_i)^2  \\
@@ -23,7 +23,7 @@ a_{57} &=  C1_{inhib}  \cdot K_{57} \sqrt{[QH_2]} \\
 a_{75} &= k_{75} \\
 k_{42}^\prime &= k_{42} \\
 a_{42} &= k_{42}^\prime [O_2] \\
-K_{eq}^{ROS} &= \text{exp}((E_{FMN} - E_{sox}) / V_T) \\
+K_{eq}^{ROS} &= \exp((E_{FMN} - E_{sox}) F / RT) \\
 a_{24} &= a_{42} K_{eq}^{ROS} [O_2^{ \cdot  -}]_m  \\
 a_{25} &= a_{52} = 0  \\
 \end{aligned}
@@ -103,7 +103,7 @@ a_{16} \cdot a_{21} \cdot a_{34} \cdot a_{57} \cdot a_{65} \cdot a_{74}   +
 a_{16} \cdot a_{23} \cdot a_{34} \cdot a_{57} \cdot a_{65} \cdot a_{74}   \\ &+
 a_{16} \cdot a_{24} \cdot a_{32} \cdot a_{57} \cdot a_{65} \cdot a_{74}   +
 a_{16} \cdot a_{24} \cdot a_{34} \cdot a_{57} \cdot a_{65} \cdot a_{74}   \\
-e_{5} &=  
+e_{5} &=
 a_{12} \cdot a_{23} \cdot a_{34} \cdot a_{47} \cdot a_{61} \cdot a_{75}   +
 a_{12} \cdot a_{23} \cdot a_{34} \cdot a_{47} \cdot a_{65} \cdot a_{75}   +
 a_{12} \cdot a_{24} \cdot a_{32} \cdot a_{47} \cdot a_{61} \cdot a_{75}   \\ &+
@@ -121,7 +121,7 @@ a_{16} \cdot a_{21} \cdot a_{34} \cdot a_{47} \cdot a_{65} \cdot a_{75}   +
 a_{16} \cdot a_{23} \cdot a_{34} \cdot a_{47} \cdot a_{65} \cdot a_{75}   \\ &+
 a_{16} \cdot a_{24} \cdot a_{32} \cdot a_{47} \cdot a_{65} \cdot a_{75}   +
 a_{16} \cdot a_{24} \cdot a_{34} \cdot a_{47} \cdot a_{65} \cdot a_{75}   \\
-e_{6} &=  
+e_{6} &=
 a_{12} \cdot a_{23} \cdot a_{34} \cdot a_{47} \cdot a_{56} \cdot a_{75} +
 a_{12} \cdot a_{24} \cdot a_{32} \cdot a_{47} \cdot a_{56} \cdot a_{75}   +
 a_{12} \cdot a_{24} \cdot a_{34} \cdot a_{47} \cdot a_{56} \cdot a_{75}   \\ &+
@@ -139,7 +139,7 @@ a_{16} \cdot a_{21} \cdot a_{34} \cdot a_{47} \cdot a_{56} \cdot a_{75}   +
 a_{16} \cdot a_{23} \cdot a_{34} \cdot a_{47} \cdot a_{56} \cdot a_{75}   \\ &+
 a_{16} \cdot a_{24} \cdot a_{32} \cdot a_{47} \cdot a_{56} \cdot a_{75}   +
 a_{16} \cdot a_{24} \cdot a_{34} \cdot a_{47} \cdot a_{56} \cdot a_{75}   \\
-e_{7} &=  
+e_{7} &=
 a_{12} \cdot a_{23} \cdot a_{34} \cdot a_{47} \cdot a_{56} \cdot a_{61} +
 a_{12} \cdot a_{23} \cdot a_{34} \cdot a_{47} \cdot a_{57} \cdot a_{61}   +
 a_{12} \cdot a_{23} \cdot a_{34} \cdot a_{47} \cdot a_{57} \cdot a_{65}   \\ &+
@@ -173,45 +173,48 @@ $$
 
 | Parameter      | Value     | Units       | Desc.                                        |
 | -------------- | --------- | ----------- | -------------------------------------------- |
-| $\rho_{C1}$    | 8.849     | mM          | Concentration of complex I<br />(Adjustable) |
+| $\rho_{C1}$    | 5     | mM          | Concentration of complex I<br />(Adjustable) |
 | $\Delta\Psi_B$ | 50        | mV          | Phase boundary potential                     |
-| $k_{12}$       | 6.3396E11 | Hz/mM^2     |                                              |
+| $k_{12}$       | 6.3396E11 | $Hz/mM^2$     |                                              |
 | $k_{21}$       | 5         | Hz          |                                              |
 | $k_{56}$       | 100       | Hz          |                                              |
-| $k_{65}$       | 2.5119E13 | Hz/mM^2     |                                              |
+| $k_{65}$       | 2.5119E13 | $Hz/mM^2$     |                                              |
 | $k_{61}$       | 1E7       | Hz          |                                              |
 | $k_{16}$       | 130       | Hz          |                                              |
-| $k_{23}$       | 3886.7    | Hz/mM^{1/2} |                                              |
+| $k_{23}$       | 3886.7    | $Hz/mM^{1/2}$ |                                              |
 | $k_{32}$       | 9.1295E6  | Hz          |                                              |
 | $k_{34}$       | 639.1364  | Hz          |                                              |
-| $k_{43}$       | 3.2882    | Hz/mM^{1/2} |                                              |
+| $k_{43}$       | 3.2882    | $Hz/mM^{1/2}$ |                                              |
 | $k_{47}$       | 1.5962E7  | Hz/mM       |                                              |
 | $k_{74}$       | 65.2227   | Hz          |                                              |
 | $k_{75}$       | 24615     | Hz          |                                              |
-| $k_{57}$       | 1166.7    | Hz/mM^{1/2} |                                              |
+| $k_{57}$       | 1166.7    | $Hz/mM^{1/2}$ |                                              |
 | $k_{42}$       | 6.0318    | Hz/mM       |                                              |
 | $E_{FMN}$      | -375      | mV          | Midpoint potential of flavin mononucleotide  |
 | $E_{sox}$      | -150      | mV          | Midpoint potential of superoxide             |
 
-## Complex II (Succinate dehydrogenase)[^Gauthier2013A]
+## Complex II (Succinate dehydrogenase)
 
 $$
 \begin{aligned}
 f_Q &= \frac{[Q]_n}{[Q]_n + [QH_2]_n}  \\
-f_{OAA} &= \frac{K_i}{[OAA] + K_i} \\
-f_{SUC} &= 0.085 \sqrt{[SUC] / [FUM]} \\
-J_{SDH} &= V_{SDH} C2_{inhib} f_{SUC} f_{OAA} \frac{f_Q}{f_Q + K_m}  \\
+f_{OAA} &= \frac{K_{i, OAA}}{[OAA] + K_{i, OAA}} \\
+f_{FUM} &= \frac{K_{i, FUM}}{[FUM] + K_{i, FUM}} \\
+f_{SUC} &= \frac{[SUC]}{[SUC] + K_{m, SUC} / f_{OAA} / f_{FUM}} \\
+J_{SDH} &= V_{SDH} C2_{inhib} f_{SUC} \frac{f_Q}{f_Q + K_{m, Q}}  \\
 J_{c2} &= J_{SDH} \\
 \end{aligned}
 $$
 
 | Parameter | Value | Units   | Desc.                                |
 | --------- | ----- | ------- | ------------------------------------ |
-| $V_{SDH}$ | 4.167 | mM * Hz | Maximum rate of SDH                  |
-| $K_i$     | 0.150 | mM      | Inhibition constant for oxaloacetate |
-| $K_m$     | 0.6   | -       | Michaelis constant for CoQ           |
+| $V_{SDH}$ | 250   | mM / minute | Maximum rate of SDH                  |
+| $K_{i, OAA}$     | 0.150 | mM      | Inhibition constant for oxaloacetate |
+| $K_{m, Q}$     | 0.6   | -       | Michaelis constant for CoQ           |
+| $K_{i, FUC}$     | 0.150 | mM      | Inhibition constant for fumarate |
+| $K_{m, SUC}$     | 0.6   | -       | Michaelis constant for succinate           |
 
-## Complex III[^Gauthier2013A]
+## Complex III
 
 $$
 \begin{aligned}
@@ -220,45 +223,45 @@ v_{1} &= v_{Q}^{C1} + v_{Q}^{C2}   \\
 v_2 &= k_d([QH_2]_{n} - [QH_2]_{p})  \\
 k_{3} &= k_{03}K_{eq3}f_{hi} \\
 k_{-3} &= k_{03} \\
-v_{3} &= k_3[QH_2]_{p} [FeS]_{ox} - k_{-3}[Q^{ \cdot  -}]_{p} [FeS]_{rd}  \\
-k_{4, ox} &= k_{04}K_{eq4, ox} \text{exp}(-\alpha\delta_1\Delta\Psi_m / V_T) \\
-k_{4, rd} &= k_{04}K_{eq4, rd} \text{exp}(-\alpha\delta_1\Delta\Psi_m / V_T) \\
-k_{-4, ox} &= k_{04} \text{exp}(\alpha(1-\delta_1)\Delta\Psi_m / V_T)  \\
-k_{-4, rd} &= k_{04} \text{exp}(\alpha(1-\delta_1)\Delta\Psi_m / V_T)  \\
-v_{4, ox} &= k_{4, ox}[Q^{ \cdot -}]_{p} [b1] - k_{-4, ox}[Q]_{p} [b2]  \\
-v_{4, rd} &= k_{4, rd}[Q^{ \cdot -}]_{p} [b3] - k_{-4, rd}[Q]_{p} [b4]  \\
+v_{3} &= k_3[QH_2]_{p} [FeS]_{ox} - k_{-3}[Q^-]_p [FeS]_{rd}  \\
+k_{4, ox} &= k_{04}K_{eq4, ox} \exp(-\alpha\delta_1\Delta\Psi_m F/ RT) \\
+k_{4, rd} &= k_{04}K_{eq4, rd} \exp(-\alpha\delta_1\Delta\Psi_m F/ RT) \\
+k_{-4, ox} &= k_{04} \exp(\alpha(1-\delta_1)\Delta\Psi_m F/ RT)  \\
+k_{-4, rd} &= k_{04} \exp(\alpha(1-\delta_1)\Delta\Psi_m F/ RT)  \\
+v_{4, ox} &= k_{4, ox}[Q^-]_p [b1] - k_{-4, ox}[Q]_{p} [b2]  \\
+v_{4, rd} &= k_{4, rd}[Q^-]_p [b3] - k_{-4, rd}[Q]_{p} [b4]  \\
 v_{5} &= k_d([Q]_{p} - [Q]_{n})  \\
-k_{6} &= K_{06}K_{eq6}\text{exp}(-\beta\delta_2\Delta\Psi_m / V_T) \\
-k_{-6} &= k_{06} \text{exp}(\beta(1-\delta_2)\Delta\Psi_m / V_T)  \\
+k_{6} &= K_{06}K_{eq6} \exp( -\beta\delta_2\Delta\Psi_m / V_T) \\
+k_{-6} &= k_{06}  \exp( \beta(1-\delta_2)\Delta\Psi_m / V_T)  \\
 v_{6} &= k_{6} [b2] - k_{-6} [b3]  \\
-k_{7, ox} &= k_{07, ox}K_{eq7, ox}\text{exp}(-\gamma\delta_3\Delta\Psi_m / V_T) \\
-k_{7, rd} &= k_{07, rd}K_{eq7, rd}\text{exp}(-\gamma\delta_3\Delta\Psi_m / V_T) \\
-k_{-7, ox} &= k_{07, ox} \text{exp}(\gamma(1-\delta_3)\Delta\Psi_m / V_T)  \\
-k_{-7, rd} &= k_{07, rd} \text{exp}(\gamma(1-\delta_3)\Delta\Psi_m / V_T)  \\
-v_{7, ox} &= (k_{7, ox}[Q]_{n}[b3] - k_{-7, ox}[Q^{ \cdot  -}]_{n}[b1])C3_{inhib} \\
-v_{7, rd} &= (k_{7, rd}[Q]_{n}[b4] - k_{-7, rd}[Q^{ \cdot  -}]_{n}[b2])C3_{inhib} \\
+k_{7, ox} &= k_{07, ox}K_{eq7, ox}\exp(-\gamma\delta_3\Delta\Psi_m F/ RT) \\
+k_{7, rd} &= k_{07, rd}K_{eq7, rd}\exp(-\gamma\delta_3\Delta\Psi_m F/ RT) \\
+k_{-7, ox} &= k_{07, ox} \exp(\gamma(1-\delta_3)\Delta\Psi_m F/ RT)  \\
+k_{-7, rd} &= k_{07, rd} \exp(\gamma(1-\delta_3)\Delta\Psi_m F/ RT)  \\
+v_{7, ox} &= (k_{7, ox}[Q]_{n}[b3] - k_{-7, ox}[Q^-]_n [b1])C3_{inhib} \\
+v_{7, rd} &= (k_{7, rd}[Q]_{n}[b4] - k_{-7, rd}[Q^-]_n [b2])C3_{inhib} \\
 f_{hm} & = [H^+]_{m}   / 10^{-7}M  \\
-k_{8, ox} &= k_{08, ox}K_{eq8, ox}\text{exp}(-\gamma\delta_3\Delta\Psi_m / V_T)(f_{hm})^2  \\
-k_{8, rd} &= k_{08,rd}K_{eq8, rd}\text{exp}(-\gamma\delta_3\Delta\Psi_m / V_T)(f_{hm})^2  \\
-k_{-8, ox} &= k_{08, ox} \text{exp}(\gamma(1-\delta_3)\Delta\Psi_m / V_T)  \\
-k_{-8, rd} &= k_{08, rd} \text{exp}(\gamma(1-\delta_3)\Delta\Psi_m / V_T)  \\
-v_{8, ox} &= (k_{8, ox}[Q^{ \cdot  -}]_{n}[b3] - k_{-8, ox}[QH_2]_{n}[b1])C3_{inhib} \\
-v_{8, rd} &= (k_{8, rd}[Q^{ \cdot  -}]_{n}[b4] - k_{-8, rd}[QH_2]_{n}[b2])C3_{inhib} \\
+k_{8, ox} &= k_{08, ox}K_{eq8, ox}\exp(-\gamma\delta_3\Delta\Psi_m F/ T)(f_{hm})^2  \\
+k_{8, rd} &= k_{08,rd}K_{eq8, rd}\exp(-\gamma\delta_3\Delta\Psi_m F/ T)(f_{hm})^2  \\
+k_{-8, ox} &= k_{08, ox} \exp(\gamma(1-\delta_3)\Delta\Psi_m F/ RT)  \\
+k_{-8, rd} &= k_{08, rd} \exp(\gamma(1-\delta_3)\Delta\Psi_m F/ RT)  \\
+v_{8, ox} &= (k_{8, ox}[Q^-]_{n}[b3] - k_{-8, ox}[QH_2]_{n}[b1])C3_{inhib} \\
+v_{8, rd} &= (k_{8, rd}[Q^-]_{n}[b4] - k_{-8, rd}[QH_2]_{n}[b2])C3_{inhib} \\
 k_9 &= k_{09}K_{eq9}  \\
 k_{-9} &= k_{09} \\
 v_{9} &= k_{9}[FeS]_{rd}[cytc1]_{ox} - k_{-9}[FeS]_{ox}[cytc1]_{rd}\\
 k_{10} &= k_{010}K_{eq10}  \\
 k_{-10} &= k_{010} \\
-v_{10} &= k_{10}[Q^{ \cdot  -}]_p[O_2] - k_{-10}[Q]_p[O_2^{ \cdot -}]  \\
+v_{10} &= k_{10}[Q^-]_p[O_2] - k_{-10}[Q]_p[O_2^-]  \\
 v_{10b} &= v_{10}  \\
 v_{33} &= k_{33}(K_{eq}[cytc1]_{rd}[cytc]_{ox} - [cytc]_{rd}[cytc1]_{ox})  \\
-\rho_{C3}^\prime &= \rho_{C3} \cdot mt_{prot}  \\
-\rho_{C4}^\prime &= \rho_{C4} \cdot mt_{prot}  \\
-FeS_{rd} &= \rho_{C3}^\prime - FeS_{ox} \\
-cytc1_{rd} &= \rho_{C3}^\prime - cytc1_{ox}  \\
-cytc_{rd} &= \rho_{C4}^\prime - cytc_{ox}  \\
- [b4] &= \rho_{C3}^\prime - [b1] - [b2] - [b3]  \\
- [QH_2]_p &= \Sigma[Q] - [Q]_n - [Q]_p - [QH_2]_n - [Q^{ \cdot  -}]_p - [Q^{ \cdot  -}]_n  \\
+\rho_{C3}^{\prime} &= \rho_{C3} \cdot mt_{prot}  \\
+\rho_{C4}^{\prime} &= \rho_{C4} \cdot mt_{prot}  \\
+FeS_{rd} &= \rho_{C3}^{\prime} - FeS_{ox} \\
+cytc1_{rd} &= \rho_{C3}^{\prime} - cytc1_{ox}  \\
+cytc_{rd} &= \rho_{C4}^{\prime} - cytc_{ox}  \\
+ [b4] &= \rho_{C3}^{\prime} - [b1] - [b2] - [b3]  \\
+ [QH_2]_p &= \Sigma Q - [Q]_n - [Q]_p - [QH_2]_n - [Q^-]_p - [Q^-]_n  \\
 J_{hRes}^{C3} &= 2v_{3}     \\
 J_{ROS, m}^{C3} &= v_{10}   \\
 J_{ROS, i}^{C3} &= v_{10b}  \\
@@ -274,7 +277,7 @@ $$
 | $K_{eq4,rd}$ | 13.7484  | -     | Equilibrium constant for reaction 4 <br />(bH reduced)    |
 | $\delta_1$   | 0.5      | -     |                                                           |
 | $\alpha$     | 0.2497   | -     |                                                           |
-| $k_d$        | 22000    | Hz    | Rate of diffusion across the membrane <br />for Q and QH2 |
+| $k_d$        | 22000    | Hz    | Diffusion rate of ubiquinone across the membrane |
 | $k_{06}$     | 166.67   | Hz/mM | Reverse rate constant for reaction 6                      |
 | $K_{eq6}$    | 9.4596   | -     | Equilibrium constant for reaction 6                       |
 | $\delta_2$   | 0.5      | -     |                                                           |
@@ -295,17 +298,17 @@ $$
 | $K_{eq10}$   | 1.4541   | -     | Equilibrium constant for reaction 10                      |
 | $k_{33}$     | 2469.13  | Hz/mM | Reverse rate constant for reaction 33                     |
 | $K_{eq33}$   | 2.1145   | -     | Equilibrium constant for reaction 33                      |
-| $\rho_{C3}$  | 0.325    | mM    | Total complex III protein                                 |
+| $\rho_{C3}$  | 0.325    | mM    | Complex III content                                 |
 
 
-## Complex IV[^Gauthier2013A]
+## Complex IV
 
 $$
 \begin{aligned}
-f_{H_{m}} &= \text{exp}(-\delta_5\Delta\Psi_m / V_T) ([H^+]_m /10^{-7}M) \\
-f_{H_{i}} &= \text{exp}((1-\delta_5)\Delta\Psi_m / V_T) ([H^+]_i /10^{-7}M)  \\
+f_{H_{m}} &= \exp(-\delta_5\Delta\Psi_m F/ RT) ([H^+]_m /10^{-7}M) \\
+f_{H_{i}} &= \exp((1-\delta_5)\Delta\Psi_m F/ RT) ([H^+]_i /10^{-7}M)  \\
 f_{C_{rd}} &= [cytc]_{rd} \\
-f_{C_{ox}} &= \text{exp}((1-\delta_5)\Delta\Psi_m / V_T) [cytc]_{ox} \\
+f_{C_{ox}} &= \text{exp}((1-\delta_5)\Delta\Psi_m F/ RT) [cytc]_{ox} \\
 a_{12} &= k_{34} f_{C_{rd}}^3 f_{H_{m}}^4  \\
 a_{14} &= k_{-37} f_{H_{i}}   \\
 a_{21} &= k_{-34} f_{C_{ox}}^3 f_{H_{i}}  \\
@@ -337,7 +340,7 @@ $$
 | Parameter     | Value     | Unit    | Desc.                    |
 | ------------- | --------- | ------- | ------------------------ |
 | $\Sigma cytc$ | 0.325     | mM      | Cytochrome c pool        |
-| $\rho_{C4}$   | 0.325     | mM      | Complex IV concentration |
+| $\rho_{C4}$   | 0.325     | mM      | Complex IV content       |
 | $k_{34}$      | 2.9445E10 | Hz/mM^3 | @ pH = 7                 |
 | $k_{-34}$     | 290.03    | Hz/mM^3 | @ pH = 7                 |
 | $k_{35}$      | 45000     | Hz/mM   |                          |
@@ -346,8 +349,7 @@ $$
 | $k_{37}$      | 1.7245E8  | Hz      | @ pH = 7                 |
 | $k_{-37}$     | 17.542    | Hz      | @ pH = 7                 |
 
-
-## Complex V (ATP synthase) [^Wei2011]
+## Complex V (ATP synthase)
 
 $$
 \begin{aligned}
@@ -363,7 +365,7 @@ $$
 | Parameter      | Value     | Unit | Desc.                                                                                   |
 | -------------- | --------- | ---- | --------------------------------------------------------------------------------------- |
 | $\rho_{F1}$    | 5         | mM   | Concentration of F1-Fo ATPase                                                           |
-| $K_{eq}^{'}$   | 6.47E5    | M    | Apparent equilibrium constant for ATP hydrolysis<br />From Golding's work[^Golding1995] |
+| $K_{eq}^{'}$   | 6.47E5    | M    | Apparent equilibrium constant for ATP hydrolysis[^Golding1995] |
 | $\Delta\Psi_B$ | 50        | mV   | Phase boundary potential                                                                |
 | $p_{a}$        | 1.656E-5  | Hz   | Sum of products of rate constants                                                       |
 | $p_{b}$        | 3.373E-7  | Hz   | Sum of products of rate constants                                                       |
@@ -378,10 +380,10 @@ $$
 $$
 \begin{aligned}
 \frac{d[Q]_n}{dt} &= v_5 - v_{7,ox}- v_{7,rd} - v_1  \\
-\frac{d[Q^{ \cdot -}]_n}{dt} &= v_{7,ox} + v_{7,rd} - v_{8,ox}- v_{8,rd}  \\
+\frac{d[Q^-]_n}{dt} &= v_{7,ox} + v_{7,rd} - v_{8,ox}- v_{8,rd}  \\
 \frac{d[QH_2]_n}{dt} &= v_{8,ox} + v_{8,rd} + v_1 - v_2   \\
 \frac{d[QH_2]_p}{dt} &= v_2 -v_3 \\
-\frac{d[Q^{ \cdot -}]_p}{dt} &= v_3 - v_{10} - v_{10b} - v_{4,ox} - v_{4,rd}   \\
+\frac{d[Q^-]_p}{dt} &= v_3 - v_{10} - v_{10b} - v_{4,ox} - v_{4,rd}   \\
 \frac{d[Q]_p}{dt} &= v_{10} + v_{10b} + v_{4,ox} + v_{4,rd} - v_5   \\
 \frac{d[b1]}{dt} &= v_{7,ox} + v_{8,ox} - v_{4,ox}    \\
 \frac{d[b2]}{dt} &= v_{4,ox} + v_{7,rd} - v_{8,rd} - v_6   \\
@@ -393,9 +395,4 @@ $$
 \end{aligned}
 $$
 
-
-[^Wei2011]: Wei AC, Aon MA, O'Rourke B, Winslow RL, Cortassa S. Mitochondrial energetics, pH regulation, and ion dynamics: a computational-experimental approach. Biophys J. 2011;100(12):2894-903. [PMC3123977](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3123977/)
-
 [^Golding1995]: Golding, E. M., Teague, W. E., & Dobson, G. P. (1995). Adjustment of K’ to varying pH and pMg for the creatine kinase, adenylate kinase and ATP hydrolysis equilibria permitting quantitative bioenergetic assessment. The Journal of Experimental Biology, 198(Pt 8), 1775–1782.
-
-[^Gauthier2013A]: Gauthier LD, Greenstein JL, O’Rourke B, Winslow RL. An Integrated Mitochondrial ROS Production and Scavenging Model: Implications for Heart Failure. Biophysical Journal. 2013;105(12):2832-2842. doi:10.1016/j.bpj.2013.11.007. [PMC3882515](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3882515)

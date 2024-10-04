@@ -1,7 +1,6 @@
-## Force generation[^Rice2000]
+## Force generation
 
-With ATP consumption from Cortassa, 2006[^Cortassa2006]
-tTe rate of ATP hydrolysis associated with force generation through actomyosin ATPase depends explicitly on both ATP and ADP, as previously demonstrated.
+The rate of ATP hydrolysis associated with force generation through actomyosin ATPase depends explicitly on both ATP and ADP. [^Rice2000]
 
 $$
 \begin{aligned}
@@ -35,7 +34,8 @@ v_{15} &= k_{pn}^{trop} [P_1] - k_{np}^{trop} [N_1] \\
 v_{54} &= g_{01,off} [N_1]  \\
  [HTRPN] &=  [HTRPN]_{tot} - [HTRPNCa]  \\
  [LTRPN] &=  [LTRPN]_{tot} - [LTRPNCa]  \\
-f_{ATP}^{AM} &= Hill([ATP]_i  \cdot Hill(K_{i,AM}^{ADP}, [ADP]_i, 1), K_{m,AM}^{ATP}, 1) \\
+f_{ATP}^{AM} &= \frac{[ATP]_i}{[ATP]_i + K_{m,AM}^{ATP}/f_{ADP}^{AM} } \\
+f_{ADP}^{AM} &= \frac{K_{i,AM}^{ADP}}{[ADP]_i + K_{i,AM}^{ADP}} \\
 V_{AM} &= V_{max}^{AM}  \cdot f_{ATP}^{AM}  \cdot  \frac{f_{01}[P_0] + f_{12}[P_1] + f_{23}[P_2]}{f_{01} + f_{12} + f_{23}} \\
 J_{trpn} &= \frac{d[HTRPNCa]}{dt} + \frac{d[LTRPNCa]}{dt} \\
 \frac{d[HTRPNCa]}{dt} &= k^{+}_{htrpn}[Ca^{2+}]_i[HTRPN] - k^{-}_{htrpn}[HTRPNCa]  \\
@@ -51,17 +51,19 @@ $$
 
 [^Rice2000]: Rice JJ, Jafri MS, Winslow RL. Modeling short-term interval-force relations in cardiac muscle. Am J Physiol Heart Circ Physiol. 2000 Mar;278(3):H913-31. [APS](https://www.physiology.org/doi/full/10.1152/ajpheart.2000.278.3.H913)
 
-[^Cortassa2006]: Cortassa S, Aon MA, O'Rourke B, et al. A computational model integrating electrophysiology, contraction, and mitochondrial bioenergetics in the ventricular myocyte. Biophys J. 2006;91(4):1564-89. [PMC1518641](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1518641/)
-
 ## Force generation parameters
 
 | Symbol          | Value  | Units              | Description                                                  |
 | --------------- | ------ | ------------------ | ------------------------------------------------------------ |
-| $k_{pn}^{trop}$ | $40$   | $\text{Hz}$        | Transition rate from tropomyosin permissive to nonpermissive |
+| $k_{pn}^{trop}$ | $40$   | $\text{Hz}$        | Transition rate from tropomyosin permissive to non-permissive |
 | $\text{SL}$     | $2.15$ | $\mu \text{m}$     | Sarcomere length                                             |
 | $f_{XB}$        | $50$   | $\text{Hz}$        | Transition rate from weak to strong crossbridge              |
 | $g_{XB}^{min}$  | $100$  | $\text{Hz}$        | Minimum transition rate from strong to weak crossbridge      |
-| $\zeta$         | $0.1$  | $\text{N mm}^{-2}$ | Conversion factor normalizing to physiological force         |
-| $V_{AM}^{max}$  | $7.2$  | $\text{mM s}^{-1}$ | Conversion factor normalizing to physiological force         |
+| $\zeta$         | $0.1$  | $\text{N/mm}^2$ | Conversion factor normalizing to physiological force         |
+| $V_{AM}^{max}$  | $7.2$  | $\text{mM/s}$ | Conversion factor normalizing to physiological force         |
 | $K_{ATP}^{AM}$  | $0.03$ | $\text{mM}$        | ATP half-saturation constant of AM ATPase                    |
 | $K_{ADP}^{AM}$  | $0.26$ | $\text{mM}$        | ADP inhibition constant of AM ATPase                         |
+| $h_{trpn}^{+}$  | $100000$ | $\text{Hz/mM}$ | Ca2+ on-rate for troponin high-affinity sites        |
+| $h_{trpn}^{-}$  | $0.33$   | $\text{Hz}$         | Ca2+ off-rate for troponin high-affinity sites       |
+| $l_{trpn}^{+}$  | $100000$ | $\text{Hz/mM}$ | Ca2+ on-rate for troponin low-affinity sites         |
+| $l_{trpn}^{-}$  | $40$     | $\text{Hz}$         | Ca2+ off-rate for troponin low-affinity sites        |
