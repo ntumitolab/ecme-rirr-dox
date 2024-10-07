@@ -24,7 +24,7 @@ $$
 J_{uni} &= V_{max} \frac{S (1+S)^3}{(1+S)^4 + L(1 + A)^n} \frac{\delta}{e^\delta-1}  \\
 S &= [Ca^{2+}]_i / K_{trans}  \\
 A &= [Ca^{2+}]_i / K_{act}    \\
-\delta &= -Z_{Ca} (\Delta\Psi_m - \Delta\Psi_0) / V_T
+\delta &= -2 (\Delta\Psi_m - \Delta\Psi_0) F/ RT
 \end{aligned}
 $$
 
@@ -67,7 +67,6 @@ $$
 \begin{aligned}
 \frac{d [Ca^{2+}]_m}{dt} &=\delta_{Ca}( J_{uni} - J_{NCLX}) \\
 \frac{d [Na^+]_m}{dt} &= J_{NCLX} - J_{NaH} \\
-\frac{d [Pi]_m}{dt} &= -J_{F1Fo} + J_{PiC} - J_{SL}  \\
 C_{m}\frac{d \Delta \Psi_m}{dt} &= J_{Hres} - J_{Hu} - J_{ANT} - J_{Hleak} -J_{NCLX} - J_{uni} - J_{IMAC} \\
 \end{aligned}
 $$

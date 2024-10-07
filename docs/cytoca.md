@@ -10,7 +10,7 @@ $$
 \beta &= 0.4 e^{-(V_m+2) / 13}  \\
 \alpha^\prime  &=  a \alpha \\
 \beta^\prime  &=  \beta / b \\
-\gamma &= 0.1875 [Ca^{2+}]_{ss}  \\
+\gamma &= \gamma_0 [Ca^{2+}]_{ss}  \\
 C_0 &= 1 - C_0 - C_1 - C_2 - C_3 - C_4 - O - C_{Ca0} - C_{Ca1} - C_{Ca2} - C_{Ca3} - C_{Ca4}   \\
 v_{01} &= 4\alpha C_0 - \beta C_1   \\
 v_{12} &= 3\alpha C_1 - 2\beta C_2   \\
@@ -39,9 +39,9 @@ v_{410} &= a^4 \gamma C_4 - \omega C_{Ca4} / b^4  \\
 I_{Ca}^{max} &= \Phi_{Ca}(P_{Ca}, z_{Ca}, V_m, 0.001, 0.341[Ca^{2+}]_o)  \\
 I_{Ca} &= 6 I_{Ca}^{max}  \cdot y_{Ca}  \cdot O  \\
 I_{Ca,K} &= y_{Ca}  \cdot O  \cdot  \Phi_{Ca}(P_{K}, z_{K}, V_m, [K^+]_i, [K^+]_o)  \\
-P_{K}  &= P_{K}^{max}  \cdot Hill(I_{Ca}^{half}, I_{Ca}^{max}, 1)  \\
+P_{K}  &= P_{K}^{max} \frac{I_{Ca}^{half}}{I_{Ca}^{half} + I_{Ca}^{max}}  \\
 y_\infty &= \frac{1}{1 + e^{(V_m + 55) / 7.5}} + \frac{0.5}{1 + e^{(-V_m + 21) / 6}}  \\
-\tau_y &= 20 + \frac{600}{1 + e^{(V_m + 30) / 9.5}}  \\
+\tau_y &= 20ms + \frac{600ms}{1 + e^{(V_m + 30) / 9.5}}  \\
 \frac{dy_{Ca}}{dt}  &=  \frac{y_\infty - y_{Ca}}{\tau_y}  \\
 \end{aligned}
 $$
@@ -50,6 +50,7 @@ $$
 | -------------- | --------------------- | ---------------- | ------------------------------------------ |
 | $A$            | $2$                   |                  | Mode transition parameter                  |
 | $B$            | $2$                   |                  | Mode transition parameter                  |
+| $\gamma_0$     | $0.1875$           | 1/ms/uM             | Mode transition parameter                  |
 | $\omega$       | $10$                  | Hz               | Mode transition parameter                  |
 | $f$            | $300$                 | Hz               | Transition rate into open state            |
 | $g$            | $2000$                | Hz               | Transition rate into open state            |
@@ -57,7 +58,7 @@ $$
 | $g^\prime$     | $0$                   | Hz               | Transition rate into open state            |
 | $P_{Ca}^{LCC}$ | $1.24 \cdot 10^{-3}$  | $cm/s$           | L-type Ca2+ channel permeability to Ca2+   |
 | $P_{K}^{LCC}$  | $1.11 \cdot 10^{-11}$ | $cm/s$           | L-type Ca2+ channel permeability to K+     |
-| $I_{Ca, half}$ | $-0.4583$             | $\mu A \ cm^{2}$ | ICa level that reduces equation Pk by half |
+| $I_{Ca, half}$ | $-0.4583$             | $uA / cm^{2}$ | ICa level that reduces equation Pk by half |
 
 ## Ryanodine receptor calcium release flux (Jrel)
 
@@ -102,8 +103,8 @@ $$
 
 | Parameter         | Value   | Units                 | Description                                                   |
 | ----------------- | ------- | --------------------- | ------------------------------------------------------------- |
-| $I_{max}^{PMCA}$  | $0.575$ | $\mu A \cdot cm^{-2}$ | Maximum sarcolemmal Ca2+ pump current                         |
-| $K_{Ca}^{PMCA}$   | $0.5$   | $\mu M$               | Ca2+ half-saturation constant for sarcolemmal Ca2+ pump       |
+| $I_{max}^{PMCA}$  | $0.575$ | $uA/cm^2$ | Maximum sarcolemmal Ca2+ pump current                         |
+| $K_{Ca}^{PMCA}$   | $0.5$   | $uM$               | Ca2+ half-saturation constant for sarcolemmal Ca2+ pump       |
 | $K_{ATP1}^{PMCA}$ | $0.012$ | $mM$                  | First ATP half-saturation constant for sarcolemmal Ca2+ pump  |
 | $K_{ATP2}^{PMCA}$ | $0.23$  | $mM$                  | Second ATP half-saturation constant for sarcolemmal Ca2+ pump |
 | $K_{ADP}^{PMCA}$  | $1.0$   | $mM$                  | ADP inhibition constant for sarcolemmal Ca2+ pump             |
@@ -127,7 +128,7 @@ $$
 | -------------------- | --------- | ------- | ---------------------------------------------- |
 | $V_{max, f}^{SERCA}$ | $0.2989$  | $mM/s$  | SERCA forward rate parameter                   |
 | $V_{max, b}^{SERCA}$ | $0.3179$  | $mM/s$  | SERCA reverse  rate parameter                  |
-| $K_{f}^{SERCA}$      | $0.24 \cdot 10^{-3}$ | $mM$ | Forward Ca2+ half-saturation constant of SERCA |
+| $K_{f}^{SERCA}$      | $0.24$ | $uM$ | Forward Ca2+ half-saturation constant of SERCA |
 | $K_{r}^{SERCA}$      | $1.64269$ | $mM$    | Reverse Ca2+ half-saturation constant of SERCA |
 | $N_{f}^{SERCA}$      | $1.4$     |         | Forward cooperativity constant of SERCA        |
 | $N_{r}^{SERCA}$      | $1.0$     |         | Reverse  cooperativity constant of SERCA       |
@@ -141,11 +142,11 @@ $$
 | --------------- | -------- | ------------------- | ---------------------------------------------------- |
 | $\tau_{tr}$     | $574.7$  | Hz                  | Time constant for transfer from subspace to myoplasm |
 | $\tau_{xfer}$   | $9090$   | Hz                  | Time constant for transfer from NSR to JSR           |
-| $K_{m}^{CMDN}$  | $2.38 \cdot 10^{-3}$   | $mM$             | Ca2+ half saturation constant for calmodulin         |
-| $K_{m}^{CSQN}$  | $0.8$    | $mM$                | Ca2+ half saturation constant for calsequestrin      |
-| $\Sigma[HTRPN]$ | $0.14$   | $mM$                | Total troponin high-affinity sites                   |
-| $\Sigma[LTRPN]$ | $0.07$   | $mM$                | Total troponin low-affinity sites                    |
-| $\Sigma[CMDN]$  | $0.05$   | $mM$                | Total myoplasmic calmodulin concentration            |
+| $K_{m}^{CMDN}$  | $2.38$   | $uM$             | Ca2+ half saturation constant for calmodulin         |
+| $K_{m}^{CSQN}$  | $800$    | $uM$                | Ca2+ half saturation constant for calsequestrin      |
+| $\Sigma[HTRPN]$ | $140$   | $uM$                | Total troponin high-affinity sites                   |
+| $\Sigma[LTRPN]$ | $70$   | $uM$                | Total troponin low-affinity sites                    |
+| $\Sigma[CMDN]$  | $50$   | $uM$                | Total myoplasmic calmodulin concentration            |
 | $\Sigma[CQSN]$  | $15$     | $mM$                | Total NSR calsequestrin concentration                |
 
 ## ODE for cytosolic calcium

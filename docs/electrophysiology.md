@@ -6,11 +6,11 @@ $$
 \begin{aligned}
 I_K &= \bar G_K X_1 X_K^2 (V - E_K) \\
 E_K &= \frac{RT}{F} \ln \frac{[K^+]_o + P_{Na,K}[Na^+]_o}{ [K^+]_i + P_{Na,K}[Na^+]_i} \\
-\bar G_K &= 0.282\sqrt{[K^+]_o /5.4mM} \\
+\bar G_K &= 0.282\sqrt{[K^+]_o /5.4mM} * (mS/cm^2) \\
 X_1 &= (1+ e^{(V_m-40)/40})^{-1} \\
 \frac{dX_k}{dt} &= \alpha_X - X_k (\alpha_X + \beta_X) \\
-\alpha_X &= 7.19 \cdot 10^{-5}\frac{V_m+30}{1 - e^{-0.148(V_m+30)}} * kHz \\
-\beta_X &= 1.31 \cdot 10^{-4}\frac{V_m+30}{e^{0.0687(V_m+30)} -1} * kHz \\
+\alpha_X &= \frac{V_m+30}{1 - e^{-0.148(V_m+30)}} * 0.0719Hz \\
+\beta_X &= \frac{V_m+30}{e^{0.0687(V_m+30)} -1} * 0.131Hz \\
 \end{aligned}
 $$
 
@@ -21,7 +21,7 @@ $$
 \Delta V &= V_m - E_{K1} \\
 I_{K1} &= \bar G_{K1}K_{1 \infty}\Delta V \\
 E_{K1} &= \frac{RT}{F} \ln \frac{[K^+]_o}{[K^+]_i}  \\
-\bar G_{K1} &= 0.748\sqrt{[K^+]_o / 5.4mM}\\
+\bar G_{K1} &= 0.748\sqrt{[K^+]_o / 5.4mM} * (mS/cm^2) \\
 K_{1 \infty} &= \frac{\alpha_{K_1}}{\alpha_{K_1} + \beta_{K_1}} \\
 \alpha_{K_1} &= \frac{1.02}{1 + e^{0.2385(\Delta V -59.215)}}  * kHz  \\
 \beta_{K_1} &= \frac{0.4912e^{0.28032(\Delta V + 5.476)} + e^{0.06175(\Delta V -594.31)}}{1 + e^{-0.5143(\Delta V + 4.753)}} * kHz
