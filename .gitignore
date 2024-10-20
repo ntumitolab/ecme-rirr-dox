@@ -24,7 +24,7 @@ docs/site/
 # Manifest.toml
 
 # VSCode settings
-.vscode/
+# .vscode/
 
 # Generated files
 *.gz
