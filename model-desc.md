@@ -947,7 +947,7 @@ Based on (McADAM, 1976) model.
 
 $$
 \begin{align}
-J_{SOD} &= {2k_5E_Tf_{sox}(k_1 + k_3^\prime) \over k_5(2 k_1 + k_3^\prime) + k_3^\prime f_{sox}}   \\
+J_{SOD} &= \frac{2 k_5 E_T f_{sox} (k_1 + k_3^\prime)}{ k_5 (2 k_1 + k_3^\prime) + k_3^\prime f_{sox}} \\
 k_3^\prime &= k_3 (1 + \frac{[H_2O_2]}{K_{H_2O_2}})  \\
 f_{sox} &= k_1^{SOD} [O_2^-]
 \end{align}
