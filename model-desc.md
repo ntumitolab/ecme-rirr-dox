@@ -370,6 +370,11 @@ v_{17} &= a \gamma C_1 - \omega C_{Ca1} / b \\
 v_{28} &= a^2 \gamma C_2 - \omega C_{Ca2} / b^2  \\
 v_{39} &= a^3 \gamma C_3 - \omega C_{Ca3} / b^3  \\
 v_{410} &= a^4 \gamma C_4 - \omega C_{Ca4} / b^4  \\
+\end{align}
+$$
+
+$$
+\begin{align}
 \frac{dC_0}{dt}  &=  -v_{01} -v_{06}  \\
 \frac{dC_1}{dt}  &=  v_{01} - v_{12} - v_{17}  \\
 \frac{dC_2}{dt}  &=  v_{12} - v_{23} - v_{28}  \\
@@ -490,6 +495,11 @@ P2_{max} &= \frac{f_{01}f_{12}g_{23}}{\Sigma PATHS} \\
 P3_{max} &= \frac{f_{01}f_{12}f_{23}}{\Sigma PATHS} \\
 Force &= \zeta \frac{[P_1] + 2[P_2] + 3[P_3] + [N_1]}{P1_{max} + 2P2_{max} + 3P3_{max}} \\
 Force_{norm} &= \frac{[P_1] + [P_2] + [P_3] + [N_1]}{P1_{max} + P2_{max} + P3_{max}} \\
+\end{align}
+$$
+
+$$
+\begin{align}
 v_{01} &= f_{01} [P_0] - g_{01(SL)} [P_1] \\
 v_{12} &= f_{12} [P_1] - g_{21(SL)} [P_2]  \\
 v_{23} &= f_{23} [P_2] - g_{23(SL)} [P_3] \\
@@ -773,6 +783,11 @@ k_{-7, ox} &= k_{07, ox} \exp(\gamma(1-\delta_3)\Delta\Psi_m F/ RT)  \\
 k_{-7, rd} &= k_{07, rd} \exp(\gamma(1-\delta_3)\Delta\Psi_m F/ RT)  \\
 v_{7, ox} &= (k_{7, ox}[Q]_{n}[b3] - k_{-7, ox}[Q^-]_n [b1])C3_{inhib} \\
 v_{7, rd} &= (k_{7, rd}[Q]_{n}[b4] - k_{-7, rd}[Q^-]_n [b2])C3_{inhib} \\
+\end{align}
+$$
+
+$$
+\begin{align}
 f_{hm} & = [H^+]_{m}   / 10^{-7}M  \\
 k_{8, ox} &= k_{08, ox}K_{eq8, ox}\exp(-\gamma\delta_3\Delta\Psi_m F/ T)(f_{hm})^2  \\
 k_{8, rd} &= k_{08,rd}K_{eq8, rd}\exp(-\gamma\delta_3\Delta\Psi_m F/ T)(f_{hm})^2  \\
@@ -798,6 +813,11 @@ cytc_{rd} &= \rho_{C4}^{\prime} - cytc_{ox}  \\
 J_{hRes}^{C3} &= 2v_{3}     \\
 J_{ROS, m}^{C3} &= v_{10}   \\
 J_{ROS, i}^{C3} &= v_{10b}  \\
+\end{align}
+$$
+
+$$
+\begin{align}
 \frac{d[Q]_n}{dt} &= v_5 - v_{7,ox}- v_{7,rd} - v_1  \\
 \frac{d[Q^-]_n}{dt} &= v_{7,ox} + v_{7,rd} - v_{8,ox}- v_{8,rd}  \\
 \frac{d[QH_2]_n}{dt} &= v_{8,ox} + v_{8,rd} + v_1 - v_2   \\
