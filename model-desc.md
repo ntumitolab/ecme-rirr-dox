@@ -18,93 +18,93 @@ $$
 
 $$
 \begin{align}
-J_{CS} = \frac{k_{cat} E_T ([AcCoA] / K_m^{AcCoA})([OAA] / K_m^{OAA})}{(1+[AcCoA] / K_m^{AcCoA})(1+[OAA] / K_m^{OAA})}
+J_{CS} = \frac{k_{cat}^{CS} E_T^{CS} ([AcCoA] / K_m^{AcCoA})([OAA] / K_m^{OAA})}{(1+[AcCoA] / K_m^{AcCoA})(1+[OAA] / K_m^{OAA})}
 \end{align}
 $$
 
-| Parameter     | Value   | Unit | Description                  |
-| :------------ | ------- | ---- | ---------------------------- |
-| $k_{cat}$     | 0.23523 | Hz   | Catalytic constant           |
-| $E_T$         | 0.4     | mM   | Enzyme concentration of CS   |
-| $K_m^{AcCoA}$ | 12.6    | μM   | Michaelis constant for AcCoA |
-| $K_m^{OAA}$   | 0.64    | μM   | Michaelis constant for OAA   |
-| $[AcCoA]$     | 0.1     | mM   | Acetyl CoA concentration     |
+| Parameter      | Value   | Unit | Description                  |
+| :------------- | ------- | ---- | ---------------------------- |
+| $k_{cat}^{CS}$ | 0.23523 | Hz   | Catalytic constant           |
+| $E_T^{CS}$     | 0.4     | mM   | Enzyme concentration of CS   |
+| $K_m^{AcCoA}$  | 12.6    | μM   | Michaelis constant for AcCoA |
+| $K_m^{OAA}$    | 0.64    | μM   | Michaelis constant for OAA   |
+| $[AcCoA]$      | 0.1     | mM   | Acetyl CoA concentration     |
 
 ### Aconitase (ACO)
 
 $$
-J_{ACO} = k_f ([CIT] - [ISOC] / K_{eq}^{ACO})
+J_{ACO} = k_f^{ACO} ([CIT] - [ISOC] / K_{eq}^{ACO})
 $$
 
 | Parameter      | Value | Unit | Description                  |
 | -------------- | ----- | ---- | ---------------------------- |
-| $k_f$          | 0.1   | Hz   | Forward rate constant of ACO |
+| $k_f^{ACO}$    | 0.1   | Hz   | Forward rate constant of ACO |
 | $K_{eq}^{ACO}$ | 2.22  | -    | Equilibrium constant of ACO  |
 
 ### Isocitrate dehydrogenase, NADH-producing (IDH3)
 
 $$
 \begin{align}
-J_{IDH3} &= \frac{k_{cat} E_T AB}{f_H AB + f_i B + f_a A + f_a f_i} \\
-f_H & = 1 + \frac{[H^+]_m}{K_{H1}} + \frac{K_{H2}}{[H^+]_m}  \\
-A &= [NAD] / K_{NAD} \\
-B &= ([ISOC] / K_{ISOC})^n  \\
-f_a &= \frac{K_A}{K_A + [ADP]_m} \frac{K_{CA}}{K_{CA} + [Ca^{2+}]_m}  \\
-f_i &= 1 + \frac{[NADH]}{K_{NADH}}  \\
+J_{IDH3} &= \frac{k_{cat}^{IDH3} E_T^{IDH3} AB}{f_H AB + f_i B + f_a A + f_a f_i} \\
+f_H & = 1 + \frac{[H^+]_m}{K_{H1}^{IDH3}} + \frac{K_{H2}^{IDH3}}{[H^+]_m}  \\
+A &= [NAD] / K_{NAD}^{IDH3} \\
+B &= ([ISOC] / K_{ISOC}^{IDH3})^n_{IDH3}  \\
+f_a &= \frac{K_A^{IDH3}}{K_A^{IDH3} + [ADP]_m} \frac{K_{CA}^{IDH3}}{K_{CA}^{IDH3} + [Ca^{2+}]_m}  \\
+f_i &= 1 + \frac{[NADH]}{K_{NADH}^{IDH3}}  \\
 \end{align}
 $$
 
-| Parameter  | Value | Unit | Description                       |
-| ---------- | ----- | ---- | --------------------------------- |
-| $k_{cat}$  | 535   | Hz   | Rate constant of IDH3             |
-| $E_T$      | 0.109 | mM   | Concentration of IDH3             |
-| $K_{H1}$   | 1     | nM   | Ionization constant of IDH3       |
-| $K_{H2}$   | 900   | nM   | Ionization constant of IDH3       |
-| $K_{NAD}$  | 0.923 | mM   | Michaelis constant for NAD        |
-| $K_{ISOC}$ | 1.520 | mM   | Michaelis constant for isocitrate |
-| $n$        | 2     | -    | Cooperativity for isocitrate      |
-| $K_A$      | 0.62  | mM   | Activation constant by ADP        |
-| $K_{CA}$   | 0.5   | μM   | Activation constant for calcium   |
-| $K_{NADH}$ | 0.19  | mM   | Inhibition constant by NADH       |
+| Parameter         | Value | Unit | Description                       |
+| ----------------- | ----- | ---- | --------------------------------- |
+| $k_{cat}^{IDH3}$  | 535   | Hz   | Rate constant of IDH3             |
+| $E_T^{IDH3}$      | 0.109 | mM   | Concentration of IDH3             |
+| $K_{H1}^{IDH3}$   | 1     | nM   | Ionization constant of IDH3       |
+| $K_{H2}^{IDH3}$   | 900   | nM   | Ionization constant of IDH3       |
+| $K_{NAD}^{IDH3}$  | 0.923 | mM   | Michaelis constant for NAD        |
+| $K_{ISOC}^{IDH3}$ | 1.520 | mM   | Michaelis constant for isocitrate |
+| $n_{IDH3}$        | 2     | -    | Cooperativity for isocitrate      |
+| $K_A^{IDH3}$      | 0.62  | mM   | Activation constant by ADP        |
+| $K_{CA}^{IDH3}$   | 0.5   | μM   | Activation constant for calcium   |
+| $K_{NADH}^{IDH3}$ | 0.19  | mM   | Inhibition constant by NADH       |
 
 ### Alpha-ketoglutarate dehydrogenase (KGDH)
 
 $$
 \begin{align}
-J_{KGDH} &= \frac{k_{cat} E_T AB}{f_H AB + f_a (A + B)} \\
-f_H & = 1 + \frac{[H^+]_m}{K_{H1}} + \frac{K_{H2}}{[H^+]_m}  \\
-A &= [NAD] / K_{NAD} \\
-B &= ([\alpha KG] / K_{AKG})^n  \\
-f_a &= \frac{K_{MG}}{K_{MG} + [Mg^{2+}]_m} \frac{K_{CA}}{K_{CA} + [Ca^{2+}]_m}  \\
+J_{KGDH} &= \frac{k_{cat}^{KGDH} E_T^{KGDH} AB}{f_H AB + f_a (A + B)} \\
+f_H & = 1 + \frac{[H^+]_m}{K_{H1}^{KGDH}} + \frac{K_{H2}^{KGDH}}{[H^+]_m}  \\
+A &= [NAD] / K_{NAD}^{KGDH} \\
+B &= ([\alpha KG] / K_{AKG}^{KGDH})^n_{KGDH}  \\
+f_a &= \frac{K_{MG}^{KGDH}}{K_{MG}^{KGDH} + [Mg^{2+}]_m} \frac{K_{CA}^{KGDH}}{K_{CA}^{KGDH} + [Ca^{2+}]_m}  \\
 \end{align}
 $$
 
-| Parameter | Value | Unit | Description                 |
-| --------- | ----- | ---- | --------------------------- |
-| $k_{cat}$ | 17.9  | Hz   | Rate constant of KGDH       |
-| $E_T$     | 0.5   | mM   | Concentration of KGDH       |
-| $K_{H1}$  | 40    | nM   | Ionization constant of KGDH |
-| $K_{H2}$  | 70    | nM   | Ionization constant of KGDH |
-| $K_{NAD}$ | 38.7  | mM   | Michaelis constant for NAD  |
-| $K_{AKG}$ | 30    | mM   | Michaelis constant for αKG  |
-| $n$       | 1.2   | -    | Hill coefficient for αKG    |
-| $K_{MG}$  | 30.8  | μM   | Activation constant for Mg  |
-| $K_{CA}$  | 0.15  | μM   | Activation constant for Ca  |
+| Parameter        | Value | Unit | Description                 |
+| ---------------- | ----- | ---- | --------------------------- |
+| $k_{cat}^{KGDH}$ | 17.9  | Hz   | Rate constant of KGDH       |
+| $E_T^{KGDH}$     | 0.5   | mM   | Concentration of KGDH       |
+| $K_{H1}^{KGDH}$  | 40    | nM   | Ionization constant of KGDH |
+| $K_{H2}^{KGDH}$  | 70    | nM   | Ionization constant of KGDH |
+| $K_{NAD}^{KGDH}$ | 38.7  | mM   | Michaelis constant for NAD  |
+| $K_{AKG}^{KGDH}$ | 30    | mM   | Michaelis constant for αKG  |
+| $n_{KGDH}$       | 1.2   | -    | Hill coefficient for αKG    |
+| $K_{MG}^{KGDH}$  | 30.8  | μM   | Activation constant for Mg  |
+| $K_{CA}^{KGDH}$  | 0.15  | μM   | Activation constant for Ca  |
 
 ### Succinate-CoA ligase (SL)
 
 $$
 \begin{align}
-J_{SL} &= k_f ([SCoA][ADP]_m[Pi]_m - [SUC][ATP]_m[CoA]/K_{eq}^{app}) \\
-K_{eq}^{app} &= K_{eq} \frac{P_{SUC}P_{ATP}}{P_{Pi}P_{ADP}} \\
+J_{SL} &= k_f^{SL} ([SCoA][ADP]_m[Pi]_m - [SUC][ATP]_m[CoA]/K_{eq}^{app}) \\
+K_{eq}^{app} &= K_{eq}^{SL} \frac{P_{SUC}P_{ATP}}{P_{Pi}P_{ADP}} \\
 \end{align}
 $$
 
-| Parameter | Value | Unit     | Description                 |
-| --------- | ----- | -------- | --------------------------- |
-| $k_f$     | 28.4  | 1Hz/mM^2 | Forward rate constant of SL |
-| $K_{eq}$  | 3.11  | -        | Equilibrium constant of SL  |
-| [CoA]     | 0.020 | mM       | Coenzyme A concentration    |
+| Parameter     | Value | Unit    | Description                 |
+| ------------- | ----- | ------- | --------------------------- |
+| $k_f^{SL}$    | 28.4  | 1Hz/mM² | Forward rate constant of SL |
+| $K_{eq}^{SL}$ | 3.11  | -       | Equilibrium constant of SL  |
+| [CoA]         | 0.020 | mM      | Coenzyme A concentration    |
 
 ### Succinate dehydrogenase (SDH)
 
@@ -113,51 +113,53 @@ See OXPHOS part: complex II (Succinate dehydrogenase).
 ### Fumarate hydratase (FH)
 
 $$
-J_{FH} = k_f ([FUM] - [MAL] / K_{eq}^{FH})
+J_{FH} = k_f^{FH} ([FUM] - [MAL] / K_{eq}^{FH})
 $$
 
 | Parameter     | Value | Unit | Description           |
 | ------------- | ----- | ---- | --------------------- |
-| $k_f$         | 8.3   | Hz   | Forward rate constant |
+| $k_f^{FH}$    | 8.3   | Hz   | Forward rate constant |
 | $K_{eq}^{FH}$ | 1.0   | -    | Equilibrium constant  |
 
 ### Malate dehydrogenase (MDH)
 
 $$
 \begin{align}
-J_{MDH} &= \frac{k_{cat} E_T AB f_a f_i}{(1+A)(1+B)}  \\
-A &= \frac{[MAL]}{K_{MAL}}\frac{K_{OAA}}{K_{OAA} + [OAA]}  \\
-B &= [NAD] / K_{NAD}  \\
-f_a &= k_{offset} + \left( 1 + \frac{[H^+]_m}{K_{H1}} (1 + \frac{[H^+]_m}{K_{H2}})    \right)^{-1}  \\
-f_i &= \left( 1 + \frac{K_{H3}}{[H^+]_m} (1 + \frac{K_{H4}}{[H^+]_m})    \right)^{2}  \\
+J_{MDH} &= \frac{k_{cat}^{MDH} E_T^{MDH} AB f_a f_i}{(1+A)(1+B)}  \\
+A &= \frac{[MAL]}{K_{MAL}^{MDH}}\frac{K_{OAA}^{MDH}}{K_{OAA}^{MDH} + [OAA]}  \\
+B &= [NAD] / K_{NAD}^{MDH}  \\
+f_a &= k_{offset}^{MDH} + \left( 1 + \frac{[H^+]_m}{K_{H1}^{MDH}} (1 + \frac{[H^+]_m}{K_{H2}^{MDH}})    \right)^{-1}  \\
+f_i &= \left( 1 + \frac{K_{H3}^{MDH}}{[H^+]_m} (1 + \frac{K_{H4}^{MDH}}{[H^+]_m})    \right)^{2}  \\
 \end{align}
 $$
 
-| Parameter    | Value  | Units | Description                          |
-| ------------ | ------ | ----- | ------------------------------------ |
-| $k_{cat}$    | 125.9  | Hz    | Rate constant                        |
-| $E_T$        | 154    | μM    |                                      |
-| $K_{H1}$     | 11.31  | nM    | Ionization constant                  |
-| $K_{H2}$     | 26.7   | mM    | Ionization constant                  |
-| $K_{H3}$     | 6.68   | pM    | Ionization constant                  |
-| $K_{H4}$     | 5.62   | nM    | Ionization constant                  |
-| $k_{offset}$ | 0.0399 | -     | Offset of MDH pH activation factor   |
-| $K_{NAD}$    | 224.4  | μM    | Michaelis constant for NAD           |
-| $K_{MAL}$    | 1.493  | mM    | Michaelis constant for malate        |
-| $K_{OAA}$    | 31     | μM    | Inhibition constant for oxaloacetate |
+| Parameter          | Value  | Units | Description                          |
+| ------------------ | ------ | ----- | ------------------------------------ |
+| $k_{cat}^{MDH}$    | 125.9  | Hz    | Rate constant                        |
+| $E_T^{MDH}$        | 154    | μM    |                                      |
+| $K_{H1}^{MDH}$     | 11.31  | nM    | Ionization constant                  |
+| $K_{H2}^{MDH}$     | 26.7   | mM    | Ionization constant                  |
+| $K_{H3}^{MDH}$     | 6.68   | pM    | Ionization constant                  |
+| $K_{H4}^{MDH}$     | 5.62   | nM    | Ionization constant                  |
+| $k_{offset}^{MDH}$ | 0.0399 | -     | Offset of MDH pH activation factor   |
+| $K_{NAD}^{MDH}$    | 224.4  | μM    | Michaelis constant for NAD           |
+| $K_{MAL}^{MDH}$    | 1.493  | mM    | Michaelis constant for malate        |
+| $K_{OAA}^{MDH}$    | 31     | μM    | Inhibition constant for oxaloacetate |
 
 ### Aspartate aminotransferase (AAT)
 
 $$
-J_{AAT} = k_f [OAA][GLU] \frac{k_{ASP}K_{eq}}{k_{ASP}K_{eq} + k_f[\alpha KG]}
+\begin{align}
+J_{AAT} = k_f^{AAT} [OAA][GLU] \frac{k_{ASP}^{AAT} K_{eq}^{AAT}}{k_{ASP}^{AAT} K_{eq}^{AAT} + k_f[\alpha KG]}
+\end{align}
 $$
 
-| Parameter | Value  | Units | Description                            |
-| --------- | ------ | ----- | -------------------------------------- |
-| $k_f$     | 21.7   | Hz/mM | Forward rate constant                  |
-| $k_{ASP}$ | 0.0015 | Hz    | Rate constant of aspartate consumption |
-| $K_{eq}$  | 6.6    | -     | Equilibrium constant                   |
-| [GLU]     | 30     | mM    | Glutamate concentration                |
+| Parameter       | Value  | Units | Description                            |
+| --------------- | ------ | ----- | -------------------------------------- |
+| $k_f^{AAT}$     | 21.7   | Hz/mM | Forward rate constant                  |
+| $k_{ASP}^{AAT}$ | 0.0015 | Hz    | Rate constant of aspartate consumption |
+| $K_{eq}^{AAT}$  | 6.6    | -     | Equilibrium constant                   |
+| [GLU]           | 30     | mM    | Glutamate concentration                |
 
 ### ODEs in the citric acid cycle
 
@@ -181,7 +183,7 @@ $$
 \begin{align}
 P_{C1} &= 1 - P_{O1} - P_{O2} - P_{C2}  \\
 v_{o1c1} &= -k_a^-P_{O1} + k_a^+[Ca^{2+}]_{ss}^n P_{C1} \\
-v_{o1o2} &= k_b^+ [Ca^{2+}]_{ss}^m P_{O1} - k_b^- P_{O2} \\
+v_{o1o2} &= k_b^+ [Ca^{2+}]_{ss}^m_{RyR} P_{O1} - k_b^- P_{O2} \\
 v_{o1c2} &= k_c^+ P_{O1} - k_c^- P_{C2} \\
 \dot{P_{O1}}  &= -v_{o1c1} - v_{o1o2} - v_{o1c2}  \\
 \dot{P_{O2}}  &= v_{o1o2}  \\
@@ -190,17 +192,17 @@ J_{rel} &= r_{ryr} (P_{O1} + P_{O2})([Ca^{2+}]_{JSR} - [Ca^{2+}]_{ss}) \\
 \end{align}
 $$
 
-| Parameter | Value                  | Units              | Description               |
-| --------- | ---------------------- | ------------------ | ------------------------- |
-| $r_{RyR}$ | $3600$                 | $\text{Hz}$        | RyR flux channel constant |
-| $n$       | $4$                    |                    | Cooperativity parameter   |
-| $m$       | $3$                    |                    | Cooperativity parameter   |
-| $k_a^+$   | $1.215 \times 10^{13}$ | $\text{Hz/mM}^{4}$ | RyR rate constant         |
-| $k_a^-$   | $576$                  | $\text{Hz}$        | RyR rate constant         |
-| $k_b^+$   | $4.05 \times 10^{6}$   | $\text{Hz/mM}^{3}$ | RyR rate constant         |
-| $k_b^-$   | $1930$                 | $\text{Hz}$        | RyR rate constant         |
-| $k_c^+$   | $100$                  | $\text{Hz}$        | RyR rate constant         |
-| $k_c^-$   | $0.8$                  | $\text{Hz}$        | RyR rate constant         |
+| Parameter | Value   | Units  | Description               |
+| --------- | ------- | ------ | ------------------------- |
+| $r_{RyR}$ | 3600    | Hz     | RyR flux channel constant |
+| $n_{RyR}$ | 4       | -      | Cooperativity parameter   |
+| $m_{RyR}$ | 3       | -      | Cooperativity parameter   |
+| $k_a^+$   | 12.15   | Hz/μM⁴ | RyR rate constant         |
+| $k_a^-$   | 576     | Hz     | RyR rate constant         |
+| $k_b^+$   | 0.00405 | Hz/μM³ | RyR rate constant         |
+| $k_b^-$   | 1930    | Hz     | RyR rate constant         |
+| $k_c^+$   | 100     | Hz     | RyR rate constant         |
+| $k_c^-$   | 0.8     | Hz     | RyR rate constant         |
 
 ### SERCA (Jup)
 
@@ -215,24 +217,26 @@ f_{ATP}^{SERCA} &= \frac{K_{m,up}^{ATP}}{[ATP]_i} ( \frac{[ADP]_i}{K_{i1, up}} +
 \end{align}
 $$
 
-| Parameter            | Value     | Units | Description                                    |
-| -------------------- | --------- | ----- | ---------------------------------------------- |
-| $V_{max, f}^{SERCA}$ | $0.2989$  | Hz*mM | SERCA forward rate parameter                   |
-| $V_{max, b}^{SERCA}$ | $0.3179$  | Hz*mM | SERCA reverse  rate parameter                  |
-| $K_{f}^{SERCA}$      | $0.24$    | μM    | Forward Ca2+ half-saturation constant of SERCA |
-| $K_{r}^{SERCA}$      | $1.64269$ | mM    | Reverse Ca2+ half-saturation constant of SERCA |
-| $N_{f}^{SERCA}$      | $1.4$     | -     | Forward cooperativity constant of SERCA        |
-| $N_{r}^{SERCA}$      | $1.0$     | -     | Reverse  cooperativity constant of SERCA       |
-| $K_{ATP}^{SERCA}$    | $10$      | μM    | ATP half-saturation constant for SERCA         |
-| $K_{ADP1}^{SERCA}$   | $140$     | μM    | ADP first inhibition constant for SERCA        |
-| $K_{ADP2}^{SERCA}$   | $5.1$     | mM    | ADP second  inhibition constant for SERCA      |
+| Parameter            | Value   | Units | Description                                    |
+| -------------------- | ------- | ----- | ---------------------------------------------- |
+| $V_{max, f}^{SERCA}$ | 0.2989  | Hz*mM | SERCA forward rate parameter                   |
+| $V_{max, b}^{SERCA}$ | 0.3179  | Hz*mM | SERCA reverse  rate parameter                  |
+| $K_{f}^{SERCA}$      | 0.24    | μM    | Forward Ca2+ half-saturation constant of SERCA |
+| $K_{r}^{SERCA}$      | 1.64269 | mM    | Reverse Ca2+ half-saturation constant of SERCA |
+| $N_{f}^{SERCA}$      | 1.4     | -     | Forward cooperativity constant of SERCA        |
+| $N_{r}^{SERCA}$      | 1.0     | -     | Reverse  cooperativity constant of SERCA       |
+| $K_{ATP}^{SERCA}$    | 10      | μM    | ATP half-saturation constant for SERCA         |
+| $K_{ADP1}^{SERCA}$   | 140     | μM    | ADP first inhibition constant for SERCA        |
+| $K_{ADP2}^{SERCA}$   | 5.1     | mM    | ADP second  inhibition constant for SERCA      |
 
 ## Sarcoplasmic ion currents
 
 GHK current equation
 
 $$
+\begin{align}
 \Phi_s(P_s, z_s, V_m, [S]_i, [S]_o) := P_sz^2_s\frac{V_mF^2}{RT}\frac{[S]_i - [S]_o\exp(-z_sV_mF/RT)}{1-\exp(-z_sV_mF/RT)}
+\end{align}
 $$
 
 ### Time-dependent delayed rectifier potassium current (IK)
@@ -397,12 +401,12 @@ $$
 
 | Parameter      | Value                 | Units            | Description                                |
 | -------------- | --------------------- | ---------------- | ------------------------------------------ |
-| $A$            | $2$                   |                  | Mode transition parameter                  |
-| $B$            | $2$                   |                  | Mode transition parameter                  |
-| $\gamma_0$     | $187500$              | Hz/mM            | Mode transition parameter                  |
-| $\omega$       | $10$                  | Hz               | Mode transition parameter                  |
-| $f$            | $300$                 | Hz               | Transition rate into open state            |
-| $g$            | $2000$                | Hz               | Transition rate into open state            |
+| $A$            | 2                   |                  | Mode transition parameter                  |
+| $B$            | 2                   |                  | Mode transition parameter                  |
+| $\gamma_0$     | 187.5              | Hz/μM            | Mode transition parameter                  |
+| $\omega$       | 10                  | Hz               | Mode transition parameter                  |
+| $f$            | 300                 | Hz               | Transition rate into open state            |
+| $g$            | 2000                | Hz               | Transition rate into open state            |
 | $P_{Ca}^{LCC}$ | $1.24 \cdot 10^{-3}$  | cm/s             | L-type Ca2+ channel permeability to Ca2+   |
 | $P_{K}^{LCC}$  | $1.11 \cdot 10^{-11}$ | cm/s             | L-type Ca2+ channel permeability to K+     |
 | $I_{Ca, half}$ | $-0.4583$             | $\mu A / cm^{2}$ | ICa level that reduces equation Pk by half |
@@ -714,27 +718,27 @@ J_{ROS}^{C1} &= \rho_{C1}^\prime (e_{4}a_{42} - e_{2}a_{24})  \\
 \end{align}
 $$
 
-| Parameter      | Value     | Units       | Desc.                                        |
-| -------------- | --------- | ----------- | -------------------------------------------- |
-| $\rho_{C1}$    | 5     | mM          | Concentration of complex I<br />(Adjustable) |
-| $\Delta\Psi_B$ | 50        | mV          | Phase boundary potential                     |
+| Parameter      | Value     | Units         | Desc.                                        |
+| -------------- | --------- | ------------- | -------------------------------------------- |
+| $\rho_{C1}$    | 5         | mM            | Concentration of complex I<br />(Adjustable) |
+| $\Delta\Psi_B$ | 50        | mV            | Phase boundary potential                     |
 | $k_{12}$       | 6.3396E11 | $Hz/mM^2$     |                                              |
-| $k_{21}$       | 5         | Hz          |                                              |
-| $k_{56}$       | 100       | Hz          |                                              |
+| $k_{21}$       | 5         | Hz            |                                              |
+| $k_{56}$       | 100       | Hz            |                                              |
 | $k_{65}$       | 2.5119E13 | $Hz/mM^2$     |                                              |
-| $k_{61}$       | 1E7       | Hz          |                                              |
-| $k_{16}$       | 130       | Hz          |                                              |
+| $k_{61}$       | 1E7       | Hz            |                                              |
+| $k_{16}$       | 130       | Hz            |                                              |
 | $k_{23}$       | 3886.7    | $Hz/mM^{1/2}$ |                                              |
-| $k_{32}$       | 9.1295E6  | Hz          |                                              |
-| $k_{34}$       | 639.1364  | Hz          |                                              |
+| $k_{32}$       | 9.1295E6  | Hz            |                                              |
+| $k_{34}$       | 639.1364  | Hz            |                                              |
 | $k_{43}$       | 3.2882    | $Hz/mM^{1/2}$ |                                              |
-| $k_{47}$       | 1.5962E7  | Hz/mM       |                                              |
-| $k_{74}$       | 65.2227   | Hz          |                                              |
-| $k_{75}$       | 24615     | Hz          |                                              |
+| $k_{47}$       | 1.5962E7  | Hz/mM         |                                              |
+| $k_{74}$       | 65.2227   | Hz            |                                              |
+| $k_{75}$       | 24615     | Hz            |                                              |
 | $k_{57}$       | 1166.7    | $Hz/mM^{1/2}$ |                                              |
-| $k_{42}$       | 6.0318    | Hz/mM       |                                              |
-| $E_{FMN}$      | -375      | mV          | Midpoint potential of flavin mononucleotide  |
-| $E_{sox}$      | -150      | mV          | Midpoint potential of superoxide             |
+| $k_{42}$       | 6.0318    | Hz/mM         |                                              |
+| $E_{FMN}$      | -375      | mV            | Midpoint potential of flavin mononucleotide  |
+| $E_{sox}$      | -150      | mV            | Midpoint potential of superoxide             |
 
 ## Complex II (Succinate dehydrogenase)
 
@@ -749,13 +753,13 @@ J_{c2} &= J_{SDH} \\
 \end{align}
 $$
 
-| Parameter | Value | Units   | Desc.                                |
-| --------- | ----- | ------- | ------------------------------------ |
-| $V_{SDH}$ | 250   | mM / minute | Maximum rate of SDH                  |
-| $K_{i, OAA}$     | 0.150 | mM      | Inhibition constant for oxaloacetate |
-| $K_{m, Q}$     | 0.6   | -       | Michaelis constant for CoQ           |
-| $K_{i, FUC}$     | 0.150 | mM      | Inhibition constant for fumarate |
-| $K_{m, SUC}$     | 0.6   | -       | Michaelis constant for succinate           |
+| Parameter    | Value | Units       | Desc.                                |
+| ------------ | ----- | ----------- | ------------------------------------ |
+| $V_{SDH}$    | 250   | mM / minute | Maximum rate of SDH                  |
+| $K_{i, OAA}$ | 0.150 | mM          | Inhibition constant for oxaloacetate |
+| $K_{m, Q}$   | 0.6   | -           | Michaelis constant for CoQ           |
+| $K_{i, FUC}$ | 0.150 | mM          | Inhibition constant for fumarate     |
+| $K_{m, SUC}$ | 0.6   | -           | Michaelis constant for succinate     |
 
 ## Complex III
 
@@ -834,37 +838,37 @@ $$
 \end{align}
 $$
 
-| Parameter    | Value    | Unit  | Desc.                                                     |
-| ------------ | -------- | ----- | --------------------------------------------------------- |
-| $k_{03}$     | 1,666.63 | Hz/mM | Reverse rate constant for reaction 3                      |
-| $K_{eq3}$    | 0.6877   | -     | Equilibrium constant for reaction 3                       |
-| $k_{04}$     | 60.67    | Hz/mM | Reverse rate constant for reaction 4                      |
-| $K_{eq4,ox}$ | 129.9853 | -     | Equilibrium constant for reaction 4 <br />(bH oxidized)   |
-| $K_{eq4,rd}$ | 13.7484  | -     | Equilibrium constant for reaction 4 <br />(bH reduced)    |
-| $\delta_1$   | 0.5      | -     |                                                           |
-| $\alpha$     | 0.2497   | -     |                                                           |
-| $k_d$        | 22000    | Hz    | Diffusion rate of ubiquinone across the membrane |
-| $k_{06}$     | 166.67   | Hz/mM | Reverse rate constant for reaction 6                      |
-| $K_{eq6}$    | 9.4596   | -     | Equilibrium constant for reaction 6                       |
-| $\delta_2$   | 0.5      | -     |                                                           |
-| $\beta$      | 0.5006   | -     |                                                           |
-| $k_{07,ox}$  | 13.33    | Hz/mM | Reverse rate constant for reaction 7 <br />(bL oxidized)  |
-| $K_{eq7,ox}$ | 3.0748   | -     | Equilibrium constant for reaction 7 <br />(bL oxidized)   |
-| $k_{07,rd}$  | 1.667    | Hz/mM | Reverse rate constant for reaction 7 <br />(bL reduced)   |
-| $K_{eq7,rd}$ | 29.0714  | -     | Equilibrium constant for reaction 7 <br />(bL reduced)    |
-| $\delta_3$   | 0.5      | -     |                                                           |
-| $\gamma$     | 0.2497   | -     | $\alpha + \beta + \gamma = 1$                             |
-| $k_{08,ox}$  | 83.33    | Hz/mM | Reverse rate constant for reaction 8 <br />(bL oxidized)  |
-| $K_{eq8,ox}$ | 129.9853 | -     | Equilibrium constant for reaction 8 <br />(bL oxidized)   |
-| $k_{08,rd}$  | 8.333    | Hz/mM | Reverse rate constant for reaction 8 <br />(bL reduced)   |
-| $K_{eq8,rd}$ | 9.4596   | -     | Equilibrium constant for reaction 8 <br />(bL reduced)    |
-| $k_{09}$     | 833      | Hz/mM | Reverse rate constant for reaction 9                      |
-| $K_{eq9}$    | 0.2697   | -     | Equilibrium constant for reaction 9                       |
-| $k_{010}$    | 0.8333   | Hz/mM | Reverse rate constant for reaction 10                     |
-| $K_{eq10}$   | 1.4541   | -     | Equilibrium constant for reaction 10                      |
-| $k_{33}$     | 2469.13  | Hz/mM | Reverse rate constant for reaction 33                     |
-| $K_{eq33}$   | 2.1145   | -     | Equilibrium constant for reaction 33                      |
-| $\rho_{C3}$  | 0.325    | mM    | Complex III content                                 |
+| Parameter    | Value    | Unit  | Desc.                                                    |
+| ------------ | -------- | ----- | -------------------------------------------------------- |
+| $k_{03}$     | 1,666.63 | Hz/mM | Reverse rate constant for reaction 3                     |
+| $K_{eq3}$    | 0.6877   | -     | Equilibrium constant for reaction 3                      |
+| $k_{04}$     | 60.67    | Hz/mM | Reverse rate constant for reaction 4                     |
+| $K_{eq4,ox}$ | 129.9853 | -     | Equilibrium constant for reaction 4 <br />(bH oxidized)  |
+| $K_{eq4,rd}$ | 13.7484  | -     | Equilibrium constant for reaction 4 <br />(bH reduced)   |
+| $\delta_1$   | 0.5      | -     |                                                          |
+| $\alpha$     | 0.2497   | -     |                                                          |
+| $k_d$        | 22000    | Hz    | Diffusion rate of ubiquinone across the membrane         |
+| $k_{06}$     | 166.67   | Hz/mM | Reverse rate constant for reaction 6                     |
+| $K_{eq6}$    | 9.4596   | -     | Equilibrium constant for reaction 6                      |
+| $\delta_2$   | 0.5      | -     |                                                          |
+| $\beta$      | 0.5006   | -     |                                                          |
+| $k_{07,ox}$  | 13.33    | Hz/mM | Reverse rate constant for reaction 7 <br />(bL oxidized) |
+| $K_{eq7,ox}$ | 3.0748   | -     | Equilibrium constant for reaction 7 <br />(bL oxidized)  |
+| $k_{07,rd}$  | 1.667    | Hz/mM | Reverse rate constant for reaction 7 <br />(bL reduced)  |
+| $K_{eq7,rd}$ | 29.0714  | -     | Equilibrium constant for reaction 7 <br />(bL reduced)   |
+| $\delta_3$   | 0.5      | -     |                                                          |
+| $\gamma$     | 0.2497   | -     | $\alpha + \beta + \gamma = 1$                            |
+| $k_{08,ox}$  | 83.33    | Hz/mM | Reverse rate constant for reaction 8 <br />(bL oxidized) |
+| $K_{eq8,ox}$ | 129.9853 | -     | Equilibrium constant for reaction 8 <br />(bL oxidized)  |
+| $k_{08,rd}$  | 8.333    | Hz/mM | Reverse rate constant for reaction 8 <br />(bL reduced)  |
+| $K_{eq8,rd}$ | 9.4596   | -     | Equilibrium constant for reaction 8 <br />(bL reduced)   |
+| $k_{09}$     | 833      | Hz/mM | Reverse rate constant for reaction 9                     |
+| $K_{eq9}$    | 0.2697   | -     | Equilibrium constant for reaction 9                      |
+| $k_{010}$    | 0.8333   | Hz/mM | Reverse rate constant for reaction 10                    |
+| $K_{eq10}$   | 1.4541   | -     | Equilibrium constant for reaction 10                     |
+| $k_{33}$     | 2469.13  | Hz/mM | Reverse rate constant for reaction 33                    |
+| $K_{eq33}$   | 2.1145   | -     | Equilibrium constant for reaction 33                     |
+| $\rho_{C3}$  | 0.325    | mM    | Complex III content                                      |
 
 
 ## Complex IV
@@ -903,17 +907,17 @@ J_{hRes} &= J_{hRes}^{C1} + J_{hRes}^{C3} + J_{hRes}^{C4} \\
 \end{align}
 $$
 
-| Parameter     | Value     | Unit    | Desc.                    |
-| ------------- | --------- | ------- | ------------------------ |
-| $\Sigma cytc$ | 0.325     | mM      | Cytochrome c pool        |
-| $\rho_{C4}$   | 0.325     | mM      | Complex IV content       |
-| $k_{34}$      | 2.9445E10 | Hz/mM^3 | Rate constant @ pH = 7   |
-| $k_{-34}$     | 290.03    | Hz/mM^3 | Rate constant @ pH = 7   |
-| $k_{35}$      | 45000     | Hz/mM   |                          |
-| $k_{36}$      | 4.826E11  | Hz/mM   | Rate constant @ pH = 7   |
-| $k_{-36}$     | 4.826     | Hz/mM   | Rate constant @ pH = 7   |
-| $k_{37}$      | 1.7245E8  | Hz      | Rate constant @ pH = 7   |
-| $k_{-37}$     | 17.542    | Hz      | Rate constant @ pH = 7   |
+| Parameter     | Value     | Unit    | Desc.                  |
+| ------------- | --------- | ------- | ---------------------- |
+| $\Sigma cytc$ | 0.325     | mM      | Cytochrome c pool      |
+| $\rho_{C4}$   | 0.325     | mM      | Complex IV content     |
+| $k_{34}$      | 2.9445E10 | Hz/mM^3 | Rate constant @ pH = 7 |
+| $k_{-34}$     | 290.03    | Hz/mM^3 | Rate constant @ pH = 7 |
+| $k_{35}$      | 45000     | Hz/mM   |                        |
+| $k_{36}$      | 4.826E11  | Hz/mM   | Rate constant @ pH = 7 |
+| $k_{-36}$     | 4.826     | Hz/mM   | Rate constant @ pH = 7 |
+| $k_{37}$      | 1.7245E8  | Hz      | Rate constant @ pH = 7 |
+| $k_{-37}$     | 17.542    | Hz      | Rate constant @ pH = 7 |
 
 ## Complex V (ATP synthase)
 
@@ -928,18 +932,18 @@ v_a &= \frac{K_{eq}^{'} \cdot \Sigma[ATP]_m}{ \Sigma[Pi]_m \cdot \Sigma[ADP]_m }
 \end{align}
 $$
 
-| Parameter      | Value     | Unit | Desc.                                                                                   |
-| -------------- | --------- | ---- | --------------------------------------------------------------------------------------- |
-| $\rho_{F1}$    | 5         | mM   | Concentration of F1-Fo ATPase                                                           |
+| Parameter      | Value     | Unit | Desc.                                                          |
+| -------------- | --------- | ---- | -------------------------------------------------------------- |
+| $\rho_{F1}$    | 5         | mM   | Concentration of F1-Fo ATPase                                  |
 | $K_{eq}^{'}$   | 6.47E5    | M    | Apparent equilibrium constant for ATP hydrolysis[^Golding1995] |
-| $\Delta\Psi_B$ | 50        | mV   | Phase boundary potential                                                                |
-| $p_{a}$        | 1.656E-5  | Hz   | Sum of products of rate constants                                                       |
-| $p_{b}$        | 3.373E-7  | Hz   | Sum of products of rate constants                                                       |
-| $p_{c1}$       | 9.651E-14 | Hz   | Sum of products of rate constants                                                       |
-| $p_{c2}$       | 4.585E-14 | Hz   | Sum of products of rate constants                                                       |
-| $p_{1}$        | 1.346E-4  | -    | Sum of products of rate constants                                                       |
-| $p_{2}$        | 7.739E-7  | -    | Sum of products of rate constants                                                       |
-| $p_{3}$        | 6.65E-15  | -    | Sum of products of rate constants                                                       |
+| $\Delta\Psi_B$ | 50        | mV   | Phase boundary potential                                       |
+| $p_{a}$        | 1.656E-5  | Hz   | Sum of products of rate constants                              |
+| $p_{b}$        | 3.373E-7  | Hz   | Sum of products of rate constants                              |
+| $p_{c1}$       | 9.651E-14 | Hz   | Sum of products of rate constants                              |
+| $p_{c2}$       | 4.585E-14 | Hz   | Sum of products of rate constants                              |
+| $p_{1}$        | 1.346E-4  | -    | Sum of products of rate constants                              |
+| $p_{2}$        | 7.739E-7  | -    | Sum of products of rate constants                              |
+| $p_{3}$        | 6.65E-15  | -    | Sum of products of rate constants                              |
 
 [^Golding1995]: Golding, E. M., Teague, W. E., & Dobson, G. P. (1995). Adjustment of K’ to varying pH and pMg for the creatine kinase, adenylate kinase and ATP hydrolysis equilibria permitting quantitative bioenergetic assessment. The Journal of Experimental Biology, 198(Pt 8), 1775–1782.
 
@@ -955,11 +959,11 @@ V_{CAT} = 2k_1E_T[H_2O_2]_i \cdot e^{-fr[H_2O_2]_i} \\
 \end{align}
 $$
 
-| Parameter | Value | Unit  | Desc.                                  |
-| --------- | ----- | ----- | -------------------------------------- |
-| $k_1$     | 17    | 1/(mM*ms) | Rate constant of catalase          |
-| $E_T$     | 0.01  | mM    | Extra-matrix concentration of catalase |
-| $fr$      | 0.05  | 1/mM  | Hydrogen peroxide inhibition factor    |
+| Parameter | Value | Unit      | Desc.                                  |
+| --------- | ----- | --------- | -------------------------------------- |
+| $k_1$     | 17    | 1/(mM*ms) | Rate constant of catalase              |
+| $E_T$     | 0.01  | mM        | Extra-matrix concentration of catalase |
+| $fr$      | 0.05  | 1/mM      | Hydrogen peroxide inhibition factor    |
 
 ### Superoxide dismutase (SOD)
 
@@ -973,13 +977,13 @@ f_{sox} &= k_1^{SOD} [O_2^-]
 \end{align}
 $$
 
-| Parameter | Value   | Unit  | Desc.                                  |
-| --------- | ------- | ----- | -------------------------------------- |
-| $k_1$     | 1200    | 1/(mM*ms) | Rate constant for EA -> EB         |
-| $k_3$     | 24      | 1/(mM*ms) | Rate constant for EB -> EC         |
-| $k_5$     | 0.24    | 1/s    | Rate constant for EC -> EA            |
-| $K_{i}$   | 500     | μM    | Inhibition constant for H2O2           |
-| $E_{T}$   | 3       | μM    | Concentration of Cu,ZnSOD (cytosolic)  |
+| Parameter | Value | Unit      | Desc.                                 |
+| --------- | ----- | --------- | ------------------------------------- |
+| $k_1$     | 1200  | 1/(mM*ms) | Rate constant for EA -> EB            |
+| $k_3$     | 24    | 1/(mM*ms) | Rate constant for EB -> EC            |
+| $k_5$     | 0.24  | 1/s       | Rate constant for EC -> EA            |
+| $K_{i}$   | 500   | μM        | Inhibition constant for H2O2          |
+| $E_{T}$   | 3     | μM        | Concentration of Cu,ZnSOD (cytosolic) |
 
 ### Glutathione peroxidase (GPX)
 
@@ -993,11 +997,11 @@ B & = \frac{\Phi_2}{[GSH] }  \\
 \end{align}
 $$
 
-| Parameter | Value  | Unit | Desc.                       |
-| --------- | ------ | ---- | --------------------------- |
-| $E_T$     | 10     | μM   | GPX content                 |
-| $\Phi_1$  | 5      | mM/s | Dalziel coefficient         |
-| $\Phi_2$  | 75     | mM/s | Dalziel coefficient         |
+| Parameter | Value | Unit | Desc.               |
+| --------- | ----- | ---- | ------------------- |
+| $E_T$     | 10    | μM   | GPX content         |
+| $\Phi_1$  | 5     | mM/s | Dalziel coefficient |
+| $\Phi_2$  | 75    | mM/s | Dalziel coefficient |
 
 ### Glutathione reductase (GR)
 
@@ -1010,13 +1014,13 @@ J_{GR} &= k_1^{GR} E_T \frac{[GSSG]}{[GSSG] + K_{GSSG}} \frac{[NADPH]}{[NADPH] +
 \end{align}
 $$
 
-| Parameter   | Value | Unit | Desc.                        |
-| ----------- | ----- | ---- | ---------------------------- |
-| $E_T$       | 10    | μM   | GR content (cytosolic)       |
-| $k_1^{GR}$  | 5     | Hz   | Catalytic constant of GR     |
-| $K_{GSSG}$  | 60    | μM   | Michaelis constant for GSSG  |
-| $K_{NADPH}$ | 15    | μM   | Michaelis constant for NADPH |
-| $\Sigma [GSH]$ |   1    | mM   | Cytosolic GSH pool     |
+| Parameter      | Value | Unit | Desc.                        |
+| -------------- | ----- | ---- | ---------------------------- |
+| $E_T$          | 10    | μM   | GR content (cytosolic)       |
+| $k_1^{GR}$     | 5     | Hz   | Catalytic constant of GR     |
+| $K_{GSSG}$     | 60    | μM   | Michaelis constant for GSSG  |
+| $K_{NADPH}$    | 15    | μM   | Michaelis constant for NADPH |
+| $\Sigma [GSH]$ | 1     | mM   | Cytosolic GSH pool           |
 
 ### Inner mitochondrial anion channel (IMAC)
 
@@ -1028,16 +1032,16 @@ V_{tr}^{ROS} &= j \cdot g_{IMAC} \left( \Delta\Psi_m + V_T ln \left( \frac{[O_2^
 \end{align}
 $$
 
-| Parameter        | Value  | Unit         | Desc.                              |
-| ---------------- | ------ | ------------ | ---------------------------------- |
-| a                | 0.001  | -            | Basal IMAC conductance             |
+| Parameter        | Value  | Unit         | Desc.                             |
+| ---------------- | ------ | ------------ | --------------------------------- |
+| a                | 0.001  | -            | Basal IMAC conductance            |
 | b                | 10000  | -            | Activation factor by superoxide   |
 | $K_{CC}$         | 10     | μM           | Activation constant by superoxide |
-| $G_L$            | 0.035  | μM * Hz / mV | Integral conductance for IMAC      |
-| $G_{max}$        | 3.9085 | μM * Hz / mV | Leak conductance of IMAC           |
-| $\kappa$         | 0.07   | 1/mV         | Steepness factor                   |
-| $\Delta\Psi_m^b$ | 4      | mV           | Potential at half saturation       |
-| j                | 0.1    | -            | Fraction of IMAC conductance       |
+| $G_L$            | 0.035  | μM * Hz / mV | Integral conductance for IMAC     |
+| $G_{max}$        | 3.9085 | μM * Hz / mV | Leak conductance of IMAC          |
+| $\kappa$         | 0.07   | 1/mV         | Steepness factor                  |
+| $\Delta\Psi_m^b$ | 4      | mV           | Potential at half saturation      |
+| j                | 0.1    | -            | Fraction of IMAC conductance      |
 
 ### ODEs for ROS transport and scavenging
 
