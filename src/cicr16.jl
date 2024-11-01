@@ -4,10 +4,10 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:lccsys)
     @parameters begin
         A_LCC = 2.0
         B_LCC = 2.0
-        ω_LCC = 0.01kHz
-        f_LCC = 0.3kHz
-        g_LCC = 2.0kHz
-        γ_LCC = 0.1875kHz / mM
+        ω_LCC = 10Hz
+        f_LCC = 300Hz
+        g_LCC = 2000Hz
+        γ_LCC = 187.5Hz / mM
         P_CA_LCC = 1.24E-3cm * Hz
         P_K_LCC = 1.11E-11cm * Hz
         I_CA_HALF_LCC = -0.4583μA / cm²
