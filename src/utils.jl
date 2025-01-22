@@ -41,59 +41,28 @@ using ModelingToolkit
     iVT = Faraday / RGAS * T₀ # Reciprocal of thermal voltage
     μAμF = μA / μF           # Common unit for current density, normalized by capacitance
     mSμF = milliseimens / μF # Common unit for conductance, normalized by capacitance
+
+    # Dissociation constants
+    KWATER = 1E-14 * Molar^2
+    KA_PI = 1.78E-7 * Molar
+    KA_ATP = 3.31E-7 * Molar
+    KA_ADP = 4.17E-7 * Molar
+    KMG_ATP = 6.46E-5 * Molar
+    KMG_ADP = 5.62E-4 * Molar
+    KA_SUC = 6.3E-6 * Molar
+    KA_H2O = 1E-14 * Molar
+    iKWATER = inv(KWATER)
+    iKA_PI = inv(KA_PI)
+    iKA_ATP = inv(KA_ATP)
+    iKA_ADP = inv(KA_ADP)
+    iKMG_ATP = inv(KMG_ATP)
+    iKMG_ADP = inv(KMG_ADP)
+    iKA_SUC = inv(KA_SUC)
+    iKA_H2O = inv(KA_H2O)
 end
 
-# Units
-const second = 1           # second
-const minute = 60second    # minute
-const ms = 1e-3second      # millisecond
-const Hz = inv(second)     # Herz
-const kHz = 1e3Hz          # kilohertz
-const metre = 1            # meter
-const cm = 0.01metre       # centimeter
-const cm² = cm^2           # square centimeter
-const μm = 1E-6metre       # Micrometer
-const mL = cm^3            # milliliter = cubic centimeter
-const Liter = 1e3mL        # liter
-const μL = 1E-6Liter
-const pL = 1E-12Liter
-const mM = 1
-const Molar = 1000mM       # molar (1000 since the SI units is mM)
-const μM = 1E-3mM          # micromolar
-const nM = 1E-6mM          # nanomolar
-const Amp = 1              # ampere
-const mA = 1E-3Amp         # milliampere
-const μA = 1E-6Amp         # micrpampere
-const Volt = 1             # volt
-const mV = 1E-3Volt        # millivolt
-const mS = mA / Volt       # milliseimens
-const T₀ = 310.0           # Default temp (37C)
-const Faraday = 96485      # Faraday constant (columb / mol)
-const Farad = Amp * second / Volt
-const μF = 1E-6Farad
-const R = 8.314            # Ideal gas constant
-const VT = R * T₀ / Faraday# Thermal voltage (@37C), around 26.7 mV
-const iVT = inv(VT)        # Reciprocal of thermal voltage (@37C)
-
-# Dissociation constants
-const KWATER = 1E-14 * Molar^2
-const KA_PI = 1.78E-7 * Molar
-const KA_ATP = 3.31E-7 * Molar
-const KA_ADP = 4.17E-7 * Molar
-const KMG_ATP = 6.46E-5 * Molar
-const KMG_ADP = 5.62E-4 * Molar
-const KA_SUC = 6.3E-6 * Molar
-const KA_H2O = 1E-14 * Molar
-
 # Affinity constants
-iKWATER = inv(KWATER)
-iKA_PI = inv(KA_PI)
-iKA_ATP = inv(KA_ATP)
-iKA_ADP = inv(KA_ADP)
-iKMG_ATP = inv(KMG_ATP)
-iKMG_ADP = inv(KMG_ADP)
-iKA_SUC = inv(KA_SUC)
-iKA_H2O = inv(KA_H2O)
+
 
 #===
 Commonly-used functions
