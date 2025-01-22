@@ -36,7 +36,7 @@ using ModelingToolkit
     μF = Farad / 10^6       # Microfarad
     T₀ = 310Kelvin          # Default temp (37C)
     Faraday = 96485Columb / mol # Faraday constant (columb / mol)
-    conRGAS = 8.314Joule/Kelvin/mol # Ideal gas constant (J/K⋅mol)
+    RGAS = 8.314Joule/Kelvin/mol # Ideal gas constant (J/K⋅mol)
     VT = RGAS * T₀ / Faraday # Thermal voltage (@37C), about 26.7 mV
     iVT = Faraday / RGAS * T₀ # Reciprocal of thermal voltage
     μAμF = μA / μF           # Common unit for current density, normalized by capacitance
