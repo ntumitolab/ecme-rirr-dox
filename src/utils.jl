@@ -1,6 +1,47 @@
 #===
 Physical constants and common functions
 ===#
+using ModelingToolkit
+
+@constants begin
+    ms = 1                  # millisecond
+    second = 1000ms         # second is the SI unit
+    minute = 60second       # minute
+    Hz = 1 / second         # Herz
+    kHz = 1 / second        # kilohertz
+    metre = 1               # meter
+    cm = metre / 10^2       # centimeter
+    cm² = cm^2              # square centimeter
+    μm = metre / 10^6       # micrometer
+    mL = cm^3               # milliliter = cubic centimeter
+    Liter = 1000mL          # liter
+    μL = μm^3               # microliter
+    pL = Liter / 10^12      # picoliter
+    mmol = 1
+    mol = 1000mmol
+    μM = mmol/metre^3       # micromolar
+    mM = 1000μM             # mM is the SI unit
+    Molar = 1000mM          # Molarity is used in equilibrium constants
+    nM = μM / 10^3          # nanomolar
+    Ampere = 1              # current unit Ampere
+    mA = Ampere / 10^3      # milliampere
+    μA = Ampere / 10^6      # micropampere
+    Joule = 10^6            # energy unit Joule
+    Kelvin = 1              # temperature unit Kelvin
+    Columb = Ampere * second # unit of electric charge
+    Volt = Joule / Columb   # voltage
+    mV = Volt / 10^3        # millivolt (mV) = 1
+    milliseimens = Ampere / Volt / 10^3 # milliseimens
+    Farad = Columb / Volt   # Capacitance
+    μF = Farad / 10^6       # Microfarad
+    T₀ = 310Kelvin          # Default temp (37C)
+    Faraday = 96485Columb / mol # Faraday constant (columb / mol)
+    conRGAS = 8.314Joule/Kelvin/mol # Ideal gas constant (J/K⋅mol)
+    VT = RGAS * T₀ / Faraday # Thermal voltage (@37C), about 26.7 mV
+    iVT = Faraday / RGAS * T₀ # Reciprocal of thermal voltage
+    μAμF = μA / μF           # Common unit for current density, normalized by capacitance
+    mSμF = milliseimens / μF # Common unit for conductance, normalized by capacitance
+end
 
 # Units
 const second = 1           # second
