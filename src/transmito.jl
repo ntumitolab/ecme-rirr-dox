@@ -27,10 +27,10 @@ function get_mitoh_sys(na_m, na_i, h_m, h_i, pi_m, pi_i; name=:mitohsys)
 	β₂⁻ = K4_M_NHE * hil(h_m * hil(KM_NA_NHE, na_m), KM_H_NHE)
 
     # PiC transition rates
-    H₂PO₄⁻_i = pi_i * hil(h_i, KA_PI)
-    H₂PO₄⁻_m = pi_m * hil(h_m, KA_PI)
-    f_pi = H₂PO₄⁻_i / KM_PI_IN_PIC
-    f_pm = H₂PO₄⁻_m / KM_PI_MT_PIC
+    dhpi⁻_i = pi_i * hil(h_i, KA_PI)
+    dhpi⁻_m = pi_m * hil(h_m, KA_PI)
+    f_pi = dhpi⁻_i / KM_PI_IN_PIC
+    f_pm = dhpi⁻_m / KM_PI_MT_PIC
     f_ohi = KWATER / h_i / KM_OH_IN_PIC
     f_ohm = KWATER / h_m / KM_OH_MT_PIC
 	ϕf = f_pi * f_ohm
@@ -61,7 +61,7 @@ function get_mitoca_sys(na_i, ca_m, ca_i, dpsi;name=:mitocasys)
     @variables vUni(t) vNaCa(t)
     v2frt = 2 * iVT * (dpsi - DPSI_OFFSET_MCU)
     f_ca = ca_i / KTRANS_MCU
-    f_act = L_MCU * (NaNMath.pow(hilr(ca_i, KACT_MCU), N_MCU))
+    f_act = L_MCU * (NaNMath.pow(hil(KACT_MCU, ca_i), N_MCU))
     vmcu = VMAX_MCU * f_ca * (f_ca + 1)^3 * exprel(-v2frt) / ((f_ca + 1)^4 + f_act)
     f_na = hil(na_i, KM_NA_NCLX)^3
     f_ca = hil(ca_m, KM_CA_NCLX)

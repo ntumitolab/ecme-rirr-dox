@@ -89,7 +89,7 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
 	vcs = KCAT_CS * ET_CS * hil(ACCOA, KM_ACCOA_CS) * hil(oaa, KM_OAA_CS)
 
 	vidh = let
-		fa = hilr(adp_m, KM_ADP_IDH) * hilr(ca_m, KM_CA_IDH)
+		fa = hil(KM_ADP_IDH, adp_m) * hil(KM_CA_IDH, ca_m)
 		f_isoc = NaNMath.pow(KM_ISOC_IDH / isoc, NI_ISOC_IDH)
 		f_nad = (1 + nadh_m/KI_NADH_IDH) * (KM_NAD_IDH / nad_m)
 		f_h = h_m / KH1_IDH + KH2_IDH / h_m
@@ -97,7 +97,7 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
 	end
 
 	vkgdh = let
-		f_a = hilr(mg_m, KM_MG_KGDH) * hilr(ca_m, KM_CA_KGDH)
+		f_a = hil(KM_MG_KGDH, mg_m) * hil(KM_CA_KGDH, ca_m)
 		f_akg = NaNMath.pow(KM_AKG_KGDH / akg, NI_AKG_KGDH)
 		f_nad = KM_NAD_KGDH / nad_m
 		f_h = 1 + h_m / KH1_KGDH + KH2_KGDH / h_m
@@ -107,7 +107,7 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
 	vmdh = let
 		f_ha = K_OFFSET_MDH + hil(KH1_MDH * hil(KH2_MDH, h_m), h_m)
 		f_hi = hil(h_m * hil(h_m, KH4_MDH), KH3_MDH)^2
-		f_oaa = hilr(oaa, KI_OAA_MDH)
+		f_oaa = hil(KI_OAA_MDH, oaa)
 		f_mal = hil(mal * f_oaa, KM_MAL_MDH)
 		f_nad = hil(nad_m, KM_NAD_MDH)
 		vmdh = KCAT_MDH * ET_MDH * f_ha * f_hi * f_nad * f_mal

@@ -10,6 +10,6 @@ function get_inak_sys(atp_i, adp_i, vm, na_i, na_o, k_o; name=:naksys)
     fnao = expm1(na_o / 67.3mM) / 7
     fnai = hil(na_i, KM_NA_NAK, 1.5)
     f_nak = 1.0 + 0.1245 * exp(-0.1iVT * vm) + 0.0365 * fnao *exp(-iVT * vm)
-    f_atp = hil(atp_i * hilr(adp_i, KI_ADP_NAK), KM_ATP_NAK)
+    f_atp = hil(atp_i * hil(KI_ADP_NAK, adp_i), KM_ATP_NAK)
     return ODESystem([iNaK ~ IMAX_NAK * fko * fnai * f_atp / f_nak], t; name)
 end

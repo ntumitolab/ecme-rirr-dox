@@ -43,8 +43,8 @@ plot(sol2, idxs=vm, label="C3 3x")
 p1 = plot(sol, idxs=[ca_i, ca_ss], tspan=(990, tend))
 p2 = plot(sol, idxs=[ca_nsr, ca_jsr], tspan=(990, tend))
 plot(p1, p2, layout=(2, 1))
-@unpack iK1, iK, iKp, iKatp, iNa, iNaCa, iCaL = sys
-plot(sol, idxs=[iK1, iK, iKp, iKatp, iCaL], tspan=(750, tend))
+@unpack iK1, iK, iKp, iKatp, iNa, iNaCa, ICaL = sys
+plot(sol, idxs=[iK1, iK, iKp, iKatp, ICaL], tspan=(750, tend))
 
 plot(sol0, idxs=[atp_i / adp_i], label="C4 1x", title="ATP:ADP")
 plot!(sol1, idxs=[atp_i / adp_i], label="C4 3x", line=:dash)

@@ -2,8 +2,8 @@
 "LCC ODE system"
 function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:lccsys)
     @parameters begin
-        A_LCC = 2.0
-        B_LCC = 2.0
+        A_LCC = 2
+        B_LCC = 2
         ω_LCC = 10Hz
         f_LCC = 300Hz
         g_LCC = 2000Hz
@@ -31,8 +31,8 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:lccsys)
         # Voltage-inhibited LCC state
         y_ca_lcc(t) = 0.9479
         # Currents
-        iCaK(t)
-        iCaL(t)
+        ICaK(t)
+        ICaL(t)
     end
 
     v = vm / mV
@@ -76,8 +76,8 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:lccsys)
         D(cca3_lcc) ~ v39 + v89 - v910,
         D(cca4_lcc) ~ v910 + v410,
         D(y_ca_lcc) ~ (y_inf - y_ca_lcc) / τ,
-        iCaL ~ 6 * y_ca_lcc * o_lcc * iCaMax,
-        iCaK ~ hilr(iCaMax, I_CA_HALF_LCC) * y_ca_lcc * o_lcc * ghkVm(P_K_LCC, vm, k_i, k_o, 1)
+        ICaL ~ 6 * y_ca_lcc * o_lcc * iCaMax,
+        ICaK ~ hil(I_CA_HALF_LCC, iCaMax) * y_ca_lcc * o_lcc * ghk(P_K_LCC, vm, k_i, k_o)
     ]
     return ODESystem(eqs, t; name)
 end

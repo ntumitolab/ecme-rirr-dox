@@ -40,7 +40,7 @@ function get_ik_sys(na_i, na_o, k_i, k_o, mg_i, vm, atp_i, adp_i; name=:iksys)
     ikatp = let
         h = 1.3 + 0.74 * exp(-0.09 * adp_i / μM)   # Hill factor (Ferrero)
         km_atp = 35.8μM + 17.9μM * NaNMath.pow(adp_i / μM, 0.56) # fixed, it's μM rather than mM
-        f_atp = hilr(atp_i, km_atp, h)  # Inhibition by ATP
+        f_atp = hil(km_atp, atp_i, h)  # Inhibition by ATP
         G0_KATP * f_atp * ΔVK
     end
 

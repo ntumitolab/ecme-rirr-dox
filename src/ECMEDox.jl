@@ -4,7 +4,6 @@ using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
 using OrdinaryDiffEq
 using NaNMath
-using LogExpFunctions
 
 export build_model, build_u0
 
@@ -174,7 +173,7 @@ function build_model(;name, use_mg=false, simplify=true, bcl=1second, istim=-80�
     @unpack iPMCA, jUp, iNaCa, jTr, jXfer = jcasys
     @unpack iK, iK1, iKp, iKatp = iksys
     @unpack iNaK = inaksys
-    @unpack iCaK, iCaL = lccsys
+    @unpack ICaK, ICaL = lccsys
     @unpack vck_mito = cksys
     @unpack vANT, vATPase, vHu, vHleak = c5sys
     @unpack jRel = ryrsys
@@ -182,13 +181,13 @@ function build_model(;name, use_mg=false, simplify=true, bcl=1second, istim=-80�
     @unpack vUni, vNaCa = mitocasys
 
     eqs = [
-        D(vm) * (-CM) ~ iNa + iCaL + iK + iK1 + iKp + iNaCa + iNaK + iNsNa + iPMCA + iCaB + iNaB + iStim + iKatp + iCaK,
+        D(vm) * (-CM) ~ iNa + ICaL + iK + iK1 + iKp + iNaCa + iNaK + iNsNa + iPMCA + iCaB + iNaB + iStim + iKatp + ICaK,
         D(na_i) ~ -A_CAP_V_MYO_F * (iNa + iNaB + iNsNa + 3 * (iNaCa + iNaK)),
-        D(k_i) ~ -A_CAP_V_MYO_F * (iK + iK1 + iKp + iKatp + iStim - 2 * iNaK + iCaK),
+        D(k_i) ~ -A_CAP_V_MYO_F * (iK + iK1 + iKp + iKatp + iStim - 2 * iNaK + ICaK),
         D(ca_i) ~ β_ca(ca_i, KM_CA_CMDN, ET_CMDN) * (jXfer - jUp - jTrpn - 0.5 * A_CAP_V_MYO_F * (iPMCA + iCaB - 2 * iNaCa) + V_MITO_V_MYO * (vNaCa - vUni)),
         D(ca_nsr) ~ β_ca(ca_nsr, KM_CA_CSQN, ET_CSQN) * (V_MYO * jUp - V_JSR * jTr) / V_NSR,
         D(ca_jsr) ~ β_ca(ca_jsr, KM_CA_CSQN, ET_CSQN) * (jTr - jRel),
-        D(ca_ss) ~ β_ca(ca_ss, KM_CA_CMDN, ET_CMDN) * ( (V_JSR * jRel - V_MYO * jXfer)/V_SS - 0.5 * iCaL * A_CAP_V_SS_F),
+        D(ca_ss) ~ β_ca(ca_ss, KM_CA_CMDN, ET_CMDN) * ( (V_JSR * jRel - V_MYO * jXfer)/V_SS - 0.5 * ICaL * A_CAP_V_SS_F),
         D(ca_m) ~ δCA * (vUni - vNaCa),
         D(adp_i) ~ vck_mito - V_MITO_V_MYO * vANT + vAM + 0.5 * jUp + A_CAP_V_MYO_F * (iPMCA + iNaK),
         D(adp_m) ~ vANT - vSL - vATPase,

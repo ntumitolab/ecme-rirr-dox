@@ -70,7 +70,7 @@ function get_force_sys(atp_i, adp_i, ca_i; name=:forcesys)
     eqs = [
         force ~ ζ * (p1 + n1 + 2 * p2 + 3 * p3) / (P1_MAX + 2P2_MAX + 3P3_MAX),
         force_normal ~ (p1 + p2 + p3 + n1) / (P1_MAX + P2_MAX + P3_MAX),
-        vAM ~ V_MAX_AM * hil(atp_i * hilr(adp_i, KI_ADP_AM), KM_ATP_AM) / (F01 + F12 + F23) * (F01 * p0 + F12 * p1 + F23 * p2),
+        vAM ~ V_MAX_AM * hil(atp_i * hil(KI_ADP_AM, adp_i), KM_ATP_AM) / (F01 + F12 + F23) * (F01 * p0 + F12 * p1 + F23 * p2),
         ΣLTRPN ~ ltr_ca + ltr_free,
         ΣHTRPN ~ htr_ca + htr_free,
         D(ltr_ca) ~ K_P_LTRPN * ca_i * ltr_free - K_M_LTRPN * ltr_ca * (1 - 2 / 3 * force_normal),

@@ -24,7 +24,7 @@ function get_jca_sys(atp_i, adp_i, ca_i, ca_nsr, ca_jsr, ca_ss, ca_o, na_i, na_o
     @parameters KM2_ATP_PMCA = 230μM  [description = "ATP 2nd half-saturation constant"]
     @parameters KI_ADP_PMCA = 1.0mM [description = "ADP half-inhibition constant"]
     ipca = let
-        f_atp = hil(atp_i * hilr(adp_i, KI_ADP_PMCA), KM1_ATP_PMCA) + hil(atp_i, KM2_ATP_PMCA)
+        f_atp = hil(atp_i * hil(KI_ADP_PMCA, adp_i), KM1_ATP_PMCA) + hil(atp_i, KM2_ATP_PMCA)
         f_ca = hil(ca_i, KM_CA_PMCA)
         IMAX_PMCA * f_atp * f_ca
     end
