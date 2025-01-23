@@ -1,8 +1,6 @@
 #===
 Physical constants and common functions
 ===#
-using ModelingToolkit
-
 @constants begin
     ms = 1                  # millisecond
     second = 1000ms         # second is the SI unit
@@ -17,8 +15,8 @@ using ModelingToolkit
     Liter = 1000mL          # liter
     μL = μm^3               # microliter
     pL = Liter / 10^12      # picoliter
-    mmol = 1
-    mol = 1000mmol
+    mmol = 1                # millimole
+    mol = 1000mmol          # mole
     μM = mmol/metre^3       # micromolar
     mM = 1000μM             # mM is the SI unit
     Molar = 1000mM          # Molarity is used in equilibrium constants
@@ -42,7 +40,7 @@ using ModelingToolkit
     μAμF = μA / μF           # Common unit for current density, normalized by capacitance
     mSμF = milliseimens / μF # Common unit for conductance, normalized by capacitance
 
-    # Dissociation constants
+    # Dissociation and affinity constants
     KWATER = 1E-14 * Molar^2
     KA_PI = 1.78E-7 * Molar
     KA_ATP = 3.31E-7 * Molar
@@ -60,9 +58,6 @@ using ModelingToolkit
     iKA_SUC = inv(KA_SUC)
     iKA_H2O = inv(KA_H2O)
 end
-
-# Affinity constants
-
 
 #===
 Commonly-used functions
@@ -82,12 +77,17 @@ hilr(x, k, n) = hil(k, x, n)
 
 """
 Logistic sigmoid function.
-"""
-expit(x) = LogExpFunctions.logistic(x)
 
-"Relative exponential function"
+    expit(x[, a=1, b=1]) = a / (b + exp(-x))
+"""
+expit(x, a=one(x), b=one(x)) = a / (b + exp(-x))
+
+"""
+Relative exponential function.
+
+    exprel(x) = x / (exp(x) - 1)
+"""
 exprel(x) = x / expm1(x)
-exprel2(x) = log1pexp(-log(2) * x) * inv(log(2))
 
 #=
 Get propotions of AXP from dissociation constants
