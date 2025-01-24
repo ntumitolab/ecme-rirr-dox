@@ -18,8 +18,7 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
         KI_DOX_C4 = 165μM  # DOX inhibition concentration (IC50) on complex IV
         K_RC_DOX = 1E3 / 15mM  # DOX redox cycling constant
         ### Complex I
-        # ρC1 = 8.85mM  # Concentration of complex I, from Gauthier et al. (2013)
-        ρC1 = 5mM # Adjusted
+        ρC1 = 5mM # Adjusted # 8.85mM, Concentration of complex I, from Gauthier et al. (2013)
         dpsi_B_C1 = 50.0mV   # Phase boundary potential
         K12_C1 = 6.3396E11Hz / mM^2
         K21_C1 = 5Hz

@@ -45,12 +45,12 @@ end
 
 function get_mitoca_sys(na_i, ca_m, ca_i, dpsi;name=:mitocasys)
     @parameters begin
-        ### Mitochondrial NCE (NCLX)
+        # Mitochondrial NCE (NCLX)
         VMAX_NCLX = 4.665E-5mM/ms
         B_NCLX = 0.5
         KM_NA_NCLX = 9.4mM
         KM_CA_NCLX = 0.375μM
-        ### Mitochondrial Ca uniporter (MCU)
+        # Mitochondrial Ca uniporter (MCU)
         VMAX_MCU = 1.2295E-4mM/ms
         DPSI_OFFSET_MCU = 91mV
         KACT_MCU = 3.8E-4mM
