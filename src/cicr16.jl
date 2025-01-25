@@ -32,8 +32,11 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:lccsys)
         cca3_lcc(t) = 1.815e-15
         cca4_lcc(t) = 0.0
         # Voltage-inhibited LCC state
-        y_ca_lcc(t) = 0.9479
+        x_yca(t) = 0.9479
+        y_inf(t)
+        τ_yca(t)
         # Currents
+        ICaMax(t)
         ICaK(t)
         ICaL(t)
     end
@@ -61,10 +64,6 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:lccsys)
     v39 = (A^3) * γ * c3_lcc - ω / (B^3) * cca3_lcc
     v410 = (A^4) * γ * c4_lcc - ω / (B^4) * cca4_lcc
 
-    y_inf = expit(-(v + 55) / 7.5) + 0.5 * expit((v - 21) / 6)
-    τ = 20.0 + 600.0 * expit(-(v + 30) / 9.5)
-    iCaMax = ghk(P_CA_LCC, vm, 1μM, 0.341 * ca_o, 2)
-
     eqs = [
         α_lcc ~ 0.4kHz * exp((v + 2) / 10),
         β_lcc ~ 0.05kHz * exp(-(v + 2) / 13),
@@ -80,9 +79,12 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:lccsys)
         D(cca2_lcc) ~ v28 + v78 - v89,
         D(cca3_lcc) ~ v39 + v89 - v910,
         D(cca4_lcc) ~ v910 + v410,
-        D(y_ca_lcc) ~ (y_inf - y_ca_lcc) / τ,
-        ICaL ~ 6 * y_ca_lcc * o_lcc * iCaMax,
-        ICaK ~ hil(I_CA_HALF_LCC, iCaMax) * y_ca_lcc * o_lcc * ghk(P_K_LCC, vm, k_i, k_o)
+        y_inf ~ expit(-(v + 55) / 7.5) + 0.5 * expit((v - 21) / 6),
+        τ_yca ~ 20.0 + 600.0 * expit(-(v + 30) / 9.5),
+        D(x_yca) ~ (y_inf - x_yca) / τ,
+        ICaMax ~ ghk(P_CA_LCC, vm, 1μM, 0.341 * ca_o, 2),
+        ICaL ~ 6 * x_yca * o_lcc * iCaMax,
+        ICaK ~ hil(I_CA_HALF_LCC, iCaMax) * x_yca * o_lcc * ghk(P_K_LCC, vm, k_i, k_o)
     ]
     return ODESystem(eqs, t; name)
 end
