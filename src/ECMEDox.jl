@@ -50,11 +50,11 @@ function build_u0(sys)
         sys.x_k => 0.0012736748778708119,
         sys.ltr_ca => 0.02049022737620247mM,
         sys.htr_ca => 0.1372356208938611mM,
-        sys.p0 => 0.0036716635421201937,
-        sys.p1 => 0.0033538440069086255,
-        sys.p2 => 0.006345552748082013,
-        sys.p3 => 0.005553300147495315,
-        sys.n1 => 0.012559971511989917,
+        sys.x_p0 => 0.0036716635421201937,
+        sys.x_p1 => 0.0033538440069086255,
+        sys.x_p2 => 0.006345552748082013,
+        sys.x_p3 => 0.005553300147495315,
+        sys.x_n1 => 0.012559971511989917,
         sys.adp_ic => 0.34296593237569856mM,
         sys.crp_i => 4.3883068168196715mM,
         sys.crp_ic => 4.376369356028448mM,
@@ -177,7 +177,7 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
     @unpack Vck_mito = cksys
     @unpack vANT, vATPase, vHu, vHleak = c5sys
     @unpack jRel = ryrsys
-    @unpack Vam, Jtrpn = forcesys
+    @unpack VAm, Jtrpn = forcesys
     @unpack vUni, vNaCa = mitocasys
 
     eqs = [
@@ -189,7 +189,7 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
         D(ca_jsr) ~ β_ca(ca_jsr, KM_CA_CSQN, ET_CSQN) * (Jtr - jRel),
         D(ca_ss) ~ β_ca(ca_ss, KM_CA_CMDN, ET_CMDN) * ((V_JSR * jRel - V_MYO * Jxfer) / V_SS - 0.5 * ICaL * A_CAP_V_SS_F),
         D(ca_m) ~ δCA * (vUni - vNaCa),
-        D(adp_i) ~ Vck_mito - V_MITO_V_MYO * vANT + Vam + 0.5 * Jup + A_CAP_V_MYO_F * (IPMCA + INaK),
+        D(adp_i) ~ Vck_mito - V_MITO_V_MYO * vANT + VAm + 0.5 * Jup + A_CAP_V_MYO_F * (IPMCA + INaK),
         D(adp_m) ~ vANT - vSL - vATPase,
         D(nadh_m) ~ -vC1 + vIDH + vKGDH + vMDH,
         D(dpsi) ~ inv(CM_MITO) * (vHres - vHu - vANT - vHleak - vNaCa - 2 * vUni - vTrROS),
