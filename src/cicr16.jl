@@ -105,11 +105,11 @@ function get_ryr_sys(ca_jsr, ca_ss; name=:ryrsys)
         po2_ryr(t) = 7.12e-11
         pc1_ryr(t) # = 0.7528
         pc2_ryr(t) = 0.2471
-        jRel(t)
+        Jrel(t)
     end
 
-    vo1c1 = KA_M_RYR * po1_ryr - KA_P_RYR * ca_ss^4 * pc1_ryr
-    vo1o2 = KB_P_RYR * ca_ss^3 * po1_ryr - KB_M_RYR * po2_ryr
+    vo1c1 = KA_M_RYR * po1_ryr - KA_P_RYR * NaNMath.pow(ca_ss, 4) * pc1_ryr
+    vo1o2 = KB_P_RYR * NaNMath.pow(ca_ss, 3) * po1_ryr - KB_M_RYR * po2_ryr
     vo1c2 = KC_P_RYR * po1_ryr - KC_M_RYR * pc2_ryr
 
     eqs = [
@@ -117,7 +117,7 @@ function get_ryr_sys(ca_jsr, ca_ss; name=:ryrsys)
         D(po1_ryr) ~ -vo1c1 - vo1o2 - vo1c2,
         D(po2_ryr) ~ vo1o2,
         D(pc2_ryr) ~ vo1c2,
-        jRel ~ R_RYR * (po1_ryr + po2_ryr) * (ca_jsr - ca_ss)
+        Jrel ~ R_RYR * (po1_ryr + po2_ryr) * (ca_jsr - ca_ss)
     ]
     return ODESystem(eqs, t; name)
 end
