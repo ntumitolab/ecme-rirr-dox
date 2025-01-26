@@ -31,8 +31,7 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:lccsys)
         cca2_lcc(t) = 6.3826e-13
         cca3_lcc(t) = 1.815e-15
         cca4_lcc(t) = 0.0
-        # Voltage-inhibited LCC state
-        x_yca(t) = 0.9479
+        x_yca(t) = 0.9479 # Voltage-gated LCC
         y_inf(t)
         τ_yca(t)
         # Currents
@@ -81,10 +80,10 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:lccsys)
         D(cca4_lcc) ~ v910 + v410,
         y_inf ~ expit(-(v + 55) / 7.5) + 0.5 * expit((v - 21) / 6),
         τ_yca ~ 20.0 + 600.0 * expit(-(v + 30) / 9.5),
-        D(x_yca) ~ (y_inf - x_yca) / τ,
+        D(x_yca) ~ (y_inf - x_yca) / τ_yca,
         ICaMax ~ ghk(P_CA_LCC, vm, 1μM, 0.341 * ca_o, 2),
-        ICaL ~ 6 * x_yca * o_lcc * iCaMax,
-        ICaK ~ hil(I_CA_HALF_LCC, iCaMax) * x_yca * o_lcc * ghk(P_K_LCC, vm, k_i, k_o)
+        ICaL ~ 6 * x_yca * o_lcc * ICaMax,
+        ICaK ~ hil(I_CA_HALF_LCC, ICaMax) * x_yca * o_lcc * ghk(P_K_LCC, vm, k_i, k_o)
     ]
     return ODESystem(eqs, t; name)
 end

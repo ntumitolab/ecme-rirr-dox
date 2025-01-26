@@ -62,14 +62,12 @@ function get_mitoca_sys(na_i, ca_m, ca_i, dpsi;name=:mitocasys)
     v2frt = 2 * iVT * (dpsi - DPSI_OFFSET_MCU)
     f_ca = ca_i / KTRANS_MCU
     f_act = L_MCU * (NaNMath.pow(hil(KACT_MCU, ca_i), N_MCU))
-    vmcu = VMAX_MCU * f_ca * (f_ca + 1)^3 * exprel(-v2frt) / ((f_ca + 1)^4 + f_act)
     f_na = hil(na_i, KM_NA_NCLX)^3
     f_ca = hil(ca_m, KM_CA_NCLX)
     ϕ_ca = ca_m / ca_i
-    vnaca = VMAX_NCLX * exp(iVT * B_NCLX * (dpsi - DPSI_OFFSET_MCU)) * ϕ_ca * f_na * f_ca
     eqs = [
-        vUni ~ vmcu,
-        vNaCa ~ vnaca
+        vUni ~ VMAX_MCU * f_ca * (f_ca + 1)^3 * exprel(-v2frt) / ((f_ca + 1)^4 + f_act),
+        vNaCa ~ VMAX_NCLX * exp(iVT * B_NCLX * (dpsi - DPSI_OFFSET_MCU)) * ϕ_ca * f_na * f_ca
     ]
     return ODESystem(eqs, t; name)
 end

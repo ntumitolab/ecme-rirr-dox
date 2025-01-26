@@ -33,31 +33,29 @@ const Farad = Columb / Volt   # Capacitance
 const μF = Farad / 10^6       # Microfarad
 const μAμF = μA / μF           # Common unit for current density, normalized by capacitance
 const mSμF = milliseimens / μF # Common unit for conductance, normalized by capacitance
+const Faraday = 96485Columb / mol # Faraday constant (columb / mol)
+const T₀ = 310Kelvin          # Default temp (37C)
+const RGAS = 8.314Joule / Kelvin / mol # Ideal gas constant (J/K⋅mol)
+const VT = RGAS * T₀ / Faraday # Thermal voltage (@37C), about 26.7 mV
+const iVT = inv(VT) # Reciprocal of thermal voltage
 
-@constants begin
-    T₀ = 310Kelvin          # Default temp (37C)
-    Faraday = 96485Columb / mol # Faraday constant (columb / mol)
-    RGAS = 8.314Joule / Kelvin / mol # Ideal gas constant (J/K⋅mol)
-    VT = RGAS * T₀ / Faraday # Thermal voltage (@37C), about 26.7 mV
-    iVT = Faraday / RGAS * T₀ # Reciprocal of thermal voltage
-    # Dissociation and affinity constants
-    KWATER = 1E-14 * Molar^2
-    KA_PI = 1.78E-7 * Molar
-    KA_ATP = 3.31E-7 * Molar
-    KA_ADP = 4.17E-7 * Molar
-    KMG_ATP = 6.46E-5 * Molar
-    KMG_ADP = 5.62E-4 * Molar
-    KA_SUC = 6.3E-6 * Molar
-    KA_H2O = 1E-14 * Molar
-    iKWATER = inv(KWATER)
-    iKA_PI = inv(KA_PI)
-    iKA_ATP = inv(KA_ATP)
-    iKA_ADP = inv(KA_ADP)
-    iKMG_ATP = inv(KMG_ATP)
-    iKMG_ADP = inv(KMG_ADP)
-    iKA_SUC = inv(KA_SUC)
-    iKA_H2O = inv(KA_H2O)
-end
+# Dissociation and affinity constants
+const KWATER = 1E-14 * Molar^2
+const KA_PI = 1.78E-7 * Molar
+const KA_ATP = 3.31E-7 * Molar
+const KA_ADP = 4.17E-7 * Molar
+const KMG_ATP = 6.46E-5 * Molar
+const KMG_ADP = 5.62E-4 * Molar
+const KA_SUC = 6.3E-6 * Molar
+const KA_H2O = 1E-14 * Molar
+const iKWATER = inv(KWATER)
+const iKA_PI = inv(KA_PI)
+const iKA_ATP = inv(KA_ATP)
+const iKA_ADP = inv(KA_ADP)
+const iKMG_ATP = inv(KMG_ATP)
+const iKMG_ADP = inv(KMG_ADP)
+const iKA_SUC = inv(KA_SUC)
+const iKA_H2O = inv(KA_H2O)
 
 #===
 Commonly-used functions
@@ -140,6 +138,3 @@ function ghk(px, vm, x_i, x_o, z=1)
     zvfrt = z * vm * iVT
     return px * z * Faraday * exprel(zvfrt) * (exp(zvfrt) * x_i - x_o)
 end
-
-"GHK flux equation"
-const ghkVm = ghk

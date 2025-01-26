@@ -91,7 +91,7 @@ end
 function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80μA / cm², tstart=0second, tend=10second, duty=0.5ms)
     @parameters begin
         iStim(t) = 0μA / cm²    # Stimulation current
-        DOX = 0mM               # Doxorubicin concentration
+        DOX(t) = 0mM               # Doxorubicin concentration
         MT_PROT = 1             # OXPHOS protein content
         ΣA_m = 1.01mM           # Mitochondrial ATP + ADP pool (Gauthier-2013)
         ΣA_i = 8mM              # Cytosolic ATP + ADP pool (Li-2015)
@@ -164,20 +164,20 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
     @unpack suc, fum, oaa, vSL, vIDH, vKGDH, vMDH = tcassys
     etcsys = get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX, MT_PROT)
     c5sys = get_c5_sys(dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT; mg_i, mg_m, use_mg)
-    @unpack VROS, VC1, VHres = etcsys
+    @unpack vROS, vC1, vHres = etcsys
     rossys = get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO)
     mitocasys = get_mitoca_sys(na_i, ca_m, ca_i, dpsi)
 
-    @unpack VTrROS, VIMAC = rossys
+    @unpack vTrROS, vIMAC = rossys
     @unpack INa, INsNa, ICaB, INaB = inasys
     @unpack IPMCA, Jup, INaCa, Jtr, Jxfer = jcasys
     @unpack IK, IK1, IKp, IKatp = iksys
     @unpack INaK = inaksys
     @unpack ICaK, ICaL = lccsys
-    @unpack Vck_mito = cksys
-    @unpack VANT, VC5, VHu, VHleak = c5sys
+    @unpack vCK_cyto = cksys
+    @unpack vANT, vC5, vHu, vHleak = c5sys
     @unpack jRel = ryrsys
-    @unpack VAm, Jtrpn = forcesys
+    @unpack vAm, Jtrpn = forcesys
     @unpack vUni, vNaCa = mitocasys
 
     eqs = [
@@ -189,11 +189,11 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
         D(ca_jsr) ~ β_ca(ca_jsr, KM_CA_CSQN, ET_CSQN) * (Jtr - jRel),
         D(ca_ss) ~ β_ca(ca_ss, KM_CA_CMDN, ET_CMDN) * ((V_JSR * jRel - V_MYO * Jxfer) / V_SS - 0.5 * ICaL * A_CAP_V_SS_F),
         D(ca_m) ~ δCA * (vUni - vNaCa),
-        D(adp_i) ~ Vck_mito - V_MITO_V_MYO * VANT + VAm + 0.5 * Jup + A_CAP_V_MYO_F * (IPMCA + INaK),
-        D(adp_m) ~ VANT - vSL - VC5,
-        D(nadh_m) ~ -VC1 + vIDH + vKGDH + vMDH,
-        D(dpsi) ~ inv(CM_MITO) * (VHres - VHu - VANT - VHleak - vNaCa - 2 * vUni - VTrROS),
-        D(sox_m) ~ VROS - VTrROS,
+        D(adp_i) ~ vCK_cyto - V_MITO_V_MYO * vANT + vAm + 0.5 * Jup + A_CAP_V_MYO_F * (IPMCA + INaK),
+        D(adp_m) ~ vANT - vSL - vC5,
+        D(nadh_m) ~ -vC1 + vIDH + vKGDH + vMDH,
+        D(dpsi) ~ inv(CM_MITO) * (vHres - vHu - vANT - vHleak - vNaCa - 2 * vUni - vTrROS),
+        D(sox_m) ~ vROS - vTrROS,
         ΣA_i ~ atp_i + adp_i,
         ΣA_m ~ atp_m + adp_m,
         ΣNAD_m ~ nad_m + nadh_m,

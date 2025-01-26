@@ -16,22 +16,22 @@ function get_ck_sys(atp_i, adp_i; name=:cksys)
         crp_i(t) = 5.0297mM
         adp_ic(t) = 0.29mM
         atp_ic(t)
-        Vck_mito(t)
-        Vck_cyto(t)
-        Vtr_crp(t)
-        Vaptase_cyto(t)
+        vCK_mito(t)
+        vCK_cyto(t)
+        vTR_crp(t)
+        vATPase_cyto(t)
     end
     eqs = [
         ΣCR ~ cr_ic + crp_ic,
         ΣCR ~ cr_i + crp_i,
         ΣA_ic ~ adp_ic + atp_ic,
-        Vaptase_cyto ~ K_ATPASE_CYTO * atp_ic,
-        Vck_mito ~ KCK_MT * (atp_i * cr_i - adp_i * crp_i / KEQ_CK),
-        Vck_cyto ~ KCK_IN * (atp_ic * cr_ic - adp_ic * crp_ic / KEQ_CK),
-        Vtr_crp ~ KTR_CR * (crp_i - crp_ic),
-        D(adp_ic) ~ Vck_cyto + Vaptase_cyto,
-        D(crp_i) ~ Vck_mito - Vtr_crp,
-        D(crp_ic) ~ Vtr_crp + Vck_cyto
+        vATPase_cyto ~ K_ATPASE_CYTO * atp_ic,
+        vCK_mito ~ KCK_MT * (atp_i * cr_i - adp_i * crp_i / KEQ_CK),
+        vCK_cyto ~ KCK_IN * (atp_ic * cr_ic - adp_ic * crp_ic / KEQ_CK),
+        vTR_crp ~ KTR_CR * (crp_i - crp_ic),
+        D(adp_ic) ~ vCK_cyto + vATPase_cyto,
+        D(crp_i) ~ vCK_mito - vTR_crp,
+        D(crp_ic) ~ vTR_crp + vCK_cyto
     ]
     return ODESystem(eqs, t; name)
 end

@@ -40,8 +40,9 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
     @variables begin
         Q_n(t)
         QH2_n(t)
-        VC1(t)
-        VROSC1(t)
+        vC1(t)
+        vHresC1(t)
+        vROSC1(t)
         C1_1(t)
         C1_2(t)
         C1_3(t)
@@ -125,8 +126,9 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
             C1_a75 ~ K75_C1,
             C1_a42 ~ K42_C1 * E_LEAK_C1 * O2,
             C1_a24 ~ K42_C1 * exp(iVT * (E_FMN - E_SOX)) * sox_m,
-            VC1 ~ 0.5 * C1_CONC * (C1_4 * a47 - C1_7 * a74),
-            VROSC1 ~ C1_CONC * (C1_4 * a42 - C1_2 * a24),
+            vC1 ~ 0.5 * C1_CONC * (C1_4 * a47 - C1_7 * a74),
+            vHresC1 ~ 4 * vC1,
+            vROSC1 ~ C1_CONC * (C1_4 * a42 - C1_2 * a24),
             C1_1 ~ C1_e1 / denom,
             C1_2 ~ C1_e2 / denom,
             C1_3 ~ C1_e3 / denom,
@@ -278,17 +280,17 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
         cytb_2(t) = 0.08033504811661059mM
         cytb_3(t) = 0.047309996276701564mM
         cytb_4(t) # Conserved
-        VROSC3(t)
-        VHres(t)
-        VHresC3(t)
-        VROS(t)
+        vROSC3(t)
+        vHres(t)
+        vHresC3(t)
+        vROS(t)
     end
 
     c3eqs = let
         C3_INHIB = hil(KI_DOX_C3, DOX, NIDOX) * ANTIMYCIN  # complex III inhibition by DOX and antimycin
         FAC_PH = h_m / 1e-7Molar
         C3_CONC = ρC3 * MT_PROT
-        v1 = VC1 + vSDH # Q reduction
+        v1 = vC1 + vSDH # Q reduction
         v2 = KD_Q * (QH2_n - QH2_p) # QH2 diffusion
         # v3 = QH2 to FeS
         Qo_avail = (C3_CONC - Qdot_p) / C3_CONC
@@ -333,10 +335,10 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
             D(cytc1_ox) ~ v33 - v9,
             C3_CONC ~ cytc1_ox + cytc1_rd,
             D(cytc_ox) ~ vCytcOx - v33,
-            VHresC3 ~ 2 * v3,
-            VHres ~ 4 * VC1 + VHresC3 + vHresC4,
-            VROSC3 ~ v10,
-            VROS ~ VROSC3 + VROSC1
+            vHresC3 ~ 2 * v3,
+            vHres ~ vHresC1 + vHresC3 + vHresC4,
+            vROSC3 ~ v10,
+            vROS ~ vROSC3 + vROSC1,
         ]
     end
 
@@ -361,10 +363,10 @@ function get_c5_sys(dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=1,
 
     @variables begin
         AF1(t)      # Relative electrochemical activity of ATP + H2O <-> ADP + Pi
-        VC5(t)  # ATP synthesis rate
-        VHu(t)      # Porton flux via ATP synthase
-        VANT(t)     # ANT reaction rate
-        VHleak(t)   # Proton leak rate
+        vC5(t)      # ATP synthesis rate
+        vHu(t)      # Porton flux via ATP synthase
+        vANT(t)     # ANT reaction rate
+        vHleak(t)   # Proton leak rate
         ΔμH(t)      # proton motive force
         E_PHOS(t)   # phosphorylation potential
     end
@@ -384,8 +386,6 @@ function get_c5_sys(dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=1,
     vh = exp(iVT * 3 * dpsi)
     fh = (h_m / h_i)^3
     common = -ρF1 * MT_PROT * C5_INHIB / ((1 + P1_C5 * AF1) * vb + (P2_C5 + P3_C5 * AF1) * vh)
-    VC5 = common * ((PA_C5 * fh + PC1_C5 * vb) * AF1 - (PA_C5 + PC2_C5 * AF1) * vh)
-    VHu = 3 * common * (PA_C5 * fh * AF1 - vh * (PA_C5 + PB_C5))
 
     # Adenine nucleotide translocator (ANT)
     # Free adenylates
@@ -400,17 +400,18 @@ function get_c5_sys(dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=1,
         adp3_i = 0.45 * adp_i
         adp3_m = 0.17 * adp_m
     end
+
     f_i = atp4_i / adp3_i
     f_m = adp3_m / atp4_m
-    VANT = VMAX_ANT * (1 - f_i * f_m * exp(-iVT * dpsi)) / ((1 + f_i * exp(-iVT * H_ANT * dpsi)) * (1 + f_m))
+
     eqs = [
         ΔμH ~ dpsi + nernst(h_i, h_m, 1),
         E_PHOS ~ VT * NaNMath.log(AF1),
-        VANT ~ VANT,
+        vANT ~ VMAX_ANT * (1 - f_i * f_m * exp(-iVT * dpsi)) / ((1 + f_i * exp(-iVT * H_ANT * dpsi)) * (1 + f_m)),
         AF1 ~ vaf1,
-        VHleak ~ G_H_MITO * ΔμH,
-        VC5 ~ VC5,
-        VHu ~ VHu,
+        vHleak ~ G_H_MITO * ΔμH,
+        vC5 ~ common * ((PA_C5 * fh + PC1_C5 * vb) * AF1 - (PA_C5 + PC2_C5 * AF1) * vh),
+        vHu ~ 3 * common * (PA_C5 * fh * AF1 - vh * (PA_C5 + PB_C5)),
     ]
     return ODESystem(eqs, t; name)
 end

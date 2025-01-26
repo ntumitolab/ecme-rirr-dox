@@ -76,17 +76,15 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
 		vMDH(t)
 		vAAT(t)
 		vSDH(t)
-		oaa(t) = 2.683e-8mM
+		oaa(t) = 0.011576938766421891mM
 		cit(t) # Conserved
-		isoc(t) = 0.486mM		# isocitrate
-		akg(t) = 0.00019mM		# alpha-ketoglutarate
-		scoa(t) = 0.286mM		# succinyl-CoA
-		suc(t) = 0.00011mM      # succinate
-        fum(t) = 0.00528mM      # fumarate
-		mal(t) = 0.002782mM		# malate
+		isoc(t) = 0.05159054318098895mM		# isocitrate
+		akg(t) = 0.051145197718677655mM		# alpha-ketoglutarate
+		scoa(t) = 0.03508849487000582mM		# succinyl-CoA
+		suc(t) = 0.0019107469302081612mM    # succinate
+        fum(t) = 0.1751906841603877mM       # fumarate
+		mal(t) = 0.15856757152954906mM		# malate
 	end
-
-	vcs = KCAT_CS * ET_CS * hil(ACCOA, KM_ACCOA_CS) * hil(oaa, KM_OAA_CS)
 
 	vidh = let
 		fa = hil(KM_ADP_IDH, adp_m) * hil(KM_CA_IDH, ca_m)
@@ -115,12 +113,10 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
 
 	vsl = let
 		if use_mg
-			poly_atp = 1 + h_m/KA_ATP + mg_m/KMG_ATP
-			poly_adp = 1 + h_m/KA_ADP + mg_m/KMG_ADP
-			atp4 = atp_m / poly_atp
-			hatp = atp4 * (h_m/KA_ATP)
-			pi_poly = 1 + h_m/KA_PI
-			suc_poly = 1 + h_m/KA_SUC
+			atp4, hatp, _, poly_atp = breakdown_atp(atp_m, h_m, mg_m)
+			_, _, _, poly_adp = breakdown_adp(adp_m, h_m, mg_m)
+			pi_poly = pipoly(h_m)
+			suc_poly = sucpoly(h_m)
 			keapp = KEQ * (poly_atp * suc_poly) / (poly_adp * pi_poly)
 			KF_SL * (scoa * adp_m - suc * (atp4 + hatp) * COA / keapp)
 		else
@@ -130,7 +126,7 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
 
 	eqs = [
 		TCA_T ~ cit + isoc + oaa + akg + scoa + suc + fum + mal,
-		vCS ~ vcs,
+		vCS ~ KCAT_CS * ET_CS * hil(ACCOA, KM_ACCOA_CS) * hil(oaa, KM_OAA_CS),
 		vACO ~ KF_ACO * (cit - isoc/KEQ_ACO),
 		vIDH ~ vidh,
 		vKGDH ~ vkgdh,

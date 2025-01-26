@@ -1,15 +1,16 @@
 "Potassium currents"
 function get_ik_sys(na_i, na_o, k_i, k_o, mg_i, vm, atp_i, adp_i; name=:iksys)
     @parameters begin
-        G_K1 = 0.75mS / cm² * sqrt(k_o / 5.4mM)  # Time-independent
-        G_K = 0.282mS / cm² * sqrt(k_o / 5.4mM)  # Time-dependent
+        G_K1 = 0.75milliseimens / cm² * sqrt(k_o / 5.4mM)  # Time-independent
+        G_K = 0.282milliseimens / cm² * sqrt(k_o / 5.4mM)  # Time-dependent
         P_NA_K = 0.01833         # Permeability ratio of Na to K in IKs
-        G_KP = 8.28E-3mS / cm²   # Plateau potassium current
+        G_KP = 8.28E-3milliseimens / cm²   # Plateau potassium current
         # ATP-inhibited K channel (Zhou, 2009, adapted from Ferrero et al.)
-        G0_KATP = 1.8mS / cm²   # KATP channel conductance
+        G0_KATP = 1.8milliseimens / cm²   # KATP channel conductance
     end
     @variables begin
         EK(t)               # Reversal potential of K
+        ΔVK(t)
         IK1(t)              # Time-independent K current
         IK(t)               # Time-dependent delayed rectifier K current
         IKp(t)              # Plateau K current
@@ -22,9 +23,9 @@ function get_ik_sys(na_i, na_o, k_i, k_o, mg_i, vm, atp_i, adp_i; name=:iksys)
     α1 = expit(-0.2385 * (vk - 59.215), 1.02)
     β1 = (0.4912 * exp(0.08032 * (vk + 5.476)) + exp(0.06175 * (vk - 594.31))) * expit(0.5143 * (vk + 4.753))
     # Time-dependent delayed rectifier K current system
-    α = 7.19e-5 / ms / (0.148) * exprel(-0.148 * (v + 30))
-    β = 1.31e-4 / ms / (0.0687) * exprel(0.0687* (v + 30))
-    EKNa = nernst(na_o * P_NA_K + k_o, na_i * P_NA_K + k_i)
+    α = 7.19e-5 / ms / (0.148) * exprel(-0.148 * (vm + 30))
+    β = 1.31e-4 / ms / (0.0687) * exprel(0.0687* (vm + 30))
+    E_KNa = nernst(na_o * P_NA_K + k_o, na_i * P_NA_K + k_i)
     x1 = expit(-(vm - 40) / 40)
     # ATP-dependent K channel (KATP) current
     hatp = 1.3 + 0.74 * exp(-0.09 * adp_i / μM)   # Hill factor (Ferrero)
@@ -36,7 +37,7 @@ function get_ik_sys(na_i, na_o, k_i, k_o, mg_i, vm, atp_i, adp_i; name=:iksys)
         EK ~ nernst(k_o, k_i),
         ΔVK ~ vm - EK,
         IK1 ~ G_K1 * (α1 / (α1 + β1)) * ΔVK,
-        IK ~ G_K * x1 * x_k^2 * (vm - EKNa),
+        IK ~ G_K * x1 * x_k^2 * (vm - E_KNa),
         IKp ~ G_KP * ΔVK * expit((vm - 7.488mV) / 5.98mV),
         IKatp ~ G0_KATP * f_atp * ΔVK
     ]

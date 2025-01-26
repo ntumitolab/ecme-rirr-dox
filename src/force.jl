@@ -27,7 +27,7 @@ function get_force_sys(atp_i, adp_i, ca_i; name=:forcesys)
         x_n1(t) = 2.243e-5
         force(t)
         force_normal(t)
-        VAm(t)
+        vAm(t)
         ltr_ca(t) = 8.949μM
         htr_ca(t) = 132.1μM
         ltr_free(t) # Conserved
@@ -65,7 +65,7 @@ function get_force_sys(atp_i, adp_i, ca_i; name=:forcesys)
     eqs = [
         force ~ ζ * (x_p1 + x_n1 + 2 * x_p2 + 3 * x_p3) / (P1_MAX + 2P2_MAX + 3P3_MAX),
         force_normal ~ (x_p1 + x_p2 + x_p3 + x_n1) / (P1_MAX + P2_MAX + P3_MAX),
-        VAm ~ V_MAX_AM * hil(atp_i * hil(KI_ADP_AM, adp_i), KM_ATP_AM) / (F01 + F12 + F23) * (F01 * x_p0 + F12 * x_p1 + F23 * x_p2),
+        vAm ~ V_MAX_AM * hil(atp_i * hil(KI_ADP_AM, adp_i), KM_ATP_AM) / (F01 + F12 + F23) * (F01 * x_p0 + F12 * x_p1 + F23 * x_p2),
         ΣLTRPN ~ ltr_ca + ltr_free,
         ΣHTRPN ~ htr_ca + htr_free,
         D(ltr_ca) ~ K_P_LTRPN * ca_i * ltr_free - K_M_LTRPN * ltr_ca * (1 - 2 / 3 * force_normal),

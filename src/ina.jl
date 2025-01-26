@@ -1,11 +1,11 @@
 "Sodium and background currents"
 function get_ina_sys(na_i, na_o, ca_i, ca_o, vm; name=:inasys)
     @parameters begin
-        G_NA = 12.8mS / cm²
+        G_NA = 12.8milliseimens / cm²
         P_NSNA = 1.75E-7cm * Hz
         KM_CA_NSNA = 1.2μM
-        G_NAB = 3.22E-3mS / cm²
-        G_CAB = 5.45E-4mS / cm²
+        G_NAB = 3.22E-3milliseimens / cm²
+        G_CAB = 5.45E-4milliseimens / cm²
     end
     @variables begin
         m_na(t) = 0.0327    # Fast Na gating (activation)
