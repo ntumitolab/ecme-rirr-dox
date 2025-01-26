@@ -50,7 +50,7 @@ plot(sol0, idxs=[atp_i / adp_i], label="C4 1x", title="ATP:ADP")
 plot!(sol1, idxs=[atp_i / adp_i], label="C4 3x", line=:dash)
 plot!(sol2, idxs=[atp_i / adp_i], label="C3 3x", line=:dot)
 
-@unpack vHres, vHu, vANT, vHleak, vNaCa, vUni, vIMAC, vROS, vTrROS, vO2 = sys
+@unpack VHres, VHu, VANT, VHleak, vNaCa, vUni, VIMAC, VROS, VTrROS, vO2 = sys
 @unpack Q_n, Qdot_n, QH2_n, QH2_p, Qdot_p, Q_p, fes_ox, fes_rd, cytc_ox, cytc_rd = sys
 plot(sol0, idxs=[Q_n, Qdot_n, QH2_n, QH2_p, Qdot_p, Q_p], title="C4 1x")
 plot(sol1, idxs=[Q_n, Qdot_n, QH2_n, QH2_p, Qdot_p, Q_p], title="C4 3x")
@@ -60,26 +60,26 @@ plot(sol0, idxs=[sys.dpsi * 1000], title="C4 1x", tspan=(700, 800))
 plot!(sol1, idxs=[sys.dpsi * 1000], title="C4 3x", tspan=(700, 800))
 plot!(sol2, idxs=[sys.dpsi * 1000], title="C3 3x", ylims=(100, 160), tspan=(700, 800))
 
-plot(sol, idxs=[vHres, vHu, vANT, vHleak, vNaCa, vUni, vTrROS], ylims=(0, 5))
-plot(sol, idxs=vANT, tspan=(400, 500))
+plot(sol, idxs=[VHres, VHu, VANT, VHleak, vNaCa, vUni, VTrROS], ylims=(0, 5))
+plot(sol, idxs=VANT, tspan=(400, 500))
 plot(sol, idxs=[fes_ox / fes_rd], tspan=(400, 500))
 plot(sol, idxs=[cytc_ox / cytc_rd], tspan=(400, 500))
 plot(sol, idxs=[sys.sox_i, sys.h2o2_i], tspan=(740, 800))
-plot(sol, idxs=[sys.vSOD_i, sys.vGPX_i, sys.vGR_i, sys.vCAT], tspan=(400, 500))
-plot(sol0, idxs=[sys.vROSC1, sys.vROSC3], tspan=(700, 800), title="C4 1x")
-plot(sol1, idxs=[sys.vROSC1, sys.vROSC3], tspan=(700, 800), title="C4 3x")
-plot(sol2, idxs=[sys.vROSC1, sys.vROSC3], tspan=(700, 800), title="C3 3x")
+plot(sol, idxs=[sys.VSOD_i, sys.VGPX_i, sys.VGR_i, sys.VCAT], tspan=(400, 500))
+plot(sol0, idxs=[sys.VROSC1, sys.VROSC3], tspan=(700, 800), title="C4 1x")
+plot(sol1, idxs=[sys.VROSC1, sys.VROSC3], tspan=(700, 800), title="C4 3x")
+plot(sol2, idxs=[sys.VROSC1, sys.VROSC3], tspan=(700, 800), title="C3 3x")
 
 plot(sol0, idxs=vO2, label="C4 1x", title="vO2")
 plot!(sol1, idxs=vO2, label="C4 3x", line=:dash)
 plot!(sol2, idxs=vO2, label="C3 3x", line=:dot)
 
-plot(sol0, idxs=vROS, label="C4 1x", title="vROS")
-plot!(sol1, idxs=vROS, label="C4 3x")
+plot(sol0, idxs=VROS, label="C4 1x", title="VROS")
+plot!(sol1, idxs=VROS, label="C4 3x")
 
-plot(sol, idxs=[sys.vROS / (sys.vO2 + sys.vROS)])
+plot(sol, idxs=[sys.VROS / (sys.vO2 + sys.VROS)])
 
-@unpack nad_m, nadh_m, vC1, vIDH, vKGDH, vMDH = sys
+@unpack nad_m, nadh_m, VC1, vIDH, vKGDH, vMDH = sys
 plot(sol, idxs=[nad_m / nadh_m])
 
 @unpack cit, isoc, oaa, akg, scoa, suc, fum, mal = sys

@@ -9,7 +9,7 @@ function get_ik_sys(na_i, na_o, k_i, k_o, mg_i, vm, atp_i, adp_i; name=:iksys)
         G0_KATP = 1.8mS / cm²   # KATP channel conductance
     end
     @variables begin
-        ΔVK(t)              # Reversal potential of K
+        EK(t)               # Reversal potential of K
         IK1(t)              # Time-independent K current
         IK(t)               # Time-dependent delayed rectifier K current
         IKp(t)              # Plateau K current
@@ -33,7 +33,8 @@ function get_ik_sys(na_i, na_o, k_i, k_o, mg_i, vm, atp_i, adp_i; name=:iksys)
 
     eqs = [
         D(x_k) ~ α - x_k * (α + β),
-        ΔVK ~ vm - nernst(k_o, k_i),
+        EK ~ nernst(k_o, k_i),
+        ΔVK ~ vm - EK,
         IK1 ~ G_K1 * (α1 / (α1 + β1)) * ΔVK,
         IK ~ G_K * x1 * x_k^2 * (vm - EKNa),
         IKp ~ G_KP * ΔVK * expit((vm - 7.488mV) / 5.98mV),

@@ -40,8 +40,8 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
     @variables begin
         Q_n(t)
         QH2_n(t)
-        vC1(t)
-        vROSC1(t)
+        VC1(t)
+        VROSC1(t)
         C1_1(t)
         C1_2(t)
         C1_3(t)
@@ -101,7 +101,7 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
         # Fraction of each state in Complex I from the MATLAB code, derived from KA pattern
         denom = C1_e1 + C1_e2 + C1_e3 + C1_e4 + C1_e5 + C1_e6 + C1_e7
 
-        [
+        c1eqs = [
             C1_e1 ~ a21 * a32 * a42 * a56 * a61 * a74 + a21 * a32 * a42 * a56 * a61 * a75 + a21 * a32 * a42 * a57 * a61 * a74 + a21 * a32 * a42 * a57 * a65 * a74 + a21 * a32 * a43 * a56 * a61 * a74 + a21 * a32 * a43 * a56 * a61 * a75 + a21 * a32 * a43 * a57 * a61 * a74 + a21 * a32 * a43 * a57 * a65 * a74 + a21 * a32 * a47 * a56 * a61 * a75 + a21 * a34 * a42 * a56 * a61 * a74 + a21 * a34 * a42 * a56 * a61 * a75 + a21 * a34 * a42 * a57 * a61 * a74 + a21 * a34 * a42 * a57 * a65 * a74 + a21 * a34 * a47 * a56 * a61 * a75 + a23 * a34 * a47 * a56 * a61 * a75 + a24 * a32 * a47 * a56 * a61 * a75 + a24 * a34 * a47 * a56 * a61 * a75,
             C1_e2 ~ a12 * a32 * a42 * a56 * a61 * a74 + a12 * a32 * a42 * a56 * a61 * a75 + a12 * a32 * a42 * a57 * a61 * a74 + a12 * a32 * a42 * a57 * a65 * a74 + a12 * a32 * a43 * a56 * a61 * a74 + a12 * a32 * a43 * a56 * a61 * a75 + a12 * a32 * a43 * a57 * a61 * a74 + a12 * a32 * a43 * a57 * a65 * a74 + a12 * a32 * a47 * a56 * a61 * a75 + a12 * a34 * a42 * a56 * a61 * a74 + a12 * a34 * a42 * a56 * a61 * a75 + a12 * a34 * a42 * a57 * a61 * a74 + a12 * a34 * a42 * a57 * a65 * a74 + a12 * a34 * a47 * a56 * a61 * a75 + a16 * a32 * a42 * a57 * a65 * a74 + a16 * a32 * a43 * a57 * a65 * a74 + a16 * a34 * a42 * a57 * a65 * a74,
             C1_e3 ~ a12 * a23 * a42 * a56 * a61 * a74 + a12 * a23 * a42 * a56 * a61 * a75 + a12 * a23 * a42 * a57 * a61 * a74 + a12 * a23 * a42 * a57 * a65 * a74 + a12 * a23 * a43 * a56 * a61 * a74 + a12 * a23 * a43 * a56 * a61 * a75 + a12 * a23 * a43 * a57 * a61 * a74 + a12 * a23 * a43 * a57 * a65 * a74 + a12 * a23 * a47 * a56 * a61 * a75 + a12 * a24 * a43 * a56 * a61 * a74 + a12 * a24 * a43 * a56 * a61 * a75 + a12 * a24 * a43 * a57 * a61 * a74 + a12 * a24 * a43 * a57 * a65 * a74 + a16 * a21 * a43 * a57 * a65 * a74 + a16 * a23 * a42 * a57 * a65 * a74 + a16 * a23 * a43 * a57 * a65 * a74 + a16 * a24 * a43 * a57 * a65 * a74,
@@ -125,8 +125,8 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
             C1_a75 ~ K75_C1,
             C1_a42 ~ K42_C1 * E_LEAK_C1 * O2,
             C1_a24 ~ K42_C1 * exp(iVT * (E_FMN - E_SOX)) * sox_m,
-            vC1 ~ 0.5 * C1_CONC * (C1_4 * a47 - C1_7 * a74),
-            vROSC1 ~ C1_CONC * (C1_4 * a42 - C1_2 * a24),
+            VC1 ~ 0.5 * C1_CONC * (C1_4 * a47 - C1_7 * a74),
+            VROSC1 ~ C1_CONC * (C1_4 * a42 - C1_2 * a24),
             C1_1 ~ C1_e1 / denom,
             C1_2 ~ C1_e2 / denom,
             C1_3 ~ C1_e3 / denom,
@@ -156,7 +156,7 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
         f_oaa = hil(KI_OAA_C2, oaa)
         f_fum = hil(KI_FUM_C2, fum)
         f_suc = hil(suc * f_oaa * f_fum, KM_SUC_C2)
-        [vSDH ~ C2_INHIB * VMAX_C2 * f_suc * f_q]
+        c2eqs = [vSDH ~ C2_INHIB * VMAX_C2 * f_suc * f_q]
     end
 
     # complex IV (CCO)
@@ -206,22 +206,22 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
         a43 = K63_C4 * f_co * f_hi^2  # K63 * exp((1 - δ₅) * 3 * vfrt) * cytc_ox * h_i^2
 
         # Weight of each state (from KA pattern)
-        den = C4_e1+ C4_e2+ C4_e3+ C4_e4
+        den = C4_e1 + C4_e2 + C4_e3 + C4_e4
         # Reaction rates
         v34 = C4_CONC * (C4_Y * a12 - C4_Yr * a21)
         v35 = C4_CONC * C4_Yr * a23
         v36 = C4_CONC * (a34 * C4_YO - a43 * C4_YOH)
         v37 = C4_CONC * (a41 * C4_YOH - a14 * C4_Y)
 
-        [
+        c4eqs = [
             C4_e1 ~ a21 * a41 * a34 + a41 * a34 * a23,
             C4_e2 ~ a12 * a41 * a34,
             C4_e3 ~ a23 * a12 * a41 + a43 * a14 * a21 + a23 * a43 * a12 + a23 * a43 * a14,
             C4_e4 ~ a14 * a34 * a21 + a34 * a23 * a12 + a34 * a23 * a14,
-            C4_Y ~ e1 / den,
-            C4_Yr ~ e2 / den,
-            C4_YO ~ e3 / den,
-            C4_YOH ~ e4 / den,
+            C4_Y ~ C4_e1 / den,
+            C4_Yr ~ C4_e2 / den,
+            C4_YO ~ C4_e3 / den,
+            C4_YOH ~ C4_e4 / den,
             vO2 ~ v35,
             vHresC4 ~ v34 + 2 * v36 + v37,
             vCytcOx ~ 3 * v34 + v35,
@@ -272,23 +272,23 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
         Qdot_n(t) = 0.06757658200311795mM
         fes_ox(t) = 0.054765936912457895mM
         fes_rd(t) # Conserved
-        cytc1_ox(t)
-        cytc1_rd(t)
-        cytb_1(t)
-        cytb_2(t)
-        cytb_3(t)
-        cytb_4(t)
-        vROSC3(t)
-        vHres(t)
-        vHresC3(t)
-        vROS(t)
+        cytc1_ox(t) = 0.28338319859718647mM
+        cytc1_rd(t) # Conserved
+        cytb_1(t) = 0.19471601197446434mM
+        cytb_2(t) = 0.08033504811661059mM
+        cytb_3(t) = 0.047309996276701564mM
+        cytb_4(t) # Conserved
+        VROSC3(t)
+        VHres(t)
+        VHresC3(t)
+        VROS(t)
     end
 
     c3eqs = let
         C3_INHIB = hil(KI_DOX_C3, DOX, NIDOX) * ANTIMYCIN  # complex III inhibition by DOX and antimycin
         FAC_PH = h_m / 1e-7Molar
         C3_CONC = ρC3 * MT_PROT
-        v1 = vC1 + vSDH # Q reduction
+        v1 = VC1 + vSDH # Q reduction
         v2 = KD_Q * (QH2_n - QH2_p) # QH2 diffusion
         # v3 = QH2 to FeS
         Qo_avail = (C3_CONC - Qdot_p) / C3_CONC
@@ -326,34 +326,21 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
             D(cytb_1) ~ v7_ox + v8_ox - v4_ox,
             D(cytb_2) ~ v4_ox + v7_rd + v8_rd - v6,
             D(cytb_3) ~ v6 - v4_rd - v7_ox - v8_ox,
-            # d_b4 = v4_rd - v7_rd - v8_rd
+            # D(cytb_4) = v4_rd - v7_rd - v8_rd
             C3_CONC ~ cytb_1 + cytb_2 + cytb_3 + cytb_4,
             D(fes_ox) ~ v9 - v3,
             C3_CONC ~ fes_ox + fes_rd,
             D(cytc1_ox) ~ v33 - v9,
             C3_CONC ~ cytc1_ox + cytc1_rd,
             D(cytc_ox) ~ vCytcOx - v33,
-            vHresC3 ~ 2 * v3,
-            vHres ~ 4 * vC1 + vHresC3 + vHresC4,
-            vROSC3 ~ v10,
-            vROS ~ vROSC3 + vROSC1
+            VHresC3 ~ 2 * v3,
+            VHres ~ 4 * VC1 + VHresC3 + vHresC4,
+            VROSC3 ~ v10,
+            VROS ~ VROSC3 + VROSC1
         ]
     end
 
-    defaults = [
-        Q_n => 1.3268400422082767mM,
-        Qdot_n => 0.06757658200311795mM,
-        QH2_n => 0.6002709581315435mM,
-        QH2_p => 0.6001505595245672mM,
-        Qdot_p => 0.07820141736951611mM,
-        cytb_1 => 0.11362728970178769mM,
-        cytb_2 => 0.14764414671393097mM,
-        cytb_3 => 0.04917170786399363mM,
-        fes_ox => 0.054765936912457895mM,
-        cytc1_ox => 0.16423864061514593mM,
-        cytc_ox => 0.1081945884323241mM
-    ]
-    return ODESystem([c1eqs; c2eqs; c4eqs; c3eqs], t; name, defaults)
+    return ODESystem([c1eqs; c2eqs; c4eqs; c3eqs], t; name)
 end
 
 function get_c5_sys(dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=1, C5_INHIB=1; use_mg=false, mg_i=0mM, mg_m=0mM, name=:c5sys)
@@ -374,23 +361,20 @@ function get_c5_sys(dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=1,
 
     @variables begin
         AF1(t)      # Relative electrochemical activity of ATP + H2O <-> ADP + Pi
-        vATPase(t)  # ATP synthesis rate
-        vHu(t)      # Porton flux via ATP synthase
-        vANT(t)     # ANT reaction rate
-        vHleak(t)   # Proton leak rate
+        VC5(t)  # ATP synthesis rate
+        VHu(t)      # Porton flux via ATP synthase
+        VANT(t)     # ANT reaction rate
+        VHleak(t)   # Proton leak rate
         ΔμH(t)      # proton motive force
         E_PHOS(t)   # phosphorylation potential
     end
 
     # F1-Fo ATPase
     if use_mg
-        poly_adp_m = 1 + h_m / KA_ADP + mg_m / KMG_ADP
-        poly_atp_m = 1 + h_m / KA_ATP + mg_m / KMG_ATP
-        poly_pi_m = 1 + h_m / KA_PI
+        adp3_m, hadp_m, _, poly_adp_m = breakdown_adp(adp_m, h_m, mg_m)
+        _, _, mgatp_m, poly_atp_m = breakdown_atp(atp_m, h_m, mg_m)
+        poly_pi_m = pipoly(h_m)
         ke_app = KEQ_C5 * poly_atp_m / (poly_adp_m * poly_pi_m)
-        adp3_m = adp_m / poly_adp_m
-        hadp_m = adp3_m * (h_m / KA_ADP)
-        mgatp_m = atp_m / poly_adp_m * (mg_m / KMG_ATP)
         vaf1 = ke_app * mgatp_m / (pi_m * (hadp_m + adp3_m))
     else
         vaf1 = KEQ_C5 * atp_m / (pi_m * adp_m)
@@ -398,10 +382,10 @@ function get_c5_sys(dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=1,
 
     vb = exp(iVT * 3 * 50mV) # Boundary potential
     vh = exp(iVT * 3 * dpsi)
-    fh = (h_m/h_i)^3
+    fh = (h_m / h_i)^3
     common = -ρF1 * MT_PROT * C5_INHIB / ((1 + P1_C5 * AF1) * vb + (P2_C5 + P3_C5 * AF1) * vh)
-    vatpase = common * ((PA_C5 * fh + PC1_C5 * vb) * AF1 - (PA_C5 + PC2_C5 * AF1) * vh)
-    vhu = 3 * common * (PA_C5 * fh * AF1 - vh * (PA_C5 + PB_C5))
+    VC5 = common * ((PA_C5 * fh + PC1_C5 * vb) * AF1 - (PA_C5 + PC2_C5 * AF1) * vh)
+    VHu = 3 * common * (PA_C5 * fh * AF1 - vh * (PA_C5 + PB_C5))
 
     # Adenine nucleotide translocator (ANT)
     # Free adenylates
@@ -418,15 +402,15 @@ function get_c5_sys(dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=1,
     end
     f_i = atp4_i / adp3_i
     f_m = adp3_m / atp4_m
-    vant = VMAX_ANT * (1 - f_i * f_m * exp(-iVT * dpsi)) / ((1 + f_i * exp(-iVT * H_ANT * dpsi)) * (1 + f_m))
+    VANT = VMAX_ANT * (1 - f_i * f_m * exp(-iVT * dpsi)) / ((1 + f_i * exp(-iVT * H_ANT * dpsi)) * (1 + f_m))
     eqs = [
         ΔμH ~ dpsi + nernst(h_i, h_m, 1),
         E_PHOS ~ VT * NaNMath.log(AF1),
-        vANT ~ vant,
+        VANT ~ VANT,
         AF1 ~ vaf1,
-        vHleak ~ G_H_MITO * ΔμH,
-        vATPase ~ vatpase,
-        vHu ~ vhu,
+        VHleak ~ G_H_MITO * ΔμH,
+        VC5 ~ VC5,
+        VHu ~ VHu,
     ]
     return ODESystem(eqs, t; name)
 end
