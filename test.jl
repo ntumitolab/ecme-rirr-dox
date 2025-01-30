@@ -5,7 +5,7 @@ using Plots
 using DataFrames
 using CSV
 using ECMEDox
-using ECMEDox: second, nernst, mM, Hz
+using ECMEDox: second, mM, Hz, μM
 Plots.default(lw=2, size=(600, 600))
 
 tend = 1000.0second
@@ -18,9 +18,32 @@ u0 = build_u0(sys)
 
 # The model is very sensitive to aconitase activity
 # The phase transition (of the Q cycle) is between 250uM to 260uM of DOX
-prob0 = ODEProblem(sys, u0, tend, [DOX => 0.260mM, ρC4 => 0.325mM])
-prob1 = ODEProblem(sys, u0, tend, [DOX => 0.260mM, ρC4 => 0.5mM])
-prob2 = ODEProblem(sys, u0, tend, [DOX => 0.260mM, ρC3 => 0.5mM])
+prob = ODEProblem(sys, u0, tend)
+alg = FBDF()
+@time sol = solve(prob, alg; reltol=1e-7, abstol=1e-7, progress=true, maxiters=1e8)
+
+plot(sol, idxs=sys.vm, tspan=(100second, 105second))
+plot(sol, idxs=[sys.atp_m / sys.adp_m])
+plot(sol, idxs=sys.dpsi)
+plot(sol, idxs=sys.vC5)
+plot(sol, idxs=sys.vANT)
+plot(sol, idxs=sys.vHres)
+plot(sol, idxs=sys.vHresC3)
+plot(sol, idxs=sys.nadh_m)
+plot(sol, idxs=sys.vC1)
+plot(sol, idxs=[sys.vIDH, sys.vKGDH, sys.vMDH])
+@unpack cit, isoc, oaa, akg, scoa, suc, fum, mal = sys
+plot(sol, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal])
+
+plot(sol, idxs=sys.ca_m)
+plot(sol, idxs=sys.ca_i)
+plot(sol, idxs=[sys.vUni, sys.vNaCa])
+plot(sol, idxs=sys.vUni, tspan=(1second, 5second))
+plot(sol, idxs=sys.ca_i, tspan=(1second, 5second))
+
+prob0 = ODEProblem(sys, u0, tend, [DOX => 260μM, ρC4 => 325μM])
+prob1 = ODEProblem(sys, u0, tend, [DOX => 260μM, ρC4 => 500μM])
+prob2 = ODEProblem(sys, u0, tend, [DOX => 260μM, ρC3 => 500μM])
 alg = FBDF()
 @time sol0 = solve(prob0, alg; reltol=1e-7, abstol=1e-7, progress=true, maxiters=1e8)
 @time sol1 = solve(prob1, alg; reltol=1e-7, abstol=1e-7, progress=true, maxiters=1e8)
@@ -37,14 +60,16 @@ CSV.write("dox260-c3-500.csv", df)
 @unpack atp_i, adp_i, vm, na_o, na_i, atp_i, adp_i, atp_m, adp_m, sox_i, sox_m = sys
 @unpack ca_i, ca_nsr, ca_jsr, ca_ss = sys
 plot(sol0, idxs=vm, label="C4 1x", title="PM potential")
+plot(sol0, idxs=[atp_i / adp_i], label="C4 1x", title="ATP:ADP", density=1000)
+
 plot(sol1, idxs=vm, label="C4 3x")
 plot(sol2, idxs=vm, label="C3 3x")
 
 p1 = plot(sol, idxs=[ca_i, ca_ss], tspan=(990, tend))
 p2 = plot(sol, idxs=[ca_nsr, ca_jsr], tspan=(990, tend))
 plot(p1, p2, layout=(2, 1))
-@unpack iK1, iK, iKp, iKatp, iNa, iNaCa, iCaL = sys
-plot(sol, idxs=[iK1, iK, iKp, iKatp, iCaL], tspan=(750, tend))
+@unpack IK1, IK, IKp, IKatp, INa, INaCa, ICaL = sys
+plot(sol0, idxs=[IK1, IK, IKp, IKatp, ICaL], tspan=(400second, tend))
 
 plot(sol0, idxs=[atp_i / adp_i], label="C4 1x", title="ATP:ADP")
 plot!(sol1, idxs=[atp_i / adp_i], label="C4 3x", line=:dash)
@@ -85,3 +110,16 @@ plot(sol, idxs=[nad_m / nadh_m])
 @unpack cit, isoc, oaa, akg, scoa, suc, fum, mal = sys
 @unpack vCS, vACO, vIDH, vKGDH, vSL, vFH, vMDH, vAAT, vSDH = sys
 plot(sol, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal])
+
+using BenchmarkTools
+
+x = randn(10^6)
+y = rand(eltype(x))
+
+iy = inv(y)
+
+fd(x, y) = x ./ y
+fm(x, iy) = x .* iy
+
+@benchmark fd($x, $y)
+@benchmark fm($x, $iy)

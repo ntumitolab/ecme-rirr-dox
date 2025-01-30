@@ -2,8 +2,8 @@
 "LCC ODE system"
 function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:lccsys)
     @parameters begin
-        A_LCC = 2.0
-        B_LCC = 2.0
+        A_LCC = 2
+        B_LCC = 2
         ω_LCC = 10Hz
         f_LCC = 300Hz
         g_LCC = 2000Hz
@@ -14,6 +14,9 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:lccsys)
     end
 
     @variables begin
+        # State transition rates
+        α_lcc(t)
+        β_lcc(t)
         # Closed LCC state
         c0_lcc(t) # = 0.9991
         c1_lcc(t) = 8.175e-5
@@ -28,18 +31,20 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:lccsys)
         cca2_lcc(t) = 6.3826e-13
         cca3_lcc(t) = 1.815e-15
         cca4_lcc(t) = 0.0
-        # Voltage-inhibited LCC state
-        y_ca_lcc(t) = 0.9479
+        x_yca(t) = 0.9479 # Voltage-gated LCC
+        y_inf(t)
+        τ_yca(t)
         # Currents
-        iCaK(t)
-        iCaL(t)
+        ICaMax(t)
+        ICaK(t)
+        ICaL(t)
     end
 
     v = vm / mV
     A, B = A_LCC, B_LCC
     ω, f, g = ω_LCC, f_LCC, g_LCC
-    α = 0.4kHz * exp((v + 2) / 10)
-    β = 0.05kHz * exp(-(v + 2) / 13)
+    α = α_lcc
+    β = β_lcc
     α′ = α * A
     β′ = β / B
     γ = γ_LCC * ca_ss
@@ -58,11 +63,9 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:lccsys)
     v39 = (A^3) * γ * c3_lcc - ω / (B^3) * cca3_lcc
     v410 = (A^4) * γ * c4_lcc - ω / (B^4) * cca4_lcc
 
-    y_inf = expit(-(v + 55) / 7.5) + 0.5 * expit((v - 21) / 6)
-    τ = 20.0ms + 600.0ms * expit(-(v + 30) / 9.5)
-    iCaMax = ghkVm(P_CA_LCC, vm, 0.001mM, 0.341 * ca_o, 2)
-
     eqs = [
+        α_lcc ~ 0.4kHz * exp((v + 2) / 10),
+        β_lcc ~ 0.05kHz * exp(-(v + 2) / 13),
         1 ~ c0_lcc + c1_lcc + c2_lcc + c3_lcc + c4_lcc + o_lcc + cca0_lcc + cca1_lcc + cca2_lcc + cca3_lcc + cca4_lcc,
         # D(c0_lcc) ~ -v01 - v06,
         D(c1_lcc) ~ v01 - v12 - v17,
@@ -75,9 +78,12 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:lccsys)
         D(cca2_lcc) ~ v28 + v78 - v89,
         D(cca3_lcc) ~ v39 + v89 - v910,
         D(cca4_lcc) ~ v910 + v410,
-        D(y_ca_lcc) ~ (y_inf - y_ca_lcc) / τ,
-        iCaL ~ 6 * y_ca_lcc * o_lcc * iCaMax,
-        iCaK ~ hilr(iCaMax, I_CA_HALF_LCC) * y_ca_lcc * o_lcc * ghkVm(P_K_LCC, vm, k_i, k_o, 1)
+        y_inf ~ expit(-(v + 55) / 7.5) + 0.5 * expit((v - 21) / 6),
+        τ_yca ~ 20.0 + 600.0 * expit(-(v + 30) / 9.5),
+        D(x_yca) ~ (y_inf - x_yca) / τ_yca,
+        ICaMax ~ ghk(P_CA_LCC, vm, 1μM, 0.341 * ca_o, 2),
+        ICaL ~ 6 * x_yca * o_lcc * ICaMax,
+        ICaK ~ hil(I_CA_HALF_LCC, ICaMax) * x_yca * o_lcc * ghk(P_K_LCC, vm, k_i, k_o)
     ]
     return ODESystem(eqs, t; name)
 end
@@ -85,13 +91,13 @@ end
 "Ryanodine receptor (RyR)"
 function get_ryr_sys(ca_jsr, ca_ss; name=:ryrsys)
     @parameters begin
-        R_RYR = 3.6kHz
-        KA_P_RYR = 1.125E10kHz / mM^4
-        KA_M_RYR = 0.576kHz
-        KB_P_RYR = 4.05E6kHz / mM^3
-        KB_M_RYR = 1.93kHz
-        KC_P_RYR = 0.1kHz
-        KC_M_RYR = 8E-4kHz
+        R_RYR = 3.6 / ms
+        KA_P_RYR = 1.125E10 / (mM^4 * ms)
+        KA_M_RYR = 0.576 / ms
+        KB_P_RYR = 4.05E6 / (mM^3 * ms)
+        KB_M_RYR = 1.93 / ms
+        KC_P_RYR = 0.1 / ms
+        KC_M_RYR = 8E-4 / ms
     end
 
     @variables begin
@@ -99,7 +105,7 @@ function get_ryr_sys(ca_jsr, ca_ss; name=:ryrsys)
         po2_ryr(t) = 7.12e-11
         pc1_ryr(t) # = 0.7528
         pc2_ryr(t) = 0.2471
-        jRel(t)
+        Jrel(t)
     end
 
     vo1c1 = KA_M_RYR * po1_ryr - KA_P_RYR * NaNMath.pow(ca_ss, 4) * pc1_ryr
@@ -111,7 +117,7 @@ function get_ryr_sys(ca_jsr, ca_ss; name=:ryrsys)
         D(po1_ryr) ~ -vo1c1 - vo1o2 - vo1c2,
         D(po2_ryr) ~ vo1o2,
         D(pc2_ryr) ~ vo1c2,
-        jRel ~ R_RYR * (po1_ryr + po2_ryr) * (ca_jsr - ca_ss)
+        Jrel ~ R_RYR * (po1_ryr + po2_ryr) * (ca_jsr - ca_ss)
     ]
     return ODESystem(eqs, t; name)
 end
