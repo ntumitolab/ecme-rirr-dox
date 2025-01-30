@@ -40,7 +40,7 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
 
         ### SL (Succinyl-coA lyase)
         COA = 0.02mM
-        KF_SL = 0.0284/(mM * ms)
+        KF_SL = 0.0284 / (mM * ms)
         KEQ_SL = 3.115mM
 
         ### FH (Fumarate hydrase) parameters
@@ -53,16 +53,16 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
         KH3_MDH = 6.68E-9mM
         KH4_MDH = 5.62E-6mM
         K_OFFSET_MDH = 3.99E-2
-        KCAT_MDH = 0.1259/ms
+        KCAT_MDH = 0.1259 / ms
         ET_MDH = 0.154mM
         KM_MAL_MDH = 1.493mM
         KI_OAA_MDH = 3.1E-3mM
         KM_NAD_MDH = 0.2244mM
 
         ### AAT (alanine aminotransferase)
-        KF_AAT = 0.0217/(ms*mM)
+        KF_AAT = 0.0217 / (ms * mM)
         KEQ_AAT = 6.6
-        KASP_AAT = 1.5E-6/ms
+        KASP_AAT = 1.5E-6 / ms
         GLU = 30.0mM
     end
 
@@ -78,18 +78,18 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
         vSDH(t)
         oaa(t) = 0.011576938766421891mM
         cit(t) # Conserved
-        isoc(t) = 0.05159054318098895mM		# isocitrate
-        akg(t) = 0.051145197718677655mM		# alpha-ketoglutarate
-        scoa(t) = 0.03508849487000582mM		# succinyl-CoA
+        isoc(t) = 0.05159054318098895mM# isocitrate
+        akg(t) = 0.051145197718677655mM# alpha-ketoglutarate
+        scoa(t) = 0.03508849487000582mM# succinyl-CoA
         suc(t) = 0.0019107469302081612mM    # succinate
         fum(t) = 0.1751906841603877mM       # fumarate
-        mal(t) = 0.15856757152954906mM		# malate
+        mal(t) = 0.15856757152954906mM# malate
     end
 
     vidh = let
         fa = hil(KM_ADP_IDH, adp_m) * hil(KM_CA_IDH, ca_m)
         f_isoc = NaNMath.pow(KM_ISOC_IDH / isoc, NI_ISOC_IDH)
-        f_nad = (1 + nadh_m/KI_NADH_IDH) * (KM_NAD_IDH / nad_m)
+        f_nad = (1 + nadh_m / KI_NADH_IDH) * (KM_NAD_IDH / nad_m)
         f_h = h_m / KH1_IDH + KH2_IDH / h_m
         vidh = KCAT_IDH * ET_IDH / (f_h + (1 + fa * f_isoc) * (1 + f_nad))
     end
@@ -127,7 +127,7 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
     eqs = [
         TCA_T ~ cit + isoc + oaa + akg + scoa + suc + fum + mal,
         vCS ~ KCAT_CS * ET_CS * hil(ACCOA, KM_ACCOA_CS) * hil(oaa, KM_OAA_CS),
-        vACO ~ KF_ACO * (cit - isoc/KEQ_ACO),
+        vACO ~ KF_ACO * (cit - isoc / KEQ_ACO),
         vIDH ~ vidh,
         vKGDH ~ vkgdh,
         vSL ~ vsl,
