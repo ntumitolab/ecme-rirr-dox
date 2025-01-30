@@ -5,7 +5,7 @@ using Plots
 using DataFrames
 using CSV
 using ECMEDox
-using ECMEDox: second, nernst, mM, Hz, μM
+using ECMEDox: second, mM, Hz, μM
 Plots.default(lw=2, size=(600, 600))
 
 tend = 1000.0second
@@ -18,6 +18,29 @@ u0 = build_u0(sys)
 
 # The model is very sensitive to aconitase activity
 # The phase transition (of the Q cycle) is between 250uM to 260uM of DOX
+prob = ODEProblem(sys, u0, tend)
+alg = FBDF()
+@time sol = solve(prob, alg; reltol=1e-7, abstol=1e-7, progress=true, maxiters=1e8)
+
+plot(sol, idxs=sys.vm, tspan=(100second, 105second))
+plot(sol, idxs=[sys.atp_m / sys.adp_m])
+plot(sol, idxs=sys.dpsi)
+plot(sol, idxs=sys.vC5)
+plot(sol, idxs=sys.vANT)
+plot(sol, idxs=sys.vHres)
+plot(sol, idxs=sys.vHresC3)
+plot(sol, idxs=sys.nadh_m)
+plot(sol, idxs=sys.vC1)
+plot(sol, idxs=[sys.vIDH, sys.vKGDH, sys.vMDH])
+@unpack cit, isoc, oaa, akg, scoa, suc, fum, mal = sys
+plot(sol, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal])
+
+plot(sol, idxs=sys.ca_m)
+plot(sol, idxs=sys.ca_i)
+plot(sol, idxs=[sys.vUni, sys.vNaCa])
+plot(sol, idxs=sys.vUni, tspan=(1second, 5second))
+plot(sol, idxs=sys.ca_i, tspan=(1second, 5second))
+
 prob0 = ODEProblem(sys, u0, tend, [DOX => 260μM, ρC4 => 325μM])
 prob1 = ODEProblem(sys, u0, tend, [DOX => 260μM, ρC4 => 500μM])
 prob2 = ODEProblem(sys, u0, tend, [DOX => 260μM, ρC3 => 500μM])
