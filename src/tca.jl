@@ -86,23 +86,27 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
         mal(t) = 0.15856757152954906mM# malate
     end
 
-    vidh = let
-        fa = hil(KM_ADP_IDH, adp_m) * hil(KM_CA_IDH, ca_m)
-        f_isoc = NaNMath.pow(KM_ISOC_IDH / isoc, NI_ISOC_IDH)
-        f_nad = (1 + nadh_m / KI_NADH_IDH) * (KM_NAD_IDH / nad_m)
-        f_h = h_m / KH1_IDH + KH2_IDH / h_m
-        vidh = KCAT_IDH * ET_IDH / (f_h + (1 + fa * f_isoc) * (1 + f_nad))
-    end
+    v_cs = KCAT_CS * ET_CS * hil(ACCOA, KM_ACCOA_CS) * hil(oaa, KM_OAA_CS)
+    v_aco = KF_ACO * (cit - isoc / KEQ_ACO)
 
-    vkgdh = let
-        f_a = hil(KM_MG_KGDH, mg_m) * hil(KM_CA_KGDH, ca_m)
-        f_akg = NaNMath.pow(KM_AKG_KGDH / akg, NI_AKG_KGDH)
-        f_nad = KM_NAD_KGDH / nad_m
+    v_kgdh = let
+        f_mgca = (1 + mg_m / KM_MG_KGDH) * (1 + ca_m / KM_CA_KGDH)
         f_h = 1 + h_m / KH1_KGDH + KH2_KGDH / h_m
-        vkgdh = ET_KGDH * KCAT_KGDH / (f_h + f_a * (f_akg + f_nad))
+        f_akg = NaNMath.pow(akg / KM_AKG_KGDH, NI_AKG_KGDH)
+        f_nad = nad_m / KM_NAD_KGDH
+        vmax = ET_KGDH * KCAT_KGDH
+        v = vmax * f_akg * f_nad * f_mgca / (f_h * f_mgca * f_akg * f_nad + f_akg + f_nad)
     end
 
-    vmdh = let
+    v_idh = let
+        vmax = KCAT_IDH * ET_ID
+        a = NaNMath.pow(isoc / KM_ISOC_IDH , NI_ISOC_IDH) * (1 + adp_m / KM_ADP_IDH) * (1 + ca_m / KM_CA_IDH)
+        b = nad_m / KM_NAD_IDH * hil(KI_NADH_IDH, nadh_m)
+        h = 1 + h_m / KH1_IDH + KH2_IDH / h_m
+        vidh = vmax * a * b / (h * a * b + a + b + 1)
+    end
+
+    v_mdh = let
         f_ha = K_OFFSET_MDH + hil(KH1_MDH * hil(KH2_MDH, h_m), h_m)
         f_hi = hil(h_m * hil(h_m, KH4_MDH), KH3_MDH)^2
         f_oaa = hil(KI_OAA_MDH, oaa)
@@ -111,7 +115,7 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
         vmdh = KCAT_MDH * ET_MDH * f_ha * f_hi * f_nad * f_mal
     end
 
-    vsl = let
+    v_sl = let
         if use_mg
             atp4, hatp, _, poly_atp = breakdown_atp(atp_m, h_m, mg_m)
             _, _, _, poly_adp = breakdown_adp(adp_m, h_m, mg_m)
@@ -124,16 +128,19 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
         end
     end
 
+    v_fh = KF_FH * (fum - mal / KEQ_FH)
+    v_aat = KF_AAT * oaa * GLU * hil(KASP_AAT * KEQ_AAT, akg * KF_AAT)
+
     eqs = [
         TCA_T ~ cit + isoc + oaa + akg + scoa + suc + fum + mal,
-        vCS ~ KCAT_CS * ET_CS * hil(ACCOA, KM_ACCOA_CS) * hil(oaa, KM_OAA_CS),
-        vACO ~ KF_ACO * (cit - isoc / KEQ_ACO),
-        vIDH ~ vidh,
-        vKGDH ~ vkgdh,
-        vSL ~ vsl,
-        vFH ~ KF_FH * (fum - mal / KEQ_FH),
-        vMDH ~ vmdh,
-        vAAT ~ KF_AAT * oaa * GLU * hil(KASP_AAT * KEQ_AAT, akg * KF_AAT),
+        vCS ~ v_cs,
+        vACO ~ v_aco ,
+        vIDH ~ v_idh,
+        vKGDH ~ v_kgdh,
+        vSL ~ v_sl,
+        vFH ~ v_fh,
+        vMDH ~ v_mdh,
+        vAAT ~ v_aat,
         D(isoc) ~ vACO - vIDH,
         D(akg) ~ vIDH - vKGDH + vAAT,
         D(scoa) ~ vKGDH - vSL,

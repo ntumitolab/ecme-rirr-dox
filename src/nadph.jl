@@ -1,24 +1,24 @@
 "NADPH generation (Gauthier 2013)"
 function get_nadph_sys(h_m, isoc, akg, ΔμH; name=:nadphsys)
     @parameters begin
-		KM_H_IDH2 = 0.5mM  # Dissociation constant for H+ of IDH2
-		KM_ISOC_IDH2 = 0.045mM  # Dissociation constant for isocitrate of IDH2
-		KM_NADP_IDH2 = 0.046mM  # Michealis constant for NADP of IDH2
-		KI_NADP_IDH2 = 2E-6mM  # Inhibition constant for NADP of IDH2
-		KM_NADPH_IDH2 = 1.2E-2mM  # Michealis constant for nadph_m of IDH2
-		KM_AKG_IDH2 = 0.08mM  # Michealis constant for AKG of IDH2
-		VF_IDH2 = 8.72E-2/ms  # Max forward rate of IDH2
-		VB_IDH2 = 5.45E-3/ms  # Max backward rate of IDH2
-		KM_NADH_THD = 0.01  # Michealis constant for NADH of THD
-		KM_NAD_THD = 0.125  # Michealis constant for NAD of THD
-		KM_NADP_THD = 0.02  # Michealis constant for NADP of THD
-		KM_NADPH_THD = 0.02  # Michealis constant for nadph_m of THD
-		ET_THD = 1E-3  # THD concnetration (mM)
-		KF_THD = 1.17474  # Max forward rate of THD
-		KB_THD = 17.2756  # Max backward rate of THD
-		D_THD = 0.5  # Voltage assymetry factor of THD
-		X_THD = 0.1  # Voltage dependence factor of THD
-	end
+        KM_H_IDH2 = 0.5mM  # Dissociation constant for H+ of IDH2
+        KM_ISOC_IDH2 = 0.045mM  # Dissociation constant for isocitrate of IDH2
+        KM_NADP_IDH2 = 0.046mM  # Michealis constant for NADP of IDH2
+        KI_NADP_IDH2 = 2E-6mM  # Inhibition constant for NADP of IDH2
+        KM_NADPH_IDH2 = 1.2E-2mM  # Michealis constant for nadph_m of IDH2
+        KM_AKG_IDH2 = 0.08mM  # Michealis constant for AKG of IDH2
+        VF_IDH2 = 8.72E-2/ms  # Max forward rate of IDH2
+        VB_IDH2 = 5.45E-3/ms  # Max backward rate of IDH2
+        KM_NADH_THD = 0.01  # Michealis constant for NADH of THD
+        KM_NAD_THD = 0.125  # Michealis constant for NAD of THD
+        KM_NADP_THD = 0.02  # Michealis constant for NADP of THD
+        KM_NADPH_THD = 0.02  # Michealis constant for nadph_m of THD
+        ET_THD = 1E-3  # THD concnetration (mM)
+        KF_THD = 1.17474  # Max forward rate of THD
+        KB_THD = 17.2756  # Max backward rate of THD
+        D_THD = 0.5  # Voltage assymetry factor of THD
+        X_THD = 0.1  # Voltage dependence factor of THD
+    end
 
     @variables begin
         nadph_m(t)

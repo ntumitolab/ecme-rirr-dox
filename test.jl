@@ -110,3 +110,16 @@ plot(sol, idxs=[nad_m / nadh_m])
 @unpack cit, isoc, oaa, akg, scoa, suc, fum, mal = sys
 @unpack vCS, vACO, vIDH, vKGDH, vSL, vFH, vMDH, vAAT, vSDH = sys
 plot(sol, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal])
+
+using BenchmarkTools
+
+x = randn(10^6)
+y = rand(eltype(x))
+
+iy = inv(y)
+
+fd(x, y) = x ./ y
+fm(x, iy) = x .* iy
+
+@benchmark fd($x, $y)
+@benchmark fm($x, $iy)

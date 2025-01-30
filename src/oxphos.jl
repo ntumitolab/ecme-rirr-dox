@@ -377,15 +377,17 @@ function get_c5_sys(dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=1,
         _, _, mgatp_m, poly_atp_m = breakdown_atp(atp_m, h_m, mg_m)
         poly_pi_m = pipoly(h_m)
         ke_app = KEQ_C5 * poly_atp_m / (poly_adp_m * poly_pi_m)
-        vaf1 = ke_app * mgatp_m / (pi_m * (hadp_m + adp3_m))
+        v_af1 = ke_app * mgatp_m / (pi_m * (hadp_m + adp3_m))
     else
-        vaf1 = KEQ_C5 * atp_m / (pi_m * adp_m)
+        v_af1 = KEQ_C5 * atp_m / (pi_m * adp_m)
     end
 
     vb = exp(iVT * 3 * 50mV) # Boundary potential
     vh = exp(iVT * 3 * dpsi)
     fh = (h_m / h_i)^3
     common = -ρF1 * MT_PROT * C5_INHIB / ((1 + P1_C5 * AF1) * vb + (P2_C5 + P3_C5 * AF1) * vh)
+    v_c5 = common * ((PA_C5 * fh + PC1_C5 * vb) * AF1 - (PA_C5 + PC2_C5 * AF1) * vh)
+    v_hu = 3 * common * (PA_C5 * fh * AF1 - vh * (PA_C5 + PB_C5))
 
     # Adenine nucleotide translocator (ANT)
     # Free adenylates
@@ -403,15 +405,16 @@ function get_c5_sys(dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=1,
 
     f_i = atp4_i / adp3_i
     f_m = adp3_m / atp4_m
+    v_ant = VMAX_ANT * (1 - f_i * f_m * exp(-iVT * dpsi)) / ((1 + f_i * exp(-iVT * H_ANT * dpsi)) * (1 + f_m))
 
     eqs = [
         ΔμH ~ dpsi + nernst(h_i, h_m, 1),
         E_PHOS ~ VT * NaNMath.log(AF1),
-        vANT ~ VMAX_ANT * (1 - f_i * f_m * exp(-iVT * dpsi)) / ((1 + f_i * exp(-iVT * H_ANT * dpsi)) * (1 + f_m)),
-        AF1 ~ vaf1,
+        vANT ~ v_ant,
+        AF1 ~ v_af1,
         vHleak ~ G_H_MITO * ΔμH,
-        vC5 ~ common * ((PA_C5 * fh + PC1_C5 * vb) * AF1 - (PA_C5 + PC2_C5 * AF1) * vh),
-        vHu ~ 3 * common * (PA_C5 * fh * AF1 - vh * (PA_C5 + PB_C5)),
+        vC5 ~ v_c5,
+        vHu ~ v_hu,
     ]
     return ODESystem(eqs, t; name)
 end

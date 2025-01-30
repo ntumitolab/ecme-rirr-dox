@@ -65,8 +65,8 @@ function get_mitoca_sys(na_i, ca_m, ca_i, dpsi; name=:mitocasys)
     v_mcu = VMAX_MCU * f_trans * (f_trans + 1)^3 * exprel(-v2frt) / ((f_trans + 1)^4 + f_act)
     f_na = hil(na_i, KM_NA_NCLX)^3
     f_ca = hil(ca_m, KM_CA_NCLX)
-    ϕ_ca = ca_m / ca_i
-    v_naca = VMAX_NCLX * exp(iVT * B_NCLX * (dpsi - DPSI_OFFSET_MCU)) * ϕ_ca * f_na * f_ca
+    r_ca = ca_m / ca_i
+    v_naca = VMAX_NCLX * exp(iVT * B_NCLX * (dpsi - DPSI_OFFSET_MCU)) * r_ca * f_na * f_ca
 
     return ODESystem([vUni ~ v_mcu, vNaCa ~ v_naca], t; name)
 end
