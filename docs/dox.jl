@@ -1,3 +1,10 @@
+#===
+# Doxorubicin addition test
+
+This model is very sensitive to aconitase activity.
+
+The phase transition (of the Q cycle) is between 250uM to 260uM of DOX
+===#
 using ProgressLogging
 using OrdinaryDiffEq
 using ModelingToolkit

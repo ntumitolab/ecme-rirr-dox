@@ -1,4 +1,4 @@
-# Model description
+# RIRR-DOX model description
 
 ## TCA cycle rates
 
