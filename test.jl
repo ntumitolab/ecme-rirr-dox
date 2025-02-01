@@ -1,6 +1,3 @@
-#===
-# Doxorubicin addition test
-===#
 using ProgressLogging
 using OrdinaryDiffEq
 using ModelingToolkit
@@ -8,7 +5,7 @@ using Plots
 using DataFrames
 using CSV
 using ECMEDox
-using ECMEDox: second, mM, Hz, μM
+using ECMEDox: second, mM, Hz, μM, μA, cm²
 Plots.default(lw=2, size=(600, 600))
 
 tend = 1000.0second
@@ -18,23 +15,6 @@ bcl = 1second
 sts = unknowns(sys)
 obs = [i.lhs for i in observed(sys)]
 u0 = build_u0(sys)
-
-# The model is very sensitive to aconitase activity
-# The phase transition (of the Q cycle) is between 250uM to 260uM of DOX
-prob = ODEProblem(sys, u0, tend)
-alg = FBDF()
-@time sol = solve(prob, alg; reltol=1e-7, abstol=1e-7, progress=true, maxiters=1e8)
-
-#---
-plot(sol, idxs=sys.vm, tspan=(100second, 105second))
-#---
-plot(sol, idxs=[sys.atp_m / sys.adp_m])
-#---
-@unpack cit, isoc, oaa, akg, scoa, suc, fum, mal = sys
-plot(sol, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal])
-# Calcium transient too low, weird ICa flux?
-plot(sol, idxs=[sys.ca_i, sys.ca_m], tspan=(100second, 105second))
-plot(sol, idxs=[sys.ICaL], tspan=(100second, 105second))
 
 prob0 = ODEProblem(sys, u0, tend, [DOX => 260μM, ρC4 => 325μM])
 prob1 = ODEProblem(sys, u0, tend, [DOX => 260μM, ρC4 => 500μM])
