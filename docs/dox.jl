@@ -35,6 +35,7 @@ plot(sol, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal])
 # Calcium transient too low, weird ICa flux?
 plot(sol, idxs=[sys.ca_i, sys.ca_m], tspan=(100second, 105second))
 plot(sol, idxs=[sys.ICaL], tspan=(100second, 105second))
+plot(sol, idxs=[sys.vUni, sys.vNaCa], tspan=(100second, 105second))
 
 prob0 = ODEProblem(sys, u0, tend, [DOX => 260μM, ρC4 => 325μM])
 prob1 = ODEProblem(sys, u0, tend, [DOX => 260μM, ρC4 => 500μM])
