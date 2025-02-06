@@ -88,9 +88,9 @@ function build_u0(sys)
     ]
 end
 
-function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80μA / cm², tstart=0second, tend=10second, duty=0.5ms)
+function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80μAcm⁻², tstart=0second, tend=10second, duty=0.5ms)
     @parameters begin
-        iStim(t) = 0μA / cm²    # Stimulation current
+        iStim(t) = 0μAcm⁻²    # Stimulation current
         DOX(t) = 0mM               # Doxorubicin concentration
         MT_PROT = 1             # OXPHOS protein content
         ΣA_m = 1.01mM           # Mitochondrial ATP + ADP pool (Gauthier-2013)
@@ -98,7 +98,7 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
         ΣNAD_m = 10mM           # Mitochondrial NAD + NADH pool # 1.0mM (Gauthier-2013)
         ΣNADP_m = 0.1mM         # Mitochondrial NADP + NADPH pool (Gauthier-2013)
 
-        CM = 1μF / cm²          # Plasma membrane capacitance
+        CM = 1μFcm⁻²          # Plasma membrane capacitance
         CM_MITO = 1.812μM / mV  # Inner mitochondrial membrane capacitance
 
         # Cell geometries
@@ -128,8 +128,8 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
         mg_m = 0.4mM        # Mitochondrial magnesium (li-2015)
         mg_i = 1.0mM        # Cytosolic magnesium (Gauthier-2013) # 3.1mM (Li-2015)
         pi_i = 3.0mM        # Cytosolic inorganic phosphate
-        h_i = 10^(-7) * Molar   # Cytosolic proton concentration
-        h_m = 10^(-7.6) * Molar # Mitochondrial proton concentration
+        h_i = exp10(-7) * Molar   # Cytosolic proton concentration
+        h_m = exp10(-7.6) * Molar # Mitochondrial proton concentration
     end
 
     @variables begin

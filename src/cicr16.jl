@@ -10,7 +10,7 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:lccsys)
         γ_LCC = 0.1875/(ms * mM)
         P_CA_LCC = 1.24E-3cm * Hz
         P_K_LCC = 1.11E-11cm * Hz
-        I_CA_HALF_LCC = -0.4583μA / cm²
+        I_CA_HALF_LCC = -0.4583μAcm⁻²
     end
 
     @variables begin
