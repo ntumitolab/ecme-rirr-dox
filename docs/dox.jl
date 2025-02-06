@@ -26,15 +26,19 @@ alg = FBDF()
 @time sol = solve(prob, alg; reltol=1e-7, abstol=1e-7, progress=true, maxiters=1e8)
 
 #---
-plot(sol, idxs=sys.vm, tspan=(100second, 105second))
+plot(sol, idxs=sys.vm, tspan=(100second, 105second), plotdensity=500)
 #---
-plot(sol, idxs=[sys.atp_m / sys.adp_m])
+plot(sol, idxs=[sys.atp_m / sys.adp_m], plotdensity=1000)
 #---
 @unpack cit, isoc, oaa, akg, scoa, suc, fum, mal = sys
 plot(sol, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal])
 # Calcium transient too low, weird ICa flux?
 plot(sol, idxs=[sys.ca_i, sys.ca_m], tspan=(100second, 105second))
-plot(sol, idxs=[sys.ICaL], tspan=(100second, 105second))
+plot(sol, idxs=[sys.ICaL, sys.INaCa], tspan=(100second, 105second))
+
+@unpack c0_lcc, c1_lcc, c2_lcc, c3_lcc, c4_lcc, o_lcc, cca0_lcc, cca1_lcc, cca2_lcc, cca3_lcc, cca4_lcc, x_yca = sys
+plot(sol, idxs=[o_lcc, x_yca], tspan=(100second, 102second))
+plot(sol, idxs=[sys.ICaK], tspan=(100second, 102second))
 plot(sol, idxs=[sys.vUni, sys.vNaCa], tspan=(100second, 105second))
 
 prob0 = ODEProblem(sys, u0, tend, [DOX => 260μM, ρC4 => 325μM])
