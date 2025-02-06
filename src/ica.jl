@@ -14,8 +14,8 @@ function get_jca_sys(atp_i, adp_i, ca_i, ca_nsr, ca_jsr, ca_ss, ca_o, na_i, na_o
     end
 
     @parameters begin
-        R_TR = inv(9.09ms)          # Diffusion rate between JSR and NSR
-        R_XFER= inv(0.5747ms)       # Diffusion rate between subspace and cytosol
+        R_TR = inv(0.5747ms)          # Diffusion rate between JSR and NSR
+        R_XFER= inv(9.09ms)       # Diffusion rate between subspace and cytosol
         IMAX_PMCA = 0.575μA / cm²   # Max PMCA current
         KM_CA_PMCA = 0.5μM          # Ca half-activation constant
         KM1_ATP_PMCA = 12μM         # ATP 1st half-activation constant
