@@ -1,4 +1,4 @@
-"Potassium currents"
+"Potassium currents, 2009 version"
 function get_ik_sys(na_i, na_o, k_i, k_o, mg_i, vm, atp_i, adp_i; name=:iksys)
     @parameters begin
         G_K1 = 0.75milliseimens / cm² * sqrt(k_o / 5.4mM)  # Time-independent

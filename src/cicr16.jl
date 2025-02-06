@@ -78,7 +78,7 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:lccsys)
         D(cca2_lcc) ~ v28 + v78 - v89,
         D(cca3_lcc) ~ v39 + v89 - v910,
         D(cca4_lcc) ~ v910 + v410,
-        y_inf ~ expit(-(v + 55) / 7.5) + 0.5 * expit((v - 21) / 6),
+        y_inf ~ expit(-(v + 55) / 7.5) + 0.5 * expit((v - 21) / 6.0),
         τ_yca ~ 20ms + 600ms * expit(-(v + 30) / 9.5),
         D(x_yca) ~ (y_inf - x_yca) / τ_yca,
         ICaMax ~ ghk(P_CA_LCC, vm, 1μM, 0.341 * ca_o, 2),
@@ -108,8 +108,8 @@ function get_ryr_sys(ca_jsr, ca_ss; name=:ryrsys)
         Jrel(t)
     end
 
-    vo1c1 = KA_M_RYR * po1_ryr - KA_P_RYR * NaNMath.pow(ca_ss, 4) * pc1_ryr
-    vo1o2 = KB_P_RYR * NaNMath.pow(ca_ss, 3) * po1_ryr - KB_M_RYR * po2_ryr
+    vo1c1 = KA_M_RYR * po1_ryr - KA_P_RYR * ca_ss^4 * pc1_ryr
+    vo1o2 = KB_P_RYR * ca_ss^3 * po1_ryr - KB_M_RYR * po2_ryr
     vo1c2 = KC_P_RYR * po1_ryr - KC_M_RYR * pc2_ryr
 
     eqs = [

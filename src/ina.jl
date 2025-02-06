@@ -24,7 +24,7 @@ function get_ina_sys(na_i, na_o, ca_i, ca_o, vm; name=:inasys)
     mα = 0.32 / 0.1 * exprel(-0.1 * (v + 47.13))
     mβ = 0.08 * exp(-v / 11)
     hα = 0.135 * exp(-(v + 80) / 6.8)
-    hβ = 7.6923 * expit((v + 10.66) / 11.1)
+    hβ = inv(0.13) * expit((v + 10.66) / 11.1)
     jα = max((-127140 * exp(0.2444v) - 3.474e-5 * exp(-0.04391v)) * (v + 37.78) * expit(-0.311 * (v + 79.23)), 0)
     jβ = 0.3 * exp(-2.535e-7v) * expit(0.1 * (v + 32))
 

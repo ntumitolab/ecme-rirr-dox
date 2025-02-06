@@ -6,38 +6,38 @@ const second = 1000ms         # second is the SI unit
 const minute = 60second       # minute
 const metre = 1               # meter
 const mmol = 1                # millimole
-const μM = mmol / metre^3       # micromolar
-const Hz = 1 / second         # Herz
-const kHz = 1 / ms            # kilohertz
-const cm = metre / 100        # centimeter
+const μM = mmol // metre^3    # micromolar = 1
+const Hz = 1 // second        # Herz
+const kHz = 1 // ms           # kilohertz
+const cm = metre // 100       # centimeter
 const cm² = cm^2              # square centimeter
-const μm = metre / 10^6       # micrometer
+const μm = metre // 10^6      # micrometer
 const mL = cm^3               # milliliter = cubic centimeter
 const Liter = 1000mL          # liter
 const μL = μm^3               # microliter
-const pL = Liter / 10^12      # picoliter
+const pL = Liter // 10^12     # picoliter
 const mol = 1000mmol          # mole
 const mM = 1000μM             # mM is the SI unit
 const Molar = 1000mM          # Molarity is used in equilibrium constants
-const nM = μM / 1000          # nanomolar
+const nM = μM // 1000         # nanomolar
 const Ampere = 1              # current unit Ampere
-const mA = Ampere / 1000      # milliampere
-const μA = Ampere / 10^6      # micropampere
+const mA = Ampere // 1000     # milliampere
+const μA = Ampere // 10^6     # micropampere
 const Joule = 10^6            # energy unit Joule
 const Kelvin = 1              # temperature unit Kelvin
 const Columb = Ampere * second # unit of electric charge
-const Volt = Joule / Columb   # voltage
-const mV = Volt / 1000        # millivolt (mV) = 1
-const milliseimens = Ampere / Volt / 1000 # milliseimens
-const Farad = Columb / Volt   # Capacitance
-const μF = Farad / 10^6       # Microfarad
-const μAμF = μA / μF           # Common unit for current density, normalized by capacitance
-const mSμF = milliseimens / μF # Common unit for conductance, normalized by capacitance
+const Volt = Joule // Columb   # voltage
+const mV = Volt // 1000         # millivolt (mV) = 1
+const milliseimens = Ampere // Volt // 1000 # milliseimens
+const Farad = Columb // Volt   # Capacitance = 1
+const μF = Farad // 10^6       # Microfarad
+const μAμF = μA // μF           # Common unit for current density, normalized by capacitance = 1
+const mSμF = milliseimens // μF # Common unit for conductance, normalized by capacitance = 1
 const Faraday = 96485Columb / mol # Faraday constant (columb / mol)
 const T₀ = 310Kelvin          # Default temp (37C)
 const RGAS = 8.314Joule / Kelvin / mol # Ideal gas constant (J/K⋅mol)
-const VT = RGAS * T₀ / Faraday # Thermal voltage (@37C), about 26.7 mV
-const iVT = inv(VT) # Reciprocal of thermal voltage
+const VT = RGAS * T₀ / Faraday # Thermal voltage (@37C), 26.7 mV
+const iVT = inv(VT) # Reciprocal of thermal voltage (0.037 per motive)
 
 # Dissociation and affinity constants
 const KWATER = 1E-14 * Molar^2

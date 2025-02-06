@@ -7,7 +7,7 @@ Rate of superoxide dismutase. Based on (McAdam, 1977)
 """
 function _vsod(sox, h2o2, K1, K3, K5, KI_H2O2, E0)
     f_h2o2 = K3 * (1 + h2o2 / KI_H2O2)
-    f_sox  = K1 * sox
+    f_sox = K1 * sox
     denom = K5 * (2 * K1 + f_h2o2) + f_h2o2 * f_sox
     return 2 * E0 * K5 * f_sox * (K1 + f_h2o2) / denom
 end
@@ -16,20 +16,20 @@ end
 function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
     @parameters begin
         # SOD params
-        K1_SOD = 1200/mM/ms  	# 2nd order rate constant of SOD
-        K3_SOD = 24/mM/ms  		# 2nd order rate constant of SOD
-        K5_SOD = 2.4E-4/ms  	# 1st order rate constant of SOD
-        KI_H2O2_SOD = 0.5mM  	# Inhibition constant of H2O2
+        K1_SOD = 1200 / mM / ms  # 2nd order rate constant of SOD
+        K3_SOD = 24 / mM / ms  # 2nd order rate constant of SOD
+        K5_SOD = 2.4E-4 / ms  # 1st order rate constant of SOD
+        KI_H2O2_SOD = 0.5mM  # Inhibition constant of H2O2
         # ET_SOD_I = 1.43μM  	# Cytosolic SOD concentration (Zhou, 2009)
-        ET_SOD_I = 3μM			# Cytosolic SOD concentration
-        ET_SOD_M = 0.3μM  		# Mitochondrial SOD concentration
+        ET_SOD_I = 3μM# Cytosolic SOD concentration
+        ET_SOD_M = 0.3μM  # Mitochondrial SOD concentration
         # glutathione peroxidase (GPX)
-        𝚽1_GPX = 5E-3mM*ms  # Rate constant of GPX
-        𝚽2_GPX = 0.75mM*ms  # Rate constant of GPX
+        𝚽1_GPX = 5E-3mM * ms  # Rate constant of GPX
+        𝚽2_GPX = 0.75mM * ms  # Rate constant of GPX
         ET_GPX = 10μM  # GPX concentration ()
         # thioredoxin peroxidase (TPX)
-        𝚽1_TPX = 3.83mM*ms  # Rate constant of TPX
-        𝚽2_TPX = 1.85mM*ms  # Rate constant of TPX
+        𝚽1_TPX = 3.83mM * ms  # Rate constant of TPX
+        𝚽2_TPX = 1.85mM * ms  # Rate constant of TPX
         ET_TPX = 3μM  # TPX concentration
         # GR (glutathion reductace) parameters
         K1_GR = 5Hz  # Catalytic constant of GR
@@ -44,16 +44,16 @@ function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
         KM_TRXSS_TR = 0.035mM  # Michaelis constant for oxidized thioredoxin of TR
         TRX_T_TR = 0.025mM  # Thioredoxin pool(mM)
         # Catalase
-        K1_CAT = 17.0/(mM*ms)  # Rate constant of CAT
+        K1_CAT = 17.0 / (mM * ms)  # Rate constant of CAT
         ET_CAT = 0.01mM  # Total pool of CAT
-        FR_CAT = 0.05/mM  # H2O2 inhibition factor of CAT
+        FR_CAT = 0.05 / mM  # H2O2 inhibition factor of CAT
         # IMAC (Inner mitochondrial anion channel) from Cortassa et al. (2004)
         A_IMAC = 1E-3  # Basal IMAC conductance factor
         B_IMAC = 1E4   # Activation IMAC conductance factor by cytoplasmic superoxide
         KCC_SOX_IMAC = 10μM  # Michaelis constant for cytoplasmic superoxide of IMAC
-        GL_IMAC = 3.5E-8mM/ms/mV  		# Leak conductance of IMAC (Zhou, 2009)
-        G_MAX_IMAC = 3.9085E-6mM/ms/mV  # Maximal conductance of IMAC (Zhou, 2009)
-        κ_IMAC = 0.07/mV  # Steepness factor
+        GL_IMAC = 3.5E-8mM / ms / mV  # Leak conductance of IMAC (Zhou, 2009)
+        G_MAX_IMAC = 3.9085E-6mM / ms / mV  # Maximal conductance of IMAC (Zhou, 2009)
+        κ_IMAC = 0.07 / mV  # Steepness factor
         DPSI_OFFSET_IMAC = 4mV  # Potential at half saturation
         J_IMAC = 0.1  # Fraction of ROS in IMAC conductance
     end
