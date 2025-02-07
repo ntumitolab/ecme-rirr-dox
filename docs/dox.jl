@@ -16,38 +16,38 @@ bcl = 1second
 @named sys = build_model(; bcl, tend)
 @unpack DOX, ρC4, ρC3 = sys
 sts = unknowns(sys)
-obs = [i.lhs for i in observed(sys)]
 u0 = build_u0(sys)
 
-# The model is very sensitive to aconitase activity
 # The phase transition (of the Q cycle) is between 250uM to 260uM of DOX
-prob = ODEProblem(sys, u0, tend)
+prob = ODEProblem(sys, u0, tend, [DOX => 250μM])
 alg = FBDF()
-@time sol = solve(prob, alg; reltol=1e-7, abstol=1e-7, progress=true, maxiters=1e8)
+opts = (; reltol=1e-6, abstol=1e-6, progress=true, maxiters=1e8)
+@time sol = solve(prob, alg; opts...)
+idxs = (sys.t/1000, sys.vm)
+plot(sol, idxs=idxs, tspan=(100second, 103second), lab=false, title="PM potential")
 
 #---
-plot(sol, idxs=sys.vm, tspan=(100second, 105second), plotdensity=500)
-#---
-plot(sol, idxs=[sys.atp_m / sys.adp_m], plotdensity=1000)
-#---
-@unpack cit, isoc, oaa, akg, scoa, suc, fum, mal = sys
-plot(sol, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal])
-# Calcium transient too low, weird ICa flux?
-plot(sol, idxs=[sys.ca_i, sys.ca_m], tspan=(100second, 105second))
-plot(sol, idxs=[sys.ICaL, sys.INaCa], tspan=(100second, 105second))
+idxs = (sys.t/1000, [sys.atp_i / sys.adp_i])
+plot(sol, idxs=idxs, tspan=(100second, 103second), lab="DOX=250", title="ATP:ADP")
 
-@unpack c0_lcc, c1_lcc, c2_lcc, c3_lcc, c4_lcc, o_lcc, cca0_lcc, cca1_lcc, cca2_lcc, cca3_lcc, cca4_lcc, x_yca = sys
-plot(sol, idxs=[o_lcc, x_yca], tspan=(100second, 102second))
-plot(sol, idxs=[sys.ICaK], tspan=(100second, 102second))
-plot(sol, idxs=[sys.vUni, sys.vNaCa], tspan=(100second, 105second))
-
+#---
 prob0 = ODEProblem(sys, u0, tend, [DOX => 260μM, ρC4 => 325μM])
 prob1 = ODEProblem(sys, u0, tend, [DOX => 260μM, ρC4 => 500μM])
 prob2 = ODEProblem(sys, u0, tend, [DOX => 260μM, ρC3 => 500μM])
-alg = FBDF()
-@time sol0 = solve(prob0, alg; reltol=1e-7, abstol=1e-7, progress=true, maxiters=1e8)
-@time sol1 = solve(prob1, alg; reltol=1e-7, abstol=1e-7, progress=true, maxiters=1e8)
-@time sol2 = solve(prob2, alg; reltol=1e-7, abstol=1e-7, progress=true, maxiters=1e8)
+@time sol0 = solve(prob0, alg; opts...)
+@time sol1 = solve(prob1, alg; opts...)
+@time sol2 = solve(prob2, alg; opts...)
+
+idxs = (sys.t/1000, sys.vm)
+
+#---
+plot(sol0, idxs=idxs, lab="DOX=260", title="PM potential")
+
+#---
+plot(sol1, idxs=idxs, lab="DOX=260, ρC4=500", title="PM potential")
+
+#---
+plot(sol2, idxs=idxs, lab="DOX=260, ρC3=500", title="PM potential")
 
 @unpack atp_i, adp_i, vm, na_o, na_i, atp_i, adp_i, atp_m, adp_m, sox_i, sox_m = sys
 @unpack ca_i, ca_nsr, ca_jsr, ca_ss = sys
