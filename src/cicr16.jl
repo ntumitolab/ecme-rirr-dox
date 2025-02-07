@@ -4,13 +4,13 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:lccsys)
     @parameters begin
         A_LCC = 2
         B_LCC = 2
-        ω_LCC = 10Hz
-        f_LCC = 300Hz
-        g_LCC = 2000Hz
-        γ_LCC = 187.5Hz / mM
+        ω_LCC = 0.01/ms
+        f_LCC = 0.3/ms
+        g_LCC = 2/ms
+        γ_LCC = 0.1875/(ms * mM)
         P_CA_LCC = 1.24E-3cm * Hz
         P_K_LCC = 1.11E-11cm * Hz
-        I_CA_HALF_LCC = -0.4583μA / cm²
+        I_CA_HALF_LCC = -0.4583μAcm⁻²
     end
 
     @variables begin
@@ -64,8 +64,8 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:lccsys)
     v410 = (A^4) * γ * c4_lcc - ω / (B^4) * cca4_lcc
 
     eqs = [
-        α_lcc ~ 0.4kHz * exp((v + 2) / 10),
-        β_lcc ~ 0.05kHz * exp(-(v + 2) / 13),
+        α_lcc ~ 0.4/ms * exp((v + 2) / 10),
+        β_lcc ~ 0.05/ms * exp(-(v + 2) / 13),
         1 ~ c0_lcc + c1_lcc + c2_lcc + c3_lcc + c4_lcc + o_lcc + cca0_lcc + cca1_lcc + cca2_lcc + cca3_lcc + cca4_lcc,
         # D(c0_lcc) ~ -v01 - v06,
         D(c1_lcc) ~ v01 - v12 - v17,
@@ -78,7 +78,7 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:lccsys)
         D(cca2_lcc) ~ v28 + v78 - v89,
         D(cca3_lcc) ~ v39 + v89 - v910,
         D(cca4_lcc) ~ v910 + v410,
-        y_inf ~ expit(-(v + 55) / 7.5) + 0.5 * expit((v - 21) / 6),
+        y_inf ~ expit(-(v + 55) / 7.5) + 0.5 * expit((v - 21) / 6.0),
         τ_yca ~ 20ms + 600ms * expit(-(v + 30) / 9.5),
         D(x_yca) ~ (y_inf - x_yca) / τ_yca,
         ICaMax ~ ghk(P_CA_LCC, vm, 1μM, 0.341 * ca_o, 2),
@@ -91,7 +91,7 @@ end
 "Ryanodine receptor (RyR)"
 function get_ryr_sys(ca_jsr, ca_ss; name=:ryrsys)
     @parameters begin
-        R_RYR = 3.6 / ms
+        R_RYR = 3600Hz
         KA_P_RYR = 1.125E10 / (mM^4 * ms)
         KA_M_RYR = 0.576 / ms
         KB_P_RYR = 4.05E6 / (mM^3 * ms)
@@ -108,13 +108,13 @@ function get_ryr_sys(ca_jsr, ca_ss; name=:ryrsys)
         Jrel(t)
     end
 
-    vo1c1 = KA_M_RYR * po1_ryr - KA_P_RYR * NaNMath.pow(ca_ss, 4) * pc1_ryr
-    vo1o2 = KB_P_RYR * NaNMath.pow(ca_ss, 3) * po1_ryr - KB_M_RYR * po2_ryr
+    vc1o1 =  KA_P_RYR * ca_ss^4 * pc1_ryr - KA_M_RYR * po1_ryr
+    vo1o2 = KB_P_RYR * ca_ss^3 * po1_ryr - KB_M_RYR * po2_ryr
     vo1c2 = KC_P_RYR * po1_ryr - KC_M_RYR * pc2_ryr
 
     eqs = [
         1 ~ pc1_ryr + po1_ryr + po2_ryr + pc2_ryr,
-        D(po1_ryr) ~ -vo1c1 - vo1o2 - vo1c2,
+        D(po1_ryr) ~ vc1o1 - vo1o2 - vo1c2,
         D(po2_ryr) ~ vo1o2,
         D(pc2_ryr) ~ vo1c2,
         Jrel ~ R_RYR * (po1_ryr + po2_ryr) * (ca_jsr - ca_ss)

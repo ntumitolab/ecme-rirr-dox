@@ -16,13 +16,13 @@ function get_jca_sys(atp_i, adp_i, ca_i, ca_nsr, ca_jsr, ca_ss, ca_o, na_i, na_o
     @parameters begin
         R_TR = inv(9.09ms)          # Diffusion rate between JSR and NSR
         R_XFER= inv(0.5747ms)       # Diffusion rate between subspace and cytosol
-        IMAX_PMCA = 0.575μA / cm²   # Max PMCA current
+        IMAX_PMCA = 0.575μAcm⁻²     # Max PMCA current
         KM_CA_PMCA = 0.5μM          # Ca half-activation constant
         KM1_ATP_PMCA = 12μM         # ATP 1st half-activation constant
         KM2_ATP_PMCA = 230μM        # ATP 2nd half-activation constant
-        KI_ADP_PMCA = 1.0mM         # ADP half-inhibition constant
-        VF_SERCA =  2.989E-4mM/ms   # Max forward SERCA rate
-        VR_SERCA =  3.179E-4mM/ms   # Max reverse SERCA rate
+        KI_ADP_PMCA = 1mM           # ADP half-inhibition constant
+        VF_SERCA =  0.2989μM/ms     # Max forward SERCA rate
+        VR_SERCA =  0.3179μM/ms     # Max reverse SERCA rate
         KMF_CA_SERCA = 0.24μM       # Michaelis constant for Ca of forward SERCA reaction
         KMR_CA_SERCA = 1.64269mM    # Michaelis constant for Ca of reverse SERCA reaction
         NFB_SERCA = 1.4             # Cooperativity of forward SERCA reaction
@@ -47,11 +47,12 @@ function get_jca_sys(atp_i, adp_i, ca_i, ca_nsr, ca_jsr, ca_ss, ca_o, na_i, na_o
     vmax_ncx = K_NCX / (KM_NA_NCX^3 + na_o^3) / (KM_CA_NCX + ca_o)
     a_eta = exp(η_NCX * vm * iVT)
     a_etam1 = exp((η_NCX - 1) * vm * iVT)
+    i_naca = vmax_ncx * (a_eta * na_i^3 * ca_o - a_etam1 * na_o^3 * ca_i) / (1 + K_SAT_NCX * a_etam1)
 
     eqs = [
         IPMCA ~ IMAX_PMCA * f_atp_ipca * f_ca_ipca,
         Jup ~ (VF_SERCA * fb - VR_SERCA * rb) / ((fb + rb + 1) * f_atp_inv),
-        INaCa ~ vmax_ncx * (a_eta * na_i^3 * ca_o - a_etam1 * na_o^3 * ca_i) / (1 + K_SAT_NCX * a_etam1),
+        INaCa ~ i_naca,
         Jtr ~ R_TR * (ca_nsr - ca_jsr),
         Jxfer ~ R_XFER * (ca_ss - ca_i),
     ]

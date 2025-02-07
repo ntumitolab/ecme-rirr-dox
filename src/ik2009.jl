@@ -1,12 +1,12 @@
-"Potassium currents"
+"Potassium currents, 2009 version"
 function get_ik_sys(na_i, na_o, k_i, k_o, mg_i, vm, atp_i, adp_i; name=:iksys)
     @parameters begin
-        G_K1 = 0.75milliseimens / cm² * sqrt(k_o / 5.4mM)  # Time-independent
-        G_K = 0.282milliseimens / cm² * sqrt(k_o / 5.4mM)  # Time-dependent
+        G_K1 = 0.75mScm⁻² * sqrt(k_o / 5.4mM)  # Time-independent
+        G_K = 0.282mScm⁻² * sqrt(k_o / 5.4mM)  # Time-dependent
         P_NA_K = 0.01833         # Permeability ratio of Na to K in IKs
-        G_KP = 8.28E-3milliseimens / cm²   # Plateau potassium current
+        G_KP = 8.28E-3mScm⁻²   # Plateau potassium current
         # ATP-inhibited K channel (Zhou, 2009, adapted from Ferrero et al.)
-        G0_KATP = 1.8milliseimens / cm²   # KATP channel conductance
+        G0_KATP = 1.8mScm⁻²   # KATP channel conductance
     end
     @variables begin
         EK(t)               # Reversal potential of K
