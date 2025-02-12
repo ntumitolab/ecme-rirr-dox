@@ -1,4 +1,4 @@
-"Na-K pump reaction"
+"Na-K pump"
 function get_inak_sys(atp_i, adp_i, vm, na_i, na_o, k_o; name=:naksys)
     @parameters begin
         KM_NA_NAK = 10.0mM  # Na half-saturate constant of Na-K ATPase

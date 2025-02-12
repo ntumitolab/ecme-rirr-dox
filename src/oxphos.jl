@@ -11,7 +11,6 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
         E_FMN = -375mV  # FMN redox potential
         E_SOX = -150mV  # Superoxide redox potential
         ### Doxorubicin effects
-        NIDOX = 3  # Hills coefficient of DOX inhibition on OXPHOS complex
         KI_DOX_C1 = 400μM  # DOX inhibition concentration (IC50) on complex I
         KI_DOX_C2 = 2000μM # DOX inhibition concentration (IC50) on complex II
         KI_DOX_C3 = 185μM  # DOX inhibition concentration (IC50) on complex III
@@ -77,7 +76,7 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
 
     c1eqs = let
         C1_CONC = ρC1 * MT_PROT
-        C1_INHIB = hil(KI_DOX_C1^3, DOX^3)  # complex I inhibition by DOX
+        C1_INHIB = hil(KI_DOX_C1, DOX, 3)  # complex I inhibition by DOX
         E_LEAK_C1 = 1 + K_RC_DOX * DOX  # Electron leak scaling factor from complex I
         fv = exp(iVT * (dpsi - dpsi_B_C1))
 
@@ -144,7 +143,6 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
         VMAX_C2 = 250mM / minute  # Maximal rate of SDH = complex II
         KM_Q_C2 = 0.6           # MM constant for CoQ
         KI_OAA_C2 = 0.15mM      # MM constant for OAA
-        FAC_SUC_C2 = 0.085
         KI_FUM_C2 = 1.3mM       # MM constant for fumarate
         KM_SUC_C2 = 0.03mM      # MM constant for succinate
     end
@@ -153,7 +151,7 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
 
     # SDH rate combining Cortassa et al. (2003) and Demin et al. (2000)
     c2eqs = let
-        C2_INHIB = hil(KI_DOX_C2, DOX, NIDOX)   # complex II inhibition by DOX
+        C2_INHIB = hil(KI_DOX_C2, DOX, 3)   # complex II inhibition by DOX
         f_q = hil(hil(Q_n, QH2_n), KM_Q_C2)
         f_oaa = hil(KI_OAA_C2, oaa)
         f_fum = hil(KI_FUM_C2, fum)
@@ -191,7 +189,7 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
     end
 
     c4eqs = let
-        C4_INHIB = hil(KI_DOX_C4, DOX, NIDOX)  # complex IV inhibition by DOX
+        C4_INHIB = hil(KI_DOX_C4, DOX, 3)  # complex IV inhibition by DOX
         C4_CONC = ρC4 * MT_PROT
         aδ = exp(-iVT * δ₅ * dpsi)
         a1mδ = exp(iVT * (1 - δ₅) * dpsi)
@@ -287,8 +285,8 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
     end
 
     c3eqs = let
-        C3_INHIB = hil(KI_DOX_C3, DOX, NIDOX) * ANTIMYCIN  # complex III inhibition by DOX and antimycin
-        FAC_PH = h_m / 1e-7Molar
+        C3_INHIB = hil(KI_DOX_C3, DOX, 3) * ANTIMYCIN  # complex III inhibition by DOX and antimycin
+        FAC_PH = h_m / 1E-7Molar
         C3_CONC = ρC3 * MT_PROT
         v1 = vC1 + vSDH # Q reduction
         v2 = KD_Q * (QH2_n - QH2_p) # QH2 diffusion
@@ -355,7 +353,9 @@ function get_c5_sys(dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=1,
         PB_C5 = 3.373E-7Hz
         PC1_C5 = 9.651E-14Hz
         PC2_C5 = 4.585E-19Hz        # Magnus model
-        KEQ_C5 = 2.2E5Molar         # Equilibrium constant of ATP synthase # 1.71E6mM in Magnus model was probably an oversight?
+        # Equilibrium constant of ATP synthase (ΔG=-)
+        # 1.71E6mM in Magnus model was inconsistent to Caplan's model (1.71E6 Molar)
+        KEQ_C5 = 2.2E5Molar
         G_H_MITO = 2E-6mM / ms / mV # Proton leak rate constant
         VMAX_ANT = 5E-3mM / ms      # Max rate of ANT, (Wei, 2011)
         H_ANT = 0.5  # Voltage steepness
