@@ -1,4 +1,4 @@
-"Potassium currents, 2009 version"
+"Potassium currents, Zhou 2009 version"
 function get_ik_sys(na_i, na_o, k_i, k_o, mg_i, vm, atp_i, adp_i; name=:iksys)
     @parameters begin
         G_K1 = 0.75mScm⁻² * sqrt(k_o / 5.4mM)  # Time-independent
@@ -28,7 +28,7 @@ function get_ik_sys(na_i, na_o, k_i, k_o, mg_i, vm, atp_i, adp_i; name=:iksys)
     E_KNa = nernst(na_o * P_NA_K + k_o, na_i * P_NA_K + k_i)
     x1 = expit(-inv(40) * (vm - 40))
     # ATP-dependent K channel (KATP) current
-    hatp = 1.3 + 0.74 * exp(-0.09 * adp_i / μM)   # Hill factor (Ferrero)
+    hatp = 1.3 + 0.74 * exp(-0.09 / μM * adp_i)   # Hill factor (Ferrero)
     km_atp = 35.8μM + 17.9μM * NaNMath.pow(adp_i / μM, 0.256) # fixed, it's μM rather than mM
     f_atp = hil(km_atp, atp_i, hatp)  # Inhibition by ATP
 
