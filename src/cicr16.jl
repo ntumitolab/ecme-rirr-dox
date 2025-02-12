@@ -1,6 +1,6 @@
 # Good old 16-state CICR (Cortassa 2006), including L-type calcium channel (LCC) and Ryanodine receptor (RyR)
 "LCC ODE system"
-function get_cicr06_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
+function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
     @parameters begin
         A_LCC = 2
         B_LCC = 2
