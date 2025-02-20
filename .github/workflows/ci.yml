@@ -38,8 +38,11 @@ jobs:
     - name: Install Python dependencies
       run: uv pip install --system -r requirements.txt
     - name: Read Julia version
+      uses: SebRollen/toml-action@v1.2.0
       id: read_toml
-      run: echo value=$(python -c 'import tomllib; from pathlib import Path; print(tomllib.loads(Path("Manifest.toml").read_text())["julia_version"])') >> "$GITHUB_OUTPUT"
+      with:
+        file: 'Manifest.toml'
+        field: 'julia_version'
     - name: Get environment hash
       id: hash
       run: |
