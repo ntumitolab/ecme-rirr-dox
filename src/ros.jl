@@ -78,19 +78,15 @@ function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
 
     fv_imac = GL_IMAC + G_MAX_IMAC * expit(κ_IMAC * (dpsi - DPSI_OFFSET_IMAC))
     gimac = (A_IMAC + B_IMAC * hil(sox_i, KCC_SOX_IMAC)) * fv_imac
-    v_imac = gimac * dpsi
-    v_trros = J_IMAC * gimac * (dpsi + ΔVROS)
-    v_sod_i = _vsod(sox_i, h2o2_i, K1_SOD, K3_SOD, K5_SOD, KI_H2O2_SOD, ET_SOD_I)
-
 
     eqs = [
         ΔVROS ~ nernst(sox_i, sox_m, -1),
-        vTrROS ~ v_trros,
-        vIMAC ~ v_imac,
+        vTrROS ~ J_IMAC * gimac * (dpsi + ΔVROS),
+        vIMAC ~ gimac * dpsi,
         vGR_i ~ ET_GR * K1_GR * hil(nadph_i, KM_NADPH_GR) * hil(gssg_i, KM_GSSG_GR),
         vGPX_i ~ ET_GPX * h2o2_i * gsh_i / (𝚽1_GPX * gsh_i + 𝚽2_GPX * h2o2_i),
         vCAT ~ 2 * K1_CAT * ET_CAT * h2o2_i * exp(-FR_CAT * h2o2_i),
-        vSOD_i ~ v_sod_i,
+        vSOD_i ~ _vsod(sox_i, h2o2_i, K1_SOD, K3_SOD, K5_SOD, KI_H2O2_SOD, ET_SOD_I),
         ΣGSH_i ~ gsh_i + 2 * gssg_i,
         D(sox_i) ~ V_MITO_V_MYO * vTrROS - vSOD_i,
         D(h2o2_i) ~ 0.5 * vSOD_i - vGPX_i - vCAT,

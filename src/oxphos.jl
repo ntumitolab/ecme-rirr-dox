@@ -345,7 +345,7 @@ end
 
 function get_c5_sys(dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=1, C5_INHIB=1; use_mg=false, mg_i=0mM, mg_m=0mM, name=:c5sys)
     @parameters begin
-        ρF1 = 5.0mM                 # Concentration of complex V (mM)
+        ρF1 = 5.0mM                 # Concentration of ATP synthase
         P1_C5 = 1.346E-8
         P2_C5 = 7.739E-7
         P3_C5 = 6.65E-15
@@ -353,7 +353,7 @@ function get_c5_sys(dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=1,
         PB_C5 = 3.373E-7Hz
         PC1_C5 = 9.651E-14Hz
         PC2_C5 = 4.585E-19Hz        # Magnus model
-        # Equilibrium constant of ATP synthase (ΔG=-)
+        # Equilibrium constant of ATP synthase (ΔG=-30kJ/mol)
         # 1.71E6mM in Magnus model was inconsistent to Caplan's model (1.71E6 Molar)
         KEQ_C5 = 2.2E5Molar
         G_H_MITO = 2E-6mM / ms / mV # Proton leak rate constant
