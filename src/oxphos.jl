@@ -18,7 +18,7 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
         K_RC_DOX = 1E3 / 15mM  # DOX redox cycling constant
         ### Complex I
         ρC1 = 5mM # Adjusted # 8.85mM, Concentration of complex I, from Gauthier et al. (2013)
-        dpsi_B_C1 = 50.0mV   # Phase boundary potential
+        dpsi_B_C1 = 50mV   # Phase boundary potential
         K12_C1 = 6.3396E11Hz / mM^2
         K21_C1 = 5Hz
         K56_C1 = 100Hz
@@ -353,9 +353,7 @@ function get_c5_sys(dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=1,
         PB_C5 = 3.373E-7Hz
         PC1_C5 = 9.651E-14Hz
         PC2_C5 = 4.585E-19Hz        # Magnus model
-        # Equilibrium constant of ATP synthase (ΔG=-)
-        # 1.71E6mM in Magnus model was inconsistent to Caplan's model (1.71E6 Molar)
-        KEQ_C5 = 2.2E5Molar
+        KEQ_C5 = 1.71E6mM           # Equilibrium constant of ATP synthase
         G_H_MITO = 2E-6mM / ms / mV # Proton leak rate constant
         VMAX_ANT = 5E-3mM / ms      # Max rate of ANT, (Wei, 2011)
         H_ANT = 0.5  # Voltage steepness

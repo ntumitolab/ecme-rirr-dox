@@ -24,15 +24,15 @@ include("u0.jl")
 
 function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80μAcm⁻², tstart=0second, tend=10second, duty=0.5ms)
     @parameters begin
-        iStim(t) = 0μAcm⁻²    # Stimulation current
-        DOX(t) = 0mM               # Doxorubicin concentration
+        iStim(t) = 0μAcm⁻²      # Stimulation current
+        DOX(t) = 0mM            # Doxorubicin concentration
         MT_PROT = 1             # OXPHOS protein content
         ΣA_m = 1.01mM           # Mitochondrial ATP + ADP pool (Gauthier-2013)
         ΣA_i = 8mM              # Cytosolic ATP + ADP pool (Li-2015)
         ΣNAD_m = 10mM           # Mitochondrial NAD + NADH pool # 1.0mM (Gauthier-2013)
         ΣNADP_m = 0.1mM         # Mitochondrial NADP + NADPH pool (Gauthier-2013)
 
-        CM = 1μFcm⁻²          # Plasma membrane capacitance
+        CM = 1μFcm⁻²            # Plasma membrane capacitance
         CM_MITO = 1.812μM / mV  # Inner mitochondrial membrane capacitance
 
         # Cell geometries

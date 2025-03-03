@@ -8,7 +8,7 @@ using Plots
 using DataFrames
 using CSV
 using ECMEDox
-using ECMEDox: second, mM, Hz, μM
+using ECMEDox: second, μM
 
 tend = 1000.0second
 bcl = 1second

@@ -3,7 +3,7 @@ function get_inak_sys(atp_i, adp_i, vm, na_i, na_o, k_o; name=:naksys)
     @parameters begin
         KM_NA_NAK = 10.0mM  # Na half-saturate constant of Na-K ATPase
         KM_K_NAK = 1.5mM    # K half-saturate constant of Na-K ATPase
-        IMAX_NAK = 3.147μAcm⁻² # Max Na-K ATPase current
+        IMAX_NAK = 3.247μAcm⁻² # Max Na-K ATPase current
         KM_ATP_NAK = 8μM    # ATP half-saturate constant of Na-K ATPase
         KI_ADP_NAK = 100μM  # ADP half-saturate constant of Na-K ATPase
     end
