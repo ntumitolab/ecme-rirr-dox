@@ -1,7 +1,7 @@
 "Initial conditions after 1000 seconds of 1Hz pacing"
 function build_u0(sys)
     return [
-        sys.sox_i => 0.0009551938366685581,
+        sys.sox_i => 5.188491782991169e-6,
         sys.h2o2_i => 0.0007085981112491873,
         sys.gssg_i => 2.092347017623283,
         sys.Q_n => 1877.6012975036206,

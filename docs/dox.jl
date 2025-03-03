@@ -9,7 +9,6 @@ using DataFrames
 using CSV
 using ECMEDox
 using ECMEDox: second, mM, Hz, μM
-Plots.default(lw=2, size=(600, 600))
 
 tend = 1000.0second
 bcl = 1second
@@ -17,6 +16,12 @@ bcl = 1second
 @unpack DOX, ρC4, ρC3 = sys
 sts = unknowns(sys)
 u0 = build_u0(sys)
+
+# ## No DOX (control)
+prob = ODEProblem(sys, u0, tend, [DOX => 0μM])
+alg = Rodas5P()
+opts = (; reltol=1e-6, abstol=1e-6, progress=true, maxiters=1e8)
+@time sol = solve(prob, alg; opts...)
 
 # The phase transition (of the Q cycle) is between 250uM to 260uM of DOX
 prob = ODEProblem(sys, u0, tend, [DOX => 250μM])
