@@ -8,7 +8,7 @@ using Plots
 using DisplayAs: PNG
 using ECMEDox
 using ECMEDox: second, mM, Hz, μM
-Plots.default(lw=2, size=(600, 600))
+Plots.default(lw=1.5, size=(600, 600))
 
 tend = 1000.0second
 bcl = 1second
@@ -23,13 +23,13 @@ alg = FBDF()
 opts = (; reltol=1e-6, abstol=1e-6, progress=true, maxiters=1e8)
 @time sol = solve(prob, alg; opts...)
 idxs = (sys.t/1000, sys.vm)
-plot(sol, idxs=idxs, lab=false, title="PM potential")
+plot(sol, idxs=idxs, lab=false, title="PM potential") |> PNG
 #---
 idxs = (sys.t/1000, sys.dpsi)
-plot(sol, idxs=idxs, lab=false, title="Mito potential")
+plot(sol, idxs=idxs, lab=false, title="Mito potential") |> PNG
 #---
 idxs = (sys.t/1000, [sys.atp_i / sys.adp_i])
-plot(sol, idxs=idxs, lab="DOX=240", title="ATP:ADP")
+plot(sol, idxs=idxs, lab="DOX=240", title="ATP:ADP") |> PNG
 
 #---
 prob0 = ODEProblem(sys, u0, tend, [DOX => 250μM])
