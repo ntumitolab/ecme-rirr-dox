@@ -3,9 +3,6 @@
 using ProgressLogging
 using OrdinaryDiffEq
 using ModelingToolkit
-using Plots
-using DataFrames
-using CSV
 using ECMEDox
 using ECMEDox: second, mM, Hz, μM
 Plots.default(lw=2, size=(600, 600))
