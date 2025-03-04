@@ -8,7 +8,7 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
         f_LCC = 0.3 / ms
         g_LCC = 2 / ms
         γ_LCC = 0.1875 / (ms * mM)
-        P_CA_LCC = 1.24E-3cm * Hz
+        P_CA_LCC = 8e-4cm * Hz # 1.24E-3cm * Hz
         P_K_LCC = 1.11E-11cm * Hz
         I_CA_HALF_LCC = -0.4583μAcm⁻²
     end
@@ -80,7 +80,7 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
         y_inf ~ expit(-(v + 55) / 7.5) + 0.5 * expit((v - 21) / 6.0),
         τ_yca ~ 20ms + 600ms * expit(-(v + 30) / 9.5),
         D(x_yca) ~ (y_inf - x_yca) / τ_yca,
-        ICaMax ~ ghk(P_CA_LCC, vm, 1μM, 0.341 * ca_o, 2),
+        ICaMax ~ ghk(P_CA_LCC, vm, 1μM, 0.341 * ca_o, 2) ,
         ICaL ~ 6 * x_yca * o_lcc * ICaMax,
         ICaK ~ hil(I_CA_HALF_LCC, ICaMax) * x_yca * o_lcc * ghk(P_K_LCC, vm, k_i, k_o)
     ]
@@ -90,7 +90,7 @@ end
 "Ryanodine receptor (RyR)"
 function get_ryr_sys(ca_jsr, ca_ss; name=:ryrsys)
     @parameters begin
-        R_RYR = 3600Hz
+        R_RYR = 3.6/ms
         KA_P_RYR = 1.125E10 / (mM^4 * ms)
         KA_M_RYR = 0.576 / ms
         KB_P_RYR = 4.05E6 / (mM^3 * ms)

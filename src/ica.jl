@@ -30,7 +30,7 @@ function get_jca_sys(atp_i, adp_i, ca_i, ca_nsr, ca_jsr, ca_ss, ca_o, na_i, na_o
         KM_ATP_SERCA = 10μM         # Michaelis constant for ATP in SERCA
         KI1_ADP_SERCA = 140μM       # 1st Michaelis constant for ADP in SERCA
         KI2_ADP_SERCA = 5.1mM       # 2nd Michaelis constant for ADP in SERCA
-        K_NCX = 9000μA / cm²        # Scaling factor of Na/Ca exchange
+        K_NCX = 9000μAcm⁻²          # Rate of Na/Ca exchanger
         KM_NA_NCX = 87.5mM          # Na half saturating concentration
         KM_CA_NCX = 1.38mM          # Ca half saturating concentration
         K_SAT_NCX = 0.1             # Steepness factor
@@ -42,16 +42,15 @@ function get_jca_sys(atp_i, adp_i, ca_i, ca_nsr, ca_jsr, ca_ss, ca_o, na_i, na_o
 
     fb = NaNMath.pow(ca_i / KMF_CA_SERCA, NFB_SERCA)
     rb = NaNMath.pow(ca_nsr / KMR_CA_SERCA, NRB_SERCA)
-    f_atp_inv = KM_ATP_SERCA / atp_i * (adp_i / KI1_ADP_SERCA + 1) + (adp_i / KI2_ADP_SERCA + 1)
-
-    vmax_ncx = K_NCX / (KM_NA_NCX^3 + na_o^3) / (KM_CA_NCX + ca_o)
-    a_eta = exp(η_NCX * vm * iVT)
-    a_etam1 = exp((η_NCX - 1) * vm * iVT)
-    i_naca = vmax_ncx * (a_eta * na_i^3 * ca_o - a_etam1 * na_o^3 * ca_i) / (1 + K_SAT_NCX * a_etam1)
+    f_atp = atp_i / (KM_ATP_SERCA * (adp_i / KI1_ADP_SERCA + 1) + atp_i * (adp_i / KI2_ADP_SERCA + 1))
+    imax_ncx = K_NCX / (KM_NA_NCX^3 + na_o^3) / (KM_CA_NCX + ca_o)
+    a_eta = exp(η_NCX * iVT * vm)
+    a_etam1 = exp((η_NCX - 1) * iVT * vm)
+    i_naca = imax_ncx * (a_eta * na_i^3 * ca_o - a_etam1 * na_o^3 * ca_i) / (1 + K_SAT_NCX * a_etam1)
 
     eqs = [
         IPMCA ~ IMAX_PMCA * f_atp_ipca * f_ca_ipca,
-        Jup ~ (VF_SERCA * fb - VR_SERCA * rb) / ((fb + rb + 1) * f_atp_inv),
+        Jup ~ f_atp * (VF_SERCA * fb - VR_SERCA * rb) / (fb + rb + 1),
         INaCa ~ i_naca,
         Jtr ~ R_TR * (ca_nsr - ca_jsr),
         Jxfer ~ R_XFER * (ca_ss - ca_i),

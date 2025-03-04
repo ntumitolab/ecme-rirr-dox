@@ -19,7 +19,7 @@ u0 = build_u0(sys)
 
 # The phase transition (of the Q cycle) is between 240uM to 260uM of DOX
 prob = ODEProblem(sys, u0, tend, [DOX => 240μM])
-alg = FBDF()
+alg = KenCarp4()
 opts = (; reltol=1e-6, abstol=1e-6, progress=true, maxiters=1e8)
 @time sol = solve(prob, alg; opts...)
 idxs = (sys.t/1000, sys.vm)

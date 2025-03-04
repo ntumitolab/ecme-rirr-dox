@@ -46,21 +46,21 @@ end
 function get_mitoca_sys(na_i, ca_m, ca_i, dpsi; name=:mitocasys)
     @parameters begin
         # Mitochondrial NCE (NCLX)
-        VMAX_NCLX = 8e-5mM / ms  # Li, 2014
+        VMAX_NCLX = 0.1μM / ms
         B_NCLX = 0.5
         KM_NA_NCLX = 9.4mM
         KM_CA_NCLX = 0.375μM
         # Mitochondrial Ca uniporter (MCU)
-        VMAX_MCU = 7e-3mM / ms  # Li, 2014
+        VMAX_MCU = 27.5μM / ms
         DPSI_OFFSET_MCU = 91mV
         KACT_MCU = 0.38μM
-        KTRANS_MCU = 19μM
+        iKTRANS_MCU = inv(19μM)
         L_MCU = 110
         N_MCU = 2.8
     end
     @variables vUni(t) vNaCa(t)
     v2frt = 2 * iVT * (dpsi - DPSI_OFFSET_MCU)
-    f_trans = ca_i / KTRANS_MCU
+    f_trans = ca_i * iKTRANS_MCU
     f_act = L_MCU * (NaNMath.pow(hil(KACT_MCU, ca_i), N_MCU))
     v_mcu = VMAX_MCU * f_trans * (f_trans + 1)^3 * exprel(-v2frt) / ((f_trans + 1)^4 + f_act)
     f_na = hil(na_i, KM_NA_NCLX)^3

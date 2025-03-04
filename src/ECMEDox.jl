@@ -119,7 +119,7 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
         D(na_i) ~ -A_CAP_V_MYO_F * (INa + INaB + INsNa + 3 * (INaCa + INaK)),
         D(k_i) ~ -A_CAP_V_MYO_F * (IK + IK1 + IKp + IKatp + iStim - 2 * INaK + ICaK),
         D(ca_i) ~ β_ca(ca_i, KM_CA_CMDN, ET_CMDN) * (Jxfer - Jup - Jtrpn - 0.5 * A_CAP_V_MYO_F * (IPMCA + ICaB - 2 * INaCa) + V_MITO_V_MYO * (vNaCa - vUni)),
-        D(ca_nsr) ~ β_ca(ca_nsr, KM_CA_CSQN, ET_CSQN) * (V_MYO * Jup - V_JSR * Jtr) / V_NSR,
+        D(ca_nsr) ~ (V_MYO * Jup - V_JSR * Jtr) / V_NSR,
         D(ca_jsr) ~ β_ca(ca_jsr, KM_CA_CSQN, ET_CSQN) * (Jtr - Jrel),
         D(ca_ss) ~ β_ca(ca_ss, KM_CA_CMDN, ET_CMDN) * ((V_JSR * Jrel - V_MYO * Jxfer) / V_SS - 0.5 * ICaL * A_CAP_V_SS_F),
         D(ca_m) ~ δCA * (vUni - vNaCa),
