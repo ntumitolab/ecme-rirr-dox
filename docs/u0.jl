@@ -5,7 +5,6 @@ using OrdinaryDiffEq
 using ModelingToolkit
 using ECMEDox
 using ECMEDox: second, mM, Hz, μM
-Plots.default(lw=2, size=(600, 600))
 
 tend = 1000.0second
 bcl = 1second
