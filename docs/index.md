@@ -407,9 +407,11 @@ $$
 | $\omega$       | 10                  | Hz               | Mode transition parameter                  |
 | $f$            | 300                 | Hz               | Transition rate into open state            |
 | $g$            | 2000                | Hz               | Transition rate into open state            |
-| $P_{Ca}^{LCC}$ | $1.24 \cdot 10^{-3}$  | cm/s             | L-type Ca2+ channel permeability to Ca2+   |
+| $P_{Ca}^{LCC}$ | $8 \cdot 10^{-4}$  | cm/s             | L-type Ca2+ channel permeability to Ca2+ (*)  |
 | $P_{K}^{LCC}$  | $1.11 \cdot 10^{-11}$ | cm/s             | L-type Ca2+ channel permeability to K+     |
 | $I_{Ca, half}$ | $-0.4583$             | $\mu A / cm^{2}$ | ICa level that reduces equation Pk by half |
+
+(*): adjusted for proper calcium transients.
 
 ### Plasma membrane calcium ATPase (PMCA) current (IpCa)
 
