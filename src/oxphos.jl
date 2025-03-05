@@ -138,26 +138,15 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
         ]
     end
 
-    # complex II (SDH)
+    # Reversible complex II (SDH)
     @parameters begin
-        VMAX_C2 = 250mM / minute  # Maximal rate of SDH = complex II
-        KM_Q_C2 = 0.6           # MM constant for CoQ
+        K_C2 = 250 / (minute * mM)   # Reaction rate constant of SDH (complex II)
         KI_OAA_C2 = 0.15mM      # MM constant for OAA
-        KI_FUM_C2 = 1.3mM       # MM constant for fumarate
-        KM_SUC_C2 = 0.03mM      # MM constant for succinate
+        KEQ_C2 = 1.0            # Equlibrium constant of SDH
     end
 
     @variables vSDH(t)
-
-    # SDH rate combining Cortassa et al. (2003) and Demin et al. (2000)
-    c2eqs = let
-        C2_INHIB = hil(KI_DOX_C2, DOX, 3)   # complex II inhibition by DOX
-        f_q = hil(hil(Q_n, QH2_n), KM_Q_C2)
-        f_oaa = hil(KI_OAA_C2, oaa)
-        f_fum = hil(KI_FUM_C2, fum)
-        f_suc = hil(suc * f_oaa * f_fum, KM_SUC_C2)
-        c2eqs = [vSDH ~ C2_INHIB * VMAX_C2 * f_suc * f_q]
-    end
+    c2eqs = [vSDH ~ K_C2 * (Q_n * suc - QH2_n * fum / KEQ_C2) * hil(KI_OAA_C2, oaa) * hil(KI_DOX_C2, DOX, 3)]
 
     # complex IV (CCO)
     @parameters begin
