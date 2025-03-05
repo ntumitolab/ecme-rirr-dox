@@ -15,14 +15,14 @@ end
 "ROS diffusion and detox system"
 function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
     @parameters begin
-        # SOD params
-        K1_SOD = 1200 / mM / ms  # 2nd order rate constant of SOD
-        K3_SOD = 24 / mM / ms  # 2nd order rate constant of SOD
-        K5_SOD = 2.4E-4 / ms  # 1st order rate constant of SOD
-        KI_H2O2_SOD = 0.5mM  # Inhibition constant of H2O2
-        # ET_SOD_I = 1.43μM  	# Cytosolic SOD concentration (Zhou, 2009)
-        ET_SOD_I = 3μM# Cytosolic SOD concentration
-        ET_SOD_M = 0.3μM  # Mitochondrial SOD concentration
+        # superoxide dismutase (SOD)
+        K1_SOD = 1200 / mM / ms     # 2nd order rate constant of SOD
+        K3_SOD = 24 / mM / ms       # 2nd order rate constant of SOD
+        K5_SOD = 2.4E-4 / ms        # 1st order rate constant of SOD
+        KI_H2O2_SOD = 0.5mM         # Inhibition constant of H2O2
+        # ET_SOD_I = 1.43μM  	    # Cytosolic SOD concentration (Zhou, 2009)
+        ET_SOD_I = 3μM              # Cytosolic SOD concentration
+        ET_SOD_M = 0.3μM            # Mitochondrial SOD concentration
         # glutathione peroxidase (GPX)
         𝚽1_GPX = 5E-3mM * ms  # Rate constant of GPX
         𝚽2_GPX = 0.75mM * ms  # Rate constant of GPX
