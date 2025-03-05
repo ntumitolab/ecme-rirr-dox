@@ -14,9 +14,9 @@ bcl = 1second
 sts = unknowns(sys)
 u0 = build_u0(sys)
 
-prob = ODEProblem(sys, u0, tend, [sys.P_CA_LCC => 8e-4cm * Hz])
+prob = ODEProblem(sys, u0, tend, [])
 alg = KenCarp4()
-@time sol = solve(prob, alg; reltol=1e-7, abstol=1e-7, progress=true, maxiters=1e8)
+@time sol = solve(prob, alg; reltol=1e-6, abstol=1e-6, progress=true)
 
 for i in sts
     println("sys.", i, " => ", sol[i][end], ",")

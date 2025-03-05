@@ -71,7 +71,7 @@ plot!(fig, sol1, idxs=idxs, label="C4 500")
 plot!(fig, sol2, idxs=idxs, label="C3 500", xlabel="Time (s)", legend=:right)
 fig |> PNG
 
-# Q cycle : reduced QH2
+# Q cycle : reduced Q pool
 @unpack Q_n, Qdot_n, QH2_n, QH2_p, Qdot_p, Q_p, fes_ox, fes_rd, cytc_ox, cytc_rd = sys
 plot(sol0, idxs=[Q_n, Qdot_n, QH2_n, QH2_p, Qdot_p, Q_p], title="Q cycle (DOX=295uM)", legend=:right) |> PNG
 
