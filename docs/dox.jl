@@ -19,7 +19,7 @@ u0 = build_u0(sys)
 alg = KenCarp4()
 opts = (; reltol=1e-6, abstol=1e-6, progress=true, maxiters=1e8)
 
-# The phase transition (of the Q cycle) is between 300uM and 305uM of DOX
+# The phase transition (of the Q cycle) is between 300uM and 301uM of DOX
 prob = ODEProblem(sys, u0, tend, [DOX => 300μM])
 @time sol = solve(prob, alg; opts...)
 
@@ -32,7 +32,7 @@ plot(sol, idxs=(s, vm), lab=false, title="PM potential") |> PNG
 plot(sol, idxs=(s, dpsi), lab=false, title="Mito potential") |> PNG
 #---
 @unpack atp_i, adp_i = sys
-plot(sol, idxs=(s, [atp_i / adp_i]), lab="DOX=305", title="ATP:ADP") |> PNG
+plot(sol, idxs=(s, [atp_i / adp_i]), lab="DOX=300", title="ATP:ADP") |> PNG
 
 #---
 prob0 = ODEProblem(sys, u0, tend, [DOX => 305μM])

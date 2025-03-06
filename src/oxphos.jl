@@ -2,46 +2,75 @@
 Detailed Oxidative phosphorylation model by Gauthier et al. (2013)
 With ROS generation
 Default parameter values from Kembro et al. and Gauthier et al.
-Some are adjusted by An-chi Wei to prevent negative concentrations
+Some are adjusted by An-Chi Wei to prevent negative concentrations
 =#
 "Electron transport chain (ETC)"
-function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0, MT_PROT=1, ANTIMYCIN=1, MYXOTHIAZOLE=1; name=:etcsys)
+function get_etc_sys(;
+    DOX=0,
+    MT_PROT=1,
+    O2=6μM,
+    h_i=exp10(-7) * Molar,
+    h_m=exp10(-7.6) * Molar,
+    name=:etcsys
+)
     @parameters begin
-        O2 = 6μM          # Oxygen concentration
-        E_FMN = -375mV  # FMN redox potential
-        E_SOX = -150mV  # Superoxide redox potential
-        ### Doxorubicin effects
         KI_DOX_C1 = 400μM  # DOX inhibition concentration (IC50) on complex I
         KI_DOX_C2 = 2000μM # DOX inhibition concentration (IC50) on complex II
         KI_DOX_C3 = 185μM  # DOX inhibition concentration (IC50) on complex III
         KI_DOX_C4 = 165μM  # DOX inhibition concentration (IC50) on complex IV
         K_RC_DOX = 1E3 / 15mM  # DOX redox cycling constant
-        ### Complex I
+        ROTENONE_BLOCK(t) = 0
+        ANTIMYCIN_BLOCK(t) = 0
+        MYXOTHIAZOLE_BLOCK(t) = 0
+        CYANIDE_BLOCK(t) = 0
+        OLIGOMYCIN_BLOCK(t) = 0
+    end
+
+    @variables begin
+        nad_m(t)
+        nadh_m(t)
+        dpsi(t)
+        sox_m(t)
+        suc(t)
+        fum(t)
+        oaa(t)
+        Q_n(t) = 1860μM
+        QH2_n(t) = 40.68μM
+        QH2_p(t) = 40.65μM
+        Q_p(t) # Conserved
+        Qdot_p(t) = 33.21μM
+        Qdot_n(t) = 164.55μM
+    end
+
+    # Complex I
+    @parameters begin
+        E_FMN_C1 = -375mV  # FMN redox potential
+        E_SOX_C1 = -150mV  # Superoxide redox potential
         ρC1 = 5mM # Adjusted # 8.85mM, Concentration of complex I, from Gauthier et al. (2013)
         dpsi_B_C1 = 50.0mV   # Phase boundary potential
-        K12_C1 = 6.3396E11Hz / mM^2
+        # Transition rates
+        K12_C1 = 633.96 / (μM^2 * ms)
         K21_C1 = 5Hz
         K56_C1 = 100Hz
-        K65_C1 = 2.5119E13Hz / mM^2
-        K61_C1 = 3.329E7Hz
+        K65_C1 = 25119 / (μM^2 * ms)
+        K61_C1 = 33290 / ms
         K16_C1 = 432.7642Hz
         K23_C1 = 3886.7Hz / sqrt(mM)
-        K32_C1 = 9.1295E6Hz
+        K32_C1 = 9129.5 / ms
         K34_C1 = 639.1364Hz
         K43_C1 = 3.2882Hz / sqrt(mM)
-        K47_C1 = 1.5962E7Hz / mM
+        K47_C1 = 15.962 / (μM * ms)
         K74_C1 = 65.2227Hz
-        K75_C1 = 2.4615E4Hz
+        K75_C1 = 24.615E3Hz
         K57_C1 = 1.1667E3Hz / sqrt(mM)
         K42_C1 = 6.0318Hz / mM
     end
 
     @variables begin
-        Q_n(t)
-        QH2_n(t)
-        vC1(t)
+        vQC1(t)
         vHresC1(t)
         vROSC1(t)
+        vNADHC1(t)
         C1_1(t)
         C1_2(t)
         C1_3(t)
@@ -76,8 +105,10 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
 
     c1eqs = let
         C1_CONC = ρC1 * MT_PROT
-        C1_INHIB = hil(KI_DOX_C1, DOX, 3)  # complex I inhibition by DOX
-        E_LEAK_C1 = 1 + K_RC_DOX * DOX  # Electron leak scaling factor from complex I
+        # complex I inhibition by DOX and rotenone
+        C1_INHIB = hil(KI_DOX_C1, DOX, 3) * (1 - ROTENONE_BLOCK)
+        # Electron leak scaling factor from complex I
+        E_LEAK_C1 = 1 + K_RC_DOX * DOX
         fv = exp(iVT * (dpsi - dpsi_B_C1))
 
         # State transition rates
@@ -124,10 +155,11 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
             C1_a57 ~ C1_INHIB * K57_C1 * NaNMath.sqrt(QH2_n),
             C1_a75 ~ K75_C1,
             C1_a42 ~ K42_C1 * E_LEAK_C1 * O2,
-            C1_a24 ~ K42_C1 * exp(iVT * (E_FMN - E_SOX)) * sox_m,
-            vC1 ~ 0.5 * C1_CONC * (C1_4 * a47 - C1_7 * a74),
-            vHresC1 ~ 4 * vC1,
+            C1_a24 ~ K42_C1 * exp(iVT * (E_FMN_C1 - E_SOX_C1)) * sox_m,
+            vQC1 ~ 0.5 * C1_CONC * (C1_4 * a47 - C1_7 * a74),
+            vHresC1 ~ 4 * vQC1,
             vROSC1 ~ C1_CONC * (C1_4 * a42 - C1_2 * a24),
+            vNADHC1 ~ 0.5 * C1_CONC * (C1_2 * a23 - C1_3 * a32),
             C1_1 ~ C1_e1 / denom,
             C1_2 ~ C1_e2 / denom,
             C1_3 ~ C1_e3 / denom,
@@ -141,7 +173,7 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
     # Reversible complex II (SDH)
     @parameters begin
         K_C2 = 250 / (minute * mM)   # Reaction rate constant of SDH (complex II)
-        KI_OAA_C2 = 0.15mM      # MM constant for OAA
+        KI_OAA_C2 = 0.15mM      # Inhibition constant for OAA
         KEQ_C2 = 1.0            # Equlibrium constant of SDH
     end
 
@@ -178,7 +210,7 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
     end
 
     c4eqs = let
-        C4_INHIB = hil(KI_DOX_C4, DOX, 3)  # complex IV inhibition by DOX
+        C4_INHIB = hil(KI_DOX_C4, DOX, 3) * (1 - CYANIDE_BLOCK)  # complex IV inhibition by DOX
         C4_CONC = ρC4 * MT_PROT
         aδ = exp(-iVT * δ₅ * dpsi)
         a1mδ = exp(iVT * (1 - δ₅) * dpsi)
@@ -253,19 +285,13 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
     end
 
     @variables begin
-        QH2_n(t) = 0.6002709581315435mM
-        QH2_p(t) = 0.6001505595245672mM
-        Q_n(t) = 1.3268400422082767mM
-        Q_p(t) # Conserved
-        Qdot_p(t) = 0.07820141736951611mM
-        Qdot_n(t) = 0.06757658200311795mM
-        fes_ox(t) = 0.054765936912457895mM
+        fes_ox(t) = 284.60μM
         fes_rd(t) # Conserved
-        cytc1_ox(t) = 0.28338319859718647mM
+        cytc1_ox(t) = 316.09μM
         cytc1_rd(t) # Conserved
-        cytb_1(t) = 0.19471601197446434mM
-        cytb_2(t) = 0.08033504811661059mM
-        cytb_3(t) = 0.047309996276701564mM
+        cytb_1(t) = 194.87μM
+        cytb_2(t) = 91.45μM
+        cytb_3(t) = 36.64μM
         cytb_4(t) # Conserved
         vROSC3(t)
         vHres(t)
@@ -274,14 +300,14 @@ function get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX=0,
     end
 
     c3eqs = let
-        C3_INHIB = hil(KI_DOX_C3, DOX, 3) * ANTIMYCIN  # complex III inhibition by DOX and antimycin
+        C3_INHIB = hil(KI_DOX_C3, DOX, 3) * (1 - ANTIMYCIN_BLOCK)  # complex III inhibition by DOX and antimycin
         FAC_PH = h_m / 1E-7Molar
         C3_CONC = ρC3 * MT_PROT
-        v1 = vC1 + vSDH # Q reduction
+        v1 = vQC1 + vSDH # Q reduction
         v2 = KD_Q * (QH2_n - QH2_p) # QH2 diffusion
         # v3 = QH2 to FeS
         Qo_avail = (C3_CONC - Qdot_p) / C3_CONC
-        v3 = K03_C3 * MYXOTHIAZOLE * (KEQ3_C3 * Qo_avail * fes_ox * FAC_PH * QH2_p - fes_rd * Qdot_p)
+        v3 = K03_C3 * (1 - MYXOTHIAZOLE_BLOCK) * (KEQ3_C3 * Qo_avail * fes_ox * FAC_PH * QH2_p - fes_rd * Qdot_p)
         # v4 = Qdot_p and bH
         el4 = exp(-iVT * α_C3 * δ₁_C3 * dpsi)
         er4 = exp(iVT * α_C3 * (1 - δ₁_C3) * dpsi)
