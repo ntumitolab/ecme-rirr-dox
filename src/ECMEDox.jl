@@ -53,17 +53,19 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
         KM_CA_CSQN = 0.8mM
         ET_CSQN = 5.0mM
         δCA = 3E-4          # Mito. Ca buffering factor
-        # concentrations
+        # constant concentrations
+        O2(t) = 6μM          # Oxygen concentration
+        h_i(t) = exp10(-7) * Molar   # Cytosolic proton concentration
+        h_m(t) = exp10(-7.6) * Molar # Mitochondrial proton concentration
         nadph_i = 0.075mM   # Cytosolic NADPH (Gauthier-2013) # 1.0mM (Li-2015)
         pi_m = 8.6512mM     # Inorganic phosphate (Gauthier-2013 and Kembro-2013)
         k_o = 5.4mM         # Extracellular potassium
         na_o = 140.0mM      # Extracellular sodium
         ca_o = 2.0mM        # Extracellular calcium
-        mg_m = 0.4mM        # Mitochondrial magnesium (li-2015)
         mg_i = 1.0mM        # Cytosolic magnesium (Gauthier-2013) # 3.1mM (Li-2015)
+        mg_m = 0.4mM        # Mitochondrial magnesium (li-2015)
         pi_i = 3.0mM        # Cytosolic inorganic phosphate
-        h_i = exp10(-7) * Molar   # Cytosolic proton concentration
-        h_m = exp10(-7.6) * Molar # Mitochondrial proton concentration
+        pi_m = 8.6512mM     # Inorganic phosphate (Gauthier-2013 and Kembro-2013)
     end
 
     @variables begin
@@ -96,9 +98,9 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
     inaksys = get_inak_sys(atp_i, adp_i, vm, na_i, na_o, k_o)
     tcassys = get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg)
     @unpack suc, fum, oaa, vSL, vIDH, vKGDH, vMDH = tcassys
-    etcsys = get_etc_sys(nad_m, nadh_m, dpsi, h_i, h_m, sox_m, suc, fum, oaa, DOX, MT_PROT)
+    etcsys = get_etc_sys(; h_i, h_m, DOX, MT_PROT, O2)
     c5sys = get_c5_sys(dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT; mg_i, mg_m, use_mg)
-    @unpack vROS, vC1, vHres = etcsys
+    @unpack vROS, vNADHC1, vHres = etcsys
     rossys = get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO)
     mitocasys = get_mitoca_sys(na_i, ca_m, ca_i, dpsi)
 
@@ -125,7 +127,7 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
         D(ca_m) ~ δCA * (vUni - vNaCa),
         D(adp_i) ~ vCK_mito - V_MITO_V_MYO * vANT + vAm + 0.5 * Jup + A_CAP_V_MYO_F * (IPMCA + INaK),
         D(adp_m) ~ vANT - vSL - vC5,
-        D(nadh_m) ~ -vC1 + vIDH + vKGDH + vMDH,
+        D(nadh_m) ~ -vNADHC1 + vIDH + vKGDH + vMDH,
         D(dpsi) ~ inv(CM_MITO) * (vHres - vHu - vANT - vHleak - vNaCa - 2 * vUni - vTrROS),
         D(sox_m) ~ vROS - vTrROS,
         ΣA_i ~ atp_i + adp_i,
