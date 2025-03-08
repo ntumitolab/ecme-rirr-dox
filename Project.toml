@@ -14,10 +14,3 @@ ProgressLogging = "33c8b6b6-d38a-422a-b730-caa89a2f386c"
 
 [compat]
 julia = "~1.10"
-DiffEqCallbacks = "4.3.0"
-DisplayAs = "0.1.6"
-ModelingToolkit = "9.64.3"
-NaNMath = "1.1.2"
-OrdinaryDiffEq = "6.91.0"
-Plots = "1.40.9"
-ProgressLogging = "0.1.4"
