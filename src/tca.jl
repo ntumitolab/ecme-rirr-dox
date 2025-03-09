@@ -62,8 +62,9 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
         ### AAT (alanine aminotransferase)
         KF_AAT = 0.0217 / (ms * mM)
         KEQ_AAT = 6.6
-        KASP_AAT = 1.5E-6 / ms
-        GLU = 30.0mM
+        # KASP_AAT = 1.5E-6 / ms # Aspartate consumption rate
+        GLU = 10.0mM        # Glutamate
+        ASP = GLU           # Aspartate
     end
 
     @variables begin
@@ -78,12 +79,12 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
         vSDH(t)
         oaa(t) = 0.011576938766421891mM
         cit(t) # Conserved
-        isoc(t) = 0.05159054318098895mM# isocitrate
-        akg(t) = 0.051145197718677655mM# alpha-ketoglutarate
-        scoa(t) = 0.03508849487000582mM# succinyl-CoA
+        isoc(t) = 0.05159054318098895mM     # isocitrate
+        akg(t) = 0.051145197718677655mM     # alpha-ketoglutarate
+        scoa(t) = 0.03508849487000582mM     # succinyl-CoA
         suc(t) = 0.0019107469302081612mM    # succinate
         fum(t) = 0.1751906841603877mM       # fumarate
-        mal(t) = 0.15856757152954906mM# malate
+        mal(t) = 0.15856757152954906mM      # malate
     end
 
     v_cs = KCAT_CS * ET_CS * hil(ACCOA, KM_ACCOA_CS) * hil(oaa, KM_OAA_CS)
@@ -95,7 +96,7 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
         f_akg = NaNMath.pow(akg / KM_AKG_KGDH, NI_AKG_KGDH)
         f_nad = nad_m / KM_NAD_KGDH
         vmax = ET_KGDH * KCAT_KGDH
-        v = vmax * f_akg * f_nad * f_mgca / (f_h * f_mgca * f_akg * f_nad + f_akg + f_nad)
+        vmax * f_akg * f_nad * f_mgca / (f_h * f_mgca * f_akg * f_nad + f_akg + f_nad)
     end
 
     v_idh = let
@@ -103,16 +104,17 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
         a = NaNMath.pow(isoc / KM_ISOC_IDH , NI_ISOC_IDH) * (1 + adp_m / KM_ADP_IDH) * (1 + ca_m / KM_CA_IDH)
         b = nad_m / KM_NAD_IDH * hil(KI_NADH_IDH, nadh_m)
         h = 1 + h_m / KH1_IDH + KH2_IDH / h_m
-        vidh = vmax * a * b / (h * a * b + a + b + 1)
+        vmax * a * b / (h * a * b + a + b + 1)
     end
 
     v_mdh = let
+        vmax = KCAT_MDH * ET_MDH
         f_ha = K_OFFSET_MDH + hil(KH1_MDH * hil(KH2_MDH, h_m), h_m)
         f_hi = hil(h_m * hil(h_m, KH4_MDH), KH3_MDH)^2
         f_oaa = hil(KI_OAA_MDH, oaa)
         f_mal = hil(mal * f_oaa, KM_MAL_MDH)
         f_nad = hil(nad_m, KM_NAD_MDH)
-        vmdh = KCAT_MDH * ET_MDH * f_ha * f_hi * f_nad * f_mal
+        vmax * ET_MDH * f_ha * f_hi * f_nad * f_mal
     end
 
     v_sl = let
@@ -129,7 +131,7 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
     end
 
     v_fh = KF_FH * (fum - mal / KEQ_FH)
-    v_aat = KF_AAT * oaa * GLU * hil(KASP_AAT * KEQ_AAT, akg * KF_AAT)
+    v_aat = KF_AAT * (oaa * GLU - akg * ASP / KEQ_AAT)
 
     eqs = [
         TCA_T ~ cit + isoc + oaa + akg + scoa + suc + fum + mal,
