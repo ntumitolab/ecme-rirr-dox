@@ -19,6 +19,7 @@ env:
   NBCACHE: '.cache'
   JULIA_CONDAPKG_BACKEND: 'Null'
   JULIA_CI: 'true'
+  UV_SYSTEM_PYTHON: 1
 
 jobs:
   CI:
