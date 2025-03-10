@@ -742,7 +742,7 @@ $$
 | $E_{FMN}$      | -375      | mV            | Midpoint potential of flavin mononucleotide  |
 | $E_{sox}$      | -150      | mV            | Midpoint potential of superoxide             |
 
-## Complex II (Succinate dehydrogenase)
+### Complex II (Succinate dehydrogenase)
 
 $$
 \begin{align}
@@ -763,7 +763,7 @@ $$
 | $K_{i, FUC}$ | 0.150 | mM          | Inhibition constant for fumarate     |
 | $K_{m, SUC}$ | 0.6   | -           | Michaelis constant for succinate     |
 
-## Complex III
+### Complex III
 
 $$
 \begin{align}
@@ -873,7 +873,7 @@ $$
 | $\rho_{C3}$  | 0.325    | mM    | Complex III content                                      |
 
 
-## Complex IV
+### Complex IV
 
 $$
 \begin{align}
@@ -921,7 +921,7 @@ $$
 | $k_{37}$      | 1.7245E8  | Hz      | Rate constant @ pH = 7 |
 | $k_{-37}$     | 17.542    | Hz      | Rate constant @ pH = 7 |
 
-## Complex V (ATP synthase)
+### Complex V (ATP synthase)
 
 $$
 \begin{align}
@@ -1177,5 +1177,3 @@ $$
 | $\Sigma[A]_m$      | 1.5     | mM   | Sum of mitochondrial ATP and ADP         |
 | $\Sigma{[NADP]_m}$ | 0.1     | mM   | Sum of mitochondrial NADPH plus NADP     |
 | $[Ca^{2+}]_i$      | 1E-4    | mM   | Cytosolic calcium concentration          |
-
-## Initial conditions
