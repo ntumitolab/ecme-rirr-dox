@@ -16,7 +16,7 @@ bcl = 1second
 @unpack DOX, ρC4, ρC3 = sys
 sts = unknowns(sys)
 u0 = build_u0(sys)
-alg = KenCarp4()
+alg = KenCarp47()
 opts = (; reltol=1e-6, abstol=1e-6, progress=true, maxiters=1e8)
 
 # The phase transition (of the Q cycle) is between 285uM and 290uM of DOX
