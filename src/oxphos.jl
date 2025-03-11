@@ -24,6 +24,8 @@ function get_etc_sys(;
         MYXOTHIAZOLE_BLOCK(t) = 0
         CYANIDE_BLOCK(t) = 0
         OLIGOMYCIN_BLOCK(t) = 0
+        E_O2_SOX = -150mV  # O2/Superoxide redox potential
+        E_FMN = -375mV     # FMN/FMN- redox potential
     end
 
     @variables begin
@@ -34,18 +36,16 @@ function get_etc_sys(;
         suc(t)
         fum(t)
         oaa(t)
-        Q_n(t) = 1860μM
-        QH2_n(t) = 40.68μM
-        QH2_p(t) = 40.65μM
+        Q_n(t)
+        QH2_n(t)
+        QH2_p(t)
         Q_p(t) # Conserved
-        Qdot_p(t) = 33.21μM
-        Qdot_n(t) = 164.55μM
+        Qdot_p(t)
+        Qdot_n(t)
     end
 
     # Complex I
     @parameters begin
-        E_FMN_C1 = -375mV  # FMN redox potential
-        E_SOX_C1 = -150mV  # Superoxide redox potential
         ρC1 = 5mM # Adjusted # 8.85mM, Concentration of complex I, from Gauthier et al. (2013)
         dpsi_B_C1 = 50.0mV   # Phase boundary potential
         # Transition rates
@@ -155,7 +155,7 @@ function get_etc_sys(;
             C1_a57 ~ C1_INHIB * K57_C1 * NaNMath.sqrt(QH2_n),
             C1_a75 ~ K75_C1,
             C1_a42 ~ K42_C1 * E_LEAK_C1 * O2,
-            C1_a24 ~ K42_C1 * exp(iVT * (E_FMN_C1 - E_SOX_C1)) * sox_m,
+            C1_a24 ~ K42_C1 * exp(iVT * (E_FMN - E_O2_SOX)) * sox_m,
             vQC1 ~ 0.5 * C1_CONC * (C1_4 * a47 - C1_7 * a74),
             vHresC1 ~ 4 * vQC1,
             vROSC1 ~ C1_CONC * (C1_4 * a42 - C1_2 * a24),
@@ -252,10 +252,20 @@ function get_etc_sys(;
 
     # complex III and the Q cycle
     @parameters begin
+        ρC3 = 0.325mM
         Q_T = 4.0mM  # Total CoQ pool
-        K03_C3 = 9.9998E4 / minute / mM
+        E_QH_QH2p = +290mV
+        E_Qp_Qdotp = -160mV
+        E_Qn_Qdotn = +70mV
+        E_Qdotn_QH2n = +170mV
+        E_bL = -40mV
+        E_bH = +40mV
+        E_FeS = +280mV
+        E_cytc1 = +245mV
+        E_cytc = +255mV
+        K03_C3 = 99998 / minute / mM
         KEQ3_C3 = 0.6877
-        K04_C3 = 3.6402E3 / minute / mM
+        K04_C3 = 3640.2 / minute / mM
         KEQ4_OX_C3 = 129.9853
         KEQ4_RD_C3 = 13.7484
         δ₁_C3 = 0.5
@@ -275,23 +285,22 @@ function get_etc_sys(;
         K08_RD_C3 = 500 / minute / mM
         KEQ8_OX_C3 = 129.9853
         KEQ8_RD_C3 = 9.4546
-        K09_C3 = 4.9949E4 / minute / mM
+        K09_C3 = 49949 / minute / mM
         KEQ9_C3 = 0.2697
         K010_C3 = 1700 / minute / mM
         KEQ10_C3 = 1.4541
         K33_C3 = 148148 / minute
         KEQ33_C3 = 2.1145
-        ρC3 = 0.325mM
     end
 
     @variables begin
-        fes_ox(t) = 284.60μM
+        fes_ox(t)
         fes_rd(t) # Conserved
-        cytc1_ox(t) = 316.09μM
+        cytc1_ox(t)
         cytc1_rd(t) # Conserved
-        cytb_1(t) = 194.87μM
-        cytb_2(t) = 91.45μM
-        cytb_3(t) = 36.64μM
+        cytb_1(t)
+        cytb_2(t)
+        cytb_3(t)
         cytb_4(t) # Conserved
         vROSC3(t)
         vHres(t)
@@ -301,13 +310,12 @@ function get_etc_sys(;
 
     c3eqs = let
         C3_INHIB = hil(KI_DOX_C3, DOX, 3) * (1 - ANTIMYCIN_BLOCK)  # complex III inhibition by DOX and antimycin
-        FAC_PH = h_m / 1E-7Molar
         C3_CONC = ρC3 * MT_PROT
         v1 = vQC1 + vSDH # Q reduction
         v2 = KD_Q * (QH2_n - QH2_p) # QH2 diffusion
         # v3 = QH2 to FeS
         Qo_avail = (C3_CONC - Qdot_p) / C3_CONC
-        v3 = K03_C3 * (1 - MYXOTHIAZOLE_BLOCK) * (KEQ3_C3 * Qo_avail * fes_ox * FAC_PH * QH2_p - fes_rd * Qdot_p)
+        v3 = K03_C3 * (1 - MYXOTHIAZOLE_BLOCK) * (KEQ3_C3 * Qo_avail * fes_ox * (h_i / 1E-7Molar) * QH2_p - fes_rd * Qdot_p)
         # v4 = Qdot_p and bH
         el4 = exp(-iVT * α_C3 * δ₁_C3 * dpsi)
         er4 = exp(iVT * α_C3 * (1 - δ₁_C3) * dpsi)
@@ -322,6 +330,7 @@ function get_etc_sys(;
         er7 = exp(iVT * γ_C3 * (1 - δ₃_C3) * dpsi)
         v7_ox = K07_OX_C3 * C3_INHIB * (KEQ7_OX_C3 * cytb_3 * Q_n * el7 - cytb_1 * Qdot_n * er7)
         v7_rd = K07_RD_C3 * C3_INHIB * (KEQ7_RD_C3 * cytb_4 * Q_n * el7 - cytb_2 * Qdot_n * er7)
+        FAC_PH = h_m / 1E-7Molar
         v8_ox = K08_OX_C3 * C3_INHIB * (KEQ8_OX_C3 * cytb_3 * Qdot_n * FAC_PH^2 * el7 - cytb_1 * QH2_n * er7)
         v8_rd = K08_RD_C3 * C3_INHIB * (KEQ8_RD_C3 * cytb_4 * Qdot_n * FAC_PH^2 * el7 - cytb_2 * QH2_n * er7)
         # v9 = fes -> cytc1
