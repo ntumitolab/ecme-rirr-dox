@@ -17,85 +17,104 @@ bcl = 1second
 sts = unknowns(sys)
 u0 = build_u0(sys)
 alg = KenCarp47()
-opts = (; reltol=1e-6, abstol=1e-6, progress=true, maxiters=1e8)
+opts = (; reltol=1e-6, abstol=1e-6, progress=true)
 
-# The phase transition (of the Q cycle) is between 285uM and 290uM of DOX
-prob = ODEProblem(sys, u0, tend, [DOX => 285μM])
-@time sol = solve(prob, alg; opts...)
+# The collapse of MMP is between 307uM and 310uM of DOX
+doxrange = 307μM:1μM:310μM
+prob = ODEProblem(sys, u0, tend)
+prob_func = (prob, i, repeat) -> remake(prob, p=[DOX => doxrange[i]])
+eprob = EnsembleProblem(prob; prob_func, safetycopy=false)
+
+@time sim = solve(eprob, KenCarp47(); trajectories=length(doxrange), opts...)
+
+fig = plot(title="MMP")
+for (i, dox) in enumerate(doxrange)
+    plot!(fig, sim[i], idxs=(sys.t/1000, sys.dpsi), lab="DOX = $(dox) μM")
+end
+plot!(fig, ylabel="mV", xlabel="Time (s)") |> PNG
 
 #---
-s = sys.t/1000
-@unpack vm = sys
-plot(sol, idxs=(s, vm), lab=false, title="PM potential") |> PNG
-#---
-@unpack dpsi = sys
-plot(sol, idxs=(s, dpsi), lab=false, title="Mito potential") |> PNG
-#---
-@unpack atp_i, adp_i = sys
-plot(sol, idxs=(s, [atp_i / adp_i]), lab="DOX=285", title="ATP:ADP") |> PNG
+fig = plot(title="ATP:ADP")
+for (i, dox) in enumerate(doxrange)
+    plot!(fig, sim[i], idxs=(sys.t/1000, [sys.atp_i / sys.adp_i]), lab="DOX = $(dox) μM")
+end
+plot!(fig, ylabel="Ratio", xlabel="Time (s)", legend=:right) |> PNG
 
 #---
-prob0 = ODEProblem(sys, u0, tend, [DOX => 290μM])
-prob1 = ODEProblem(sys, u0, tend, [DOX => 290μM, ρC4 => 500μM])
-prob2 = ODEProblem(sys, u0, tend, [DOX => 290μM, ρC3 => 500μM])
+fig = plot(title="ATP synthase")
+for (i, dox) in enumerate(doxrange)
+    plot!(fig, sim[i], idxs=(sys.t/1000, sys.vC5), lab="DOX = $(dox) μM")
+end
+plot!(fig, ylabel="Rate (μM/ms)", xlabel="Time (s)", legend=:right) |> PNG
+
+#---
+prob0 = ODEProblem(sys, u0, tend, [DOX => 308μM])
+prob1 = ODEProblem(sys, u0, tend, [DOX => 308μM, ρC4 => 500μM])
+prob2 = ODEProblem(sys, u0, tend, [DOX => 308μM, ρC3 => 500μM])
 @time sol0 = solve(prob0, alg; opts...)
 @time sol1 = solve(prob1, alg; opts...)
 @time sol2 = solve(prob2, alg; opts...)
 
 #---
-plot(sol0, idxs=(s, vm), lab="DOX=290", title="PM potential") |> PNG
+s = sys.t / 1000
+@unpack vm, atp_i, adp_i, dpsi = sys
+plot(sol0, idxs=(s, vm), lab="DOX=308", title="PM potential") |> PNG
 
 #---
-plot(sol1, idxs=(s, vm), lab="DOX=290, ρC4=500", title="PM potential") |> PNG
+plot(sol1, idxs=(s, vm), lab="DOX=308, ρC4=500", title="PM potential") |> PNG
 
 #---
-plot(sol2, idxs=(s, vm), lab="DOX=290, ρC3=500", title="PM potential") |> PNG
+plot(sol2, idxs=(s, vm), lab="DOX=308, ρC3=500", title="PM potential") |> PNG
 
 #---
 i = idxs=(s, [atp_i / adp_i])
-fig = plot(sol0, idxs=i, label="DOX=290", title="ATP:ADP")
+fig = plot(sol0, idxs=i, label="DOX=308", title="ATP:ADP")
 plot!(fig, sol1, idxs=i, label="C4 500uM")
 plot!(fig, sol2, idxs=i, label="C3 500uM")
 fig |> PNG
 
 #---
 i = idxs=(s, sys.dpsi)
-fig = plot(sol0, idxs=i, label="DOX=290", title="MMP")
+fig = plot(sol0, idxs=i, label="DOX=308", title="MMP")
 plot!(fig, sol1, idxs=i, label="C4 500uM")
 plot!(fig, sol2, idxs=i, label="C3 500uM")
 fig |> PNG
 
 #---
 idxs = (sys.t/1000, sys.vO2 + sys.vROS)
-fig = plot(sol0, idxs=idxs, label="DOX=290", title="Oxygen consumption")
+fig = plot(sol0, idxs=idxs, label="DOX=308", title="Oxygen consumption")
 plot!(fig, sol1, idxs=idxs, label="C4 500")
 plot!(fig, sol2, idxs=idxs, label="C3 500", xlabel="Time (s)", ylabel="vO2 (μM/ms)")
 fig |> PNG
 
 # O2 shunt
 idxs = (sys.t/1000, sys.vROS / (sys.vO2 + sys.vROS))
-fig = plot(sol0, idxs=idxs, label="DOX=290", title="ROS shunt fraction")
+fig = plot(sol0, idxs=idxs, label="DOX=308", title="ROS shunt fraction")
 plot!(fig, sol1, idxs=idxs, label="C4 500")
 plot!(fig, sol2, idxs=idxs, label="C3 500", xlabel="Time (s)", legend=:right)
 fig |> PNG
 
-# Q cycle : reduced Q pool
+# Q cycle : reduced Q pool (QH2 accumulation)
 @unpack Q_n, Qdot_n, QH2_n, QH2_p, Qdot_p, Q_p, fes_ox, fes_rd, cytc_ox, cytc_rd = sys
-plot(sol0, idxs=[Q_n, Qdot_n, QH2_n, QH2_p, Qdot_p, Q_p], title="Q cycle (DOX=290uM)", legend=:right) |> PNG
+plot(sol0, idxs=[Q_n, Qdot_n, QH2_n, QH2_p, Qdot_p, Q_p], title="Q cycle (DOX=308uM)", legend=:right) |> PNG
 
 # Succinate accumulation and CAC slowed down.
 @unpack cit, isoc, oaa, akg, scoa, suc, fum, mal= sys
 plot(sol0, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal], legend=:right, title="CAC metabolites") |> PNG
 
-#---
+# AAT going in the direction from AKG to OAA
 @unpack vCS, vACO, vIDH, vKGDH, vSL, vFH, vMDH, vAAT, vSDH = sys
 plot(sol0, idxs=[vCS, vACO, vIDH, vKGDH, vSL, vFH, vMDH, vAAT, vSDH], legend=:right, title="CAC flux", tspan=(100second, 1000second)) |> PNG
 
-#---
+# ROS production from complex I and complex III
+plot(sol0, idxs=[sys.vROSC1, sys.vROSC3], legend=:right, title="Superoxide generation") |> PNG
+
+# Reverse electron transport in complex I?
+plot(sol0, idxs=[sys.vQC1], legend=:right, title="Complex I rates") |> PNG
 
 # NADH production from CAC decreased
 idxs = (sys.t/1000, sys.nadh_m)
-fig = plot(sol0, idxs=idxs, label="DOX=290", title="NADH (mito)")
+fig = plot(sol0, idxs=idxs, label="DOX=308", title="NADH (mito)")
 plot!(fig, sol1, idxs=idxs, label="C4 500")
 plot!(fig, sol2, idxs=idxs, label="C3 500", xlabel="Time (s)", legend=:right)
 fig |> PNG
