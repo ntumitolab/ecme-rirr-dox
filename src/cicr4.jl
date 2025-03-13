@@ -1,8 +1,8 @@
 #===
-Coupled LCC-RyR local control model (3 states) by Hinch et al. (2004) https://pmc.ncbi.nlm.nih.gov/articles/PMC1304886/
+Coupled LCC-RyR local control model (9 states) by Hinch et al. (2004) https://pmc.ncbi.nlm.nih.gov/articles/PMC1304886/
 
 ===#
-function get_cicr4_sys(ca_i, ca_sr, ca_o, vm, A_CAP, V_DS=2e-4μm^3; name=:cicrsys)
+function get_cicr9_sys(; ca_i, ca_sr, ca_o, vm, A_CAP, V_DS=2e-4μm^3, name=:cicr9)
     @parameters begin
         V_L = -2mV # Potential when half LCC open
         kV_L = inv(7mV) # Steepness of opening potentials
@@ -25,37 +25,38 @@ function get_cicr4_sys(ca_i, ca_sr, ca_o, vm, A_CAP, V_DS=2e-4μm^3; name=:cicrs
         θ_R = 0.012     # reciprocal of proportion of time inactivated in open mode
         c_R = 0.01      # Biasing to make inactivation a function of [Ca2+]ds
         d_R = 100       # Biasing to make inactivation a function of [Ca2+]ds
-        J_R = 2E-2μm^3/ms # Permeability of single RyR
-        N_CaRU = 50000  # Number of Ca release units
-        g_D = 0.065μm^3/m # Ca2+ flux rate from dyadic space to cytosol
+        J_R = 2E-2μm^3/ms   # Permeability of single RyR
+        N_CaRU = 50000      # Number of Ca release units
+        g_D = 0.065μm^3/ms  # Ca2+ flux rate from dyadic space to cytosol
     end
 
     @variables begin
-        z1(t)
-        z2(t)
-        z3(t)
-        z4(t) # conserved
+        # LCC/RyR close/open/inactivated states
+        y_oo(t) = 0
+        y_oc(t) = 0
+        y_oi(t) = 0
+        y_co(t) = 0
+        y_cc(t) # conserved
+        y_ci(t) = 0
+        y_io(t) = 0
+        y_ic(t) = 0
+        y_ii(t) = 0
         ca_ss_cc(t)
         ca_ss_co(t)
         ca_ss_oc(t)
         ca_ss_oo(t)
+        ca_ss(t)
         JR_co(t)
         JR_oo(t)
         JL_oc(t)
         JL_oo(t)
+        ICaL(t)
+        JRyR(t)
         α1_L(t)
         αp_L(t)
         αm_L(t)
         ϵm_L(t)
         βm_R(t)
-        yoc_z1(t)
-        yco_z1(t)
-        yoo_z1(t)
-        ycc_z1(t)
-        yci_z2(t)
-        yoi_z2(t)
-        yic_z3(t)
-        yio_z3(t)
     end
 
     _ϵp(ca) = ca * itau_L * iK_L * (α1_L + a_L) / (α1_L + 1)
@@ -63,30 +64,32 @@ function get_cicr4_sys(ca_i, ca_sr, ca_o, vm, A_CAP, V_DS=2e-4μm^3; name=:cicrs
     _μp(ca) = itauR * (ca^2 + c_R * K_RyR^2) / (ca^2 + K_RyR^2)
     _μm(ca) = itauR * θ_R * d_R * (ca^2 + c_R * K_RyR^2) / (d_R * ca^2 + c_R * K_RyR^2)
 
+    # State transition rates
+    v_oo_oc = y_oo * βm_R - y_oc * _βp(ca_ss_oc)
+    v_oc_oi = y_oc * _μp(ca_ss_oc) - y_oi * _μm(ca_ss_oc)
+    v_oo_co = y_oo * αm_L - y_co * αp_L
+    v_oc_cc = y_oc * αm_L - y_cc * αp_L
+    v_oi_ci = y_oi * αm_L - y_ci * αp_L
+    v_co_cc = y_co * βm_R - y_cc * _βp(ca_ss_cc)
+    v_cc_ci = y_cc * _μp(ca_ss_cc) - y_ci * _μm(ca_ss_cc)
+    v_co_io = y_co * _ϵp(ca_ss_co) - y_io * ϵm_L
+    v_cc_ic = y_cc * _ϵp(ca_ss_cc) - y_ic * ϵm_L
+    v_ci_ii = y_ci * _ϵp(ca_ss_cc) - y_ii * ϵm_L
+    v_io_ic = y_io * βm_R - y_ic * _βp(ca_ss_cc)
+    v_ic_ii = y_ic * _μp(ca_ss_cc) - y_ii * _μm(ca_ss_cc)
 
+    # calcium flux weights
+    # wi = 1
     wr = J_R / g_D
     wl = J_L / g_D * exprel(-2 * iVT * vm)
     cao = ca_o * exp(-2 * iVT * vm)
-    woc = αp_L * βm_R * (αp_L + αm_L + βm_R + _βp(ca_ss_cc))
-    wco = αm_L * (_βp(ca_ss_cc) * (αm_L + βm_R + _βp(ca_ss_oc)) + _βp(ca_ss_oc) * αp_L)
-    woo = αp_L * (_βp(ca_ss_oc) * (αp_L + βm_R + _βp(ca_ss_cc)) + _βp(ca_ss_cc) * αm_L)
-    wcc = αm_L * βm_R * (αp_L + αm_L + βm_R + _βp(ca_ss_oc))
-    dem = woc + wco + woo + wcc
-
-    r1 = yoc_z1 * _μp(ca_ss_oc) + ycc_z1 * _μp(ca_ss_cc)
-    r2 = (αp_L * _μm(ca_ss_oc) + αm_L * _μm(ca_ss_cc)) / (αp_L + αm_L)
-    r3 = _μp(ca_ss_cc) * hil(βm_R, _βp(ca_ss_cc))
-    r4 = _μm(ca_ss_cc)
-    r5 = yco_z1 * _ϵp(ca_ss_co) + ycc_z1 * _ϵp(ca_ss_cc)
-    r6 = ϵm_L
-    r7 = _ϵp(ca_ss_cc) * hil(αm_L, αp_L)
-    r8 = ϵm_L
 
     eqs = [
         ca_ss_cc ~ ca_i,
         ca_ss_co ~ (ca_i + wr * ca_sr) / (1 + wr),
         ca_ss_oc ~ (ca_i + wl * cao)/ (1 + wl),
         ca_ss_oo ~ (ca_i + wr * ca_sr + wl * cao) / (1 + wr + wl),
+        ca_ss ~ ca_ss_oo * y_oo + ca_ss_co * (y_co + y_io) + ca_ss_oc * (y_oc + y_oi) + ca_ss_cc * (y_cc + y_ci + y_ic + y_ii),
         JR_co ~ J_R * (ca_sr - ca_i) / (1 + wr),
         JL_oc ~ J_L * exprel(-2 * iVT * vm) * (cao - ca_i) / (1 + wl),
         JR_oo ~ J_R * (ca_sr - ca_i + wl * (ca_sr - cao)) / (1 + wr + wl),
@@ -96,18 +99,15 @@ function get_cicr4_sys(ca_i, ca_sr, ca_o, vm, A_CAP, V_DS=2e-4μm^3; name=:cicrs
         αm_L ~ it_L * phi_L,
         ϵm_L ~ itau_L * b_L * (α1_L + a_L) / (b_L * α1_L + a_L),
         βm_R ~ it_R * phi_R,
-        1 ~ z1 + z2 + z3 + z4,
-        1 ~ yci_z2 + yoi_z2,
-        1 ~ yic_z3 + yio_z3,
-        1 ~ yoc_z1 + yco_z1 + yoo_z1 + ycc_z1,
-        yci_z2 ~ αm_L / (αp_L + αm_L),
-        yic_z3 ~ βm_R / (βm_R + _βp(ca_ss_cc)),
-        yoc_z1 ~ woc / dem,
-        yco_z1 ~ wco / dem,
-        yoo_z1 ~ woo / dem,
-        D(z1) ~ -(r1 + r5) * z1 + r2 * z2 + r6 * z3,
-        D(z2) ~ r1 * z1 - (r2 + r7) * z2 + r8 * z4,
-        D(z3) ~ r5 * z1 - (r6 + r3) * z3 + r4 * z4
+        1 ~ y_oo + y_oc + y_oi + y_co + y_cc + y_ci + y_io + y_ic + y_ii,
+        D(y_oo) ~ - v_oo_oc - v_oo_co,
+        D(y_oc) ~ v_oo_oc - v_oc_oi - v_oc_cc,
+        D(y_oi) ~ v_oc_oi - v_oi_ci,
+        D(y_co) ~ v_oo_co - v_co_cc - v_co_io,
+        D(y_ci) ~ v_cc_ci + v_oi_ci - v_ci_ii,
+        D(y_io) ~ v_co_io - v_io_ic,
+        D(y_ic) ~ v_io_ic + v_cc_ic - v_ic_ii,
+        D(y_ii) ~ v_ci_ii + v_ic_ii
     ]
 
     return ODESystem(eqs, t; name)
