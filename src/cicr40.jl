@@ -22,7 +22,7 @@ function get_cicr40_sys(ca_i, ca_jsr, ca_o, vm, A_CAP, V_SS_SINGLE=0.203E-6pL; n
         KRYR_65 = 30 / ms
         KRYR_25 = 2.358E6 / mM^2 / ms
         KRYR_52 = 0.001235 / ms
-        NCaRU = 339000 # Number of LCC/RyR pairs
+        NCaRU = 50000 # Number of LCC/RyR pairs
     end
 
     @variables begin
