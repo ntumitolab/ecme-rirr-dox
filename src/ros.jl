@@ -18,7 +18,7 @@ function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
         # superoxide dismutase (SOD)
         K1_SOD = 1200 / mM / ms     # 2nd order rate constant of SOD
         K3_SOD = 24 / mM / ms       # 2nd order rate constant of SOD
-        K5_SOD = 2.4E-4 / ms        # 1st order rate constant of SOD
+        K5_SOD = 0.24Hz        # 1st order rate constant of SOD
         KI_H2O2_SOD = 0.5mM         # Inhibition constant of H2O2
         # ET_SOD_I = 1.43μM  	    # Cytosolic SOD concentration (Zhou, 2009)
         ET_SOD_I = 3μM              # Cytosolic SOD concentration
@@ -45,14 +45,14 @@ function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
         TRX_T_TR = 0.025mM  # Thioredoxin pool(mM)
         # Catalase
         K1_CAT = 17.0 / (mM * ms)  # Rate constant of CAT
-        ET_CAT = 0.01mM  # Total pool of CAT
+        ET_CAT = 10μM       # Catalase concentration
         FR_CAT = 0.05 / mM  # H2O2 inhibition factor of CAT
         # IMAC (Inner mitochondrial anion channel) from Cortassa et al. (2004)
-        A_IMAC = 1E-3  # Basal IMAC conductance factor
-        B_IMAC = 1E4   # Activation IMAC conductance factor by cytoplasmic superoxide
-        KCC_SOX_IMAC = 10μM  # Michaelis constant for cytoplasmic superoxide of IMAC
+        A_IMAC = 0.001      # Basal IMAC conductance factor
+        B_IMAC = 10000      # Activation IMAC conductance factor by cytoplasmic superoxide
+        KCC_SOX_IMAC = 10μM # Activation constant by cytoplasmic superoxide of IMAC
         GL_IMAC = 3.5E-8mM / ms / mV  # Leak conductance of IMAC (Zhou, 2009)
-        G_MAX_IMAC = 3.9085E-6mM / ms / mV  # Maximal conductance of IMAC (Zhou, 2009)
+        G_MAX_IMAC = GL_IMAC * 100  # Maximal conductance of IMAC (Zhou, 2009)
         κ_IMAC = 0.07 / mV  # Steepness factor
         DPSI_OFFSET_IMAC = 4mV  # Potential at half saturation
         J_IMAC = 0.1  # Fraction of ROS in IMAC conductance

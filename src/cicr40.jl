@@ -22,7 +22,7 @@ function get_cicr40_sys(ca_i, ca_jsr, ca_o, vm, A_CAP, V_SS_SINGLE=0.203E-6pL; n
         KRYR_65 = 30 / ms
         KRYR_25 = 2.358E6 / mM^2 / ms
         KRYR_52 = 0.001235 / ms
-        NCaRU = 339000 # Number of LCC/RyR pairs
+        NCaRU = 50000 # Number of LCC/RyR pairs
     end
 
     @variables begin
@@ -115,7 +115,7 @@ function get_cicr40_sys(ca_i, ca_jsr, ca_o, vm, A_CAP, V_SS_SINGLE=0.203E-6pL; n
         τ_yca ~ 20ms + 500ms * expit(-0.1 * (v + 28)) * expit(inv(14) * (v + 42)),
         Jxfer ~ R_XFER * (ca_ssavg - ca_i),
         ICaL ~ NCaRU / A_CAP * P_LCC * (pcicr[2] * ghk(1, vm, ca_ss[2], 0.341 * ca_o, 2) + pcicr[4] * ghk(1, vm, ca_ss[4], 0.341 * ca_o, 2)),
-        Jlcc ~ - ICaL * A_CAP / (V_SS_SINGLE * Faraday),
+        Jlcc ~ - ICaL * A_CAP / (2 * V_SS_SINGLE * Faraday),
         Jryr ~ R_RYR * (pcicr[3] * (ca_jsr - ca_ss[3]) + pcicr[4] * (ca_jsr - ca_ss[4]))
     ]
 
