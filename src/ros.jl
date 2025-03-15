@@ -6,10 +6,10 @@ ROS scavenging system
 Rate of superoxide dismutase. Based on (McAdam, 1977)
 """
 function _vsod(sox, h2o2, K1, K3, K5, KI_H2O2, E0)
-    f_h2o2 = K3 * (1 + h2o2 / KI_H2O2)
-    f_sox = K1 * sox
-    denom = K5 * (2 * K1 + f_h2o2) + f_h2o2 * f_sox
-    return 2 * E0 * K5 * f_sox * (K1 + f_h2o2) / denom
+    k3 = K3 * (1 + h2o2 / KI_H2O2)
+    k1 = K1 * sox
+    denom = K5 * (2 * K1 + k3) + k3 * k1
+    return 2 * E0 * K5 * k1 * (K1 + k3) / denom
 end
 
 "ROS diffusion and detox system"
