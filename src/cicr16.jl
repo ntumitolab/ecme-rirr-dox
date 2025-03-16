@@ -19,19 +19,19 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
         β_lcc(t)
         # Closed LCC state
         c0_lcc(t) # = 0.9991
-        c1_lcc(t) = 8.175e-5
-        c2_lcc(t) = 2.508e-9
-        c3_lcc(t) = 3.421e-14
-        c4_lcc(t) = 1.749e-20
+        c1_lcc(t) = 0
+        c2_lcc(t) = 0
+        c3_lcc(t) = 0
+        c4_lcc(t) = 0
         # Opened LCC state
-        o_lcc(t) = 2.624e-20
+        o_lcc(t) = 0
         # Ca-inhibited LCC states
-        cca0_lcc(t) = 1.1328e-3
-        cca1_lcc(t) = 1.7591e-8
-        cca2_lcc(t) = 6.3826e-13
-        cca3_lcc(t) = 1.815e-15
-        cca4_lcc(t) = 0.0
-        x_yca(t) = 0.9479 # Voltage-gated LCC
+        cca0_lcc(t) = 0
+        cca1_lcc(t) = 0
+        cca2_lcc(t) = 0
+        cca3_lcc(t) = 0
+        cca4_lcc(t) = 0
+        x_yca(t) = 1 # Voltage-gated LCC
         y_inf(t)
         τ_yca(t)
         # Currents

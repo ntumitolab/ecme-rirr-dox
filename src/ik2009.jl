@@ -15,7 +15,7 @@ function get_ik_sys(na_i, na_o, k_i, k_o, mg_i, vm, atp_i, adp_i; name=:iksys)
         IK(t)               # Time-dependent delayed rectifier K current
         IKp(t)              # Plateau K current
         IKatp(t)            # ATP-dependent K channel (KATP) current
-        x_k(t) = 1.1212e-4  # Time-dependent K channel gating variable
+        x_k(t) = 0          # Time-dependent K channel gating variable
     end
 
     # Time-independent potassium current
