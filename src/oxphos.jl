@@ -129,7 +129,7 @@ function get_etc_sys(;
         a42 = C1_a42
         a24 = C1_a24
 
-        # Fraction of each state in Complex I from the MATLAB code, derived from KA pattern
+        # Fraction of each state in Complex I derived from KA pattern
         denom = C1_e1 + C1_e2 + C1_e3 + C1_e4 + C1_e5 + C1_e6 + C1_e7
 
         c1eqs = [
