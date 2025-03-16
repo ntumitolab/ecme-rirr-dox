@@ -19,12 +19,12 @@ function get_force_sys(atp_i, adp_i, ca_i; name=:forcesys)
     end
 
     @variables begin
-        x_p0(t) = 2.601e-5
-        x_p1(t) = 2.248e-5
-        x_p2(t) = 4.199e-5
-        x_p3(t) = 3.657e-5
+        x_p0(t) = 0
+        x_p1(t) = 0
+        x_p2(t) = 0
+        x_p3(t) = 0
         x_n0(t)  # Conserved ~ 1
-        x_n1(t) = 2.243e-5
+        x_n1(t) = 0
         force(t)
         force_normal(t)
         vAm(t)

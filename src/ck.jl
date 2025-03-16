@@ -9,6 +9,7 @@ function get_ck_sys(atp_i, adp_i; name=:cksys)
         ΣCR = 25.0mM        # Pool of creatine and creatine phosphate
         ΣA_ic = 8mM         # Pool of cytosolic ATP/ADP
     end
+
     @variables begin
         cr_ic(t)  # Conserved
         crp_ic(t) = 5.1291mM
