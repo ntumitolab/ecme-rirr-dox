@@ -11,6 +11,8 @@ function _vsod(sox, h2o2, K1, K3, K5, KI_H2O2, E0)
     return 2 * E0 * K5 * K1 * sox * (K1 + k3′) / denom
 end
 
+_vsod_simple(sox, h2o2, K1, K3, K5, KI_H2O2, E0) = 2 * E0 * K1 * sox
+
 "ROS diffusion and detox system"
 function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
     @parameters begin
@@ -87,7 +89,7 @@ function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
         vGR_i ~ ET_GR * K1_GR * hil(nadph_i, KM_NADPH_GR) * hil(gssg_i, KM_GSSG_GR),
         vGPX_i ~ ET_GPX * h2o2_i * gsh_i / (𝚽1_GPX * gsh_i + 𝚽2_GPX * h2o2_i),
         vCAT ~ 2 * K1_CAT * ET_CAT * h2o2_i * exp(-FR_CAT * h2o2_i),
-        vSOD_i ~ _vsod(sox_i, h2o2_i, K1_SOD, K3_SOD, K5_SOD, KI_H2O2_SOD, ET_SOD_I),
+        vSOD_i ~ _vsod_simple(sox_i, h2o2_i, K1_SOD, K3_SOD, K5_SOD, KI_H2O2_SOD, ET_SOD_I),
         ΣGSH_i ~ gsh_i + 2 * gssg_i,
         D(sox_i) ~ V_MITO_V_MYO * vTrROS - vSOD_i,
         D(h2o2_i) ~ 0.5 * vSOD_i - vGPX_i - vCAT,
