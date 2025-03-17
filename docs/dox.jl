@@ -19,13 +19,14 @@ u0 = build_u0(sys)
 alg = KenCarp47()
 opts = (; reltol=1e-6, abstol=1e-6, progress=true)
 
-# The collapse of MMP is between 307uM and 310uM of DOX
-doxrange = 307μM:1μM:310μM
+# The collapse of MMP is between 304uM and 305uM of DOX
+doxrange = 304μM:1μM:307μM
 prob = ODEProblem(sys, u0, tend)
 prob_func = (prob, i, repeat) -> remake(prob, p=[DOX => doxrange[i]])
+sol = solve(prob, alg; opts...)  ## Warm-up
 eprob = EnsembleProblem(prob; prob_func, safetycopy=false)
 
-@time sim = solve(eprob, KenCarp47(); trajectories=length(doxrange), opts...)
+@time sim = solve(eprob, alg; trajectories=length(doxrange), opts...)
 
 fig = plot(title="MMP")
 for (i, dox) in enumerate(doxrange)
@@ -46,6 +47,13 @@ for (i, dox) in enumerate(doxrange)
     plot!(fig, sim[i], idxs=(sys.t/1000, sys.vC5), lab="DOX = $(dox) μM")
 end
 plot!(fig, ylabel="Rate (μM/ms)", xlabel="Time (s)", legend=:right) |> PNG
+
+#---
+fig = plot(title="Cyto ROS")
+for (i, dox) in enumerate(doxrange)
+    plot!(fig, sim[i], idxs=(sys.t/1000, sys.sox_i), lab="DOX = $(dox) μM")
+end
+plot!(fig, ylabel="Conc. (μM)", xlabel="Time (s)", legend=:right) |> PNG
 
 #---
 prob0 = ODEProblem(sys, u0, tend, [DOX => 308μM])
@@ -74,6 +82,13 @@ plot!(fig, sol2, idxs=i, label="C3 500uM")
 fig |> PNG
 
 #---
+i = idxs=(s, sys.sox_m)
+fig = plot(sol0, idxs=i, label="DOX=308", title="SOX (mito)")
+plot!(fig, sol1, idxs=i, label="C4 500uM")
+plot!(fig, sol2, idxs=i, label="C3 500uM")
+fig |> PNG
+
+#---
 i = idxs=(s, sys.dpsi)
 fig = plot(sol0, idxs=i, label="DOX=308", title="MMP")
 plot!(fig, sol1, idxs=i, label="C4 500uM")
@@ -93,6 +108,9 @@ fig = plot(sol0, idxs=idxs, label="DOX=308", title="ROS shunt fraction")
 plot!(fig, sol1, idxs=idxs, label="C4 500")
 plot!(fig, sol2, idxs=idxs, label="C3 500", xlabel="Time (s)", legend=:right)
 fig |> PNG
+
+#---
+plot(sol0, idxs=[sys.sox_i, sys.sox_m], title="Superoxide (DOX=308uM)", legend=:right) |> PNG
 
 # Q cycle : reduced Q pool (QH2 accumulation)
 @unpack Q_n, Qdot_n, QH2_n, QH2_p, Qdot_p, Q_p, fes_ox, fes_rd, cytc_ox, cytc_rd = sys
