@@ -49,7 +49,7 @@ function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
         A_IMAC = 0.001      # Basal IMAC conductance factor
         B_IMAC = 10000      # Activation IMAC conductance factor by cytoplasmic superoxide
         KCC_SOX_IMAC = 10μM # Activation constant by cytoplasmic superoxide of IMAC
-        GL_IMAC = 78μM / second / Volt  # Leak conductance of IMAC (Zhou, 2009)
+        GL_IMAC = 35μM / second / Volt  # Leak conductance of IMAC (Zhou, 2009)
         G_MAX_IMAC = GL_IMAC * 100  # Maximal conductance of IMAC (Zhou, 2009)
         κ_IMAC = 0.07 / mV      # Steepness factor OF IMAC voltage dependence
         DPSI_OFFSET_IMAC = 4mV  # Potential at half saturation
