@@ -58,12 +58,12 @@ function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
     end
 
     @variables begin
-        sox_i(t) = 1.0222129545264641nM
-        h2o2_i(t) = 0.755888231084137nM
+        sox_i(t) = 1nM
+        h2o2_i(t) = 0.76nM
         # h2o2_m(t)
         gsh_i(t) # Conserved
         # gsh_m(t)
-        gssg_i(t) = 2.220885967007533μM
+        gssg_i(t) = 2μM
         # gssg_m(t)
         # nadph_m(t)
         vSOD_i(t)
@@ -71,17 +71,19 @@ function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
         vGR_i(t)
         vCAT(t)   # Catalase flux
         vTrROS(t) # SOX flux via IMAC
-        vIMAC(t)  # IMAC ion flux
+        vIMAC(t)  # Anion ion flux across IMM
+        gIMAC(t)  # IMAC conductance
         ΔVROS(t)  # Reversal potential of ROS
     end
 
-    fv_imac = GL_IMAC + G_MAX_IMAC * expit(κ_IMAC * (dpsi - DPSI_OFFSET_IMAC))
-    gimac = (A_IMAC + B_IMAC * hil(sox_i, KCC_SOX_IMAC)) * fv_imac
+    act_imac = (A_IMAC + B_IMAC * hil(sox_i, KCC_SOX_IMAC))
+    fv_imac = GL_IMAC + G_MAX_IMAC / (1 + exp(κ_IMAC * (DPSI_OFFSET_IMAC - dpsi)))
 
     eqs = [
         ΔVROS ~ nernst(sox_i, sox_m, -1),
         vTrROS ~ J_IMAC * gimac * (dpsi + ΔVROS),
-        vIMAC ~ gimac * dpsi,
+        gIMAC ~ act_imac * fv_imac,
+        vIMAC ~ gIMAC * dpsi,
         vGR_i ~ ET_GR * K1_GR * hil(nadph_i, KM_NADPH_GR) * hil(gssg_i, KM_GSSG_GR),
         vGPX_i ~ ET_GPX * h2o2_i * gsh_i / (𝚽1_GPX * gsh_i + 𝚽2_GPX * h2o2_i),
         vCAT ~ 2 * K1_CAT * ET_CAT * h2o2_i * exp(-FR_CAT * h2o2_i),
