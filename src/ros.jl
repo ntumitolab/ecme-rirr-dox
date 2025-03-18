@@ -12,7 +12,7 @@ function _vsod(sox, h2o2, K1, K3, K5, KI_H2O2, E0)
 end
 
 "ROS diffusion and detox system"
-function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
+function get_ros_sys(; dpsi, sox_m, nadph_i=75μM, V_MITO_V_MYO=0.615, name=:rossys)
     @parameters begin
         # superoxide dismutase (SOD)
         K1_SOD = 1200 / mM / ms     # 2nd order rate constant of SOD
@@ -58,12 +58,12 @@ function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
     end
 
     @variables begin
-        sox_i(t) = 1.0222129545264641nM
-        h2o2_i(t) = 0.755888231084137nM
+        sox_i(t) = 1nM
+        h2o2_i(t) = 0.76nM
         # h2o2_m(t)
         gsh_i(t) # Conserved
         # gsh_m(t)
-        gssg_i(t) = 2.220885967007533μM
+        gssg_i(t) = 2.22μM
         # gssg_m(t)
         # nadph_m(t)
         vSOD_i(t)
