@@ -51,12 +51,12 @@ function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
         # IMAC (Inner mitochondrial anion channel) from Cortassa et al. (2004)
         A_IMAC = 0.001      # Basal IMAC conductance factor
         B_IMAC = 10000      # Activation IMAC conductance factor by cytoplasmic superoxide
-        KCC_SOX_IMAC = 10μM # Activation constant by cytoplasmic superoxide of IMAC
+        KCC_SOX_IMAC = 10μM # IMAC activation constant by cytoplasmic superoxide
         GL_IMAC = 78.2μM / second / Volt    # Leak conductance of IMAC (Nivala, 2011)
         G_MAX_IMAC = GL_IMAC * 100          # Maximal conductance of IMAC (Nivala, 2011)
         κ_IMAC = 0.07 / mV      # Steepness factor OF IMAC voltage dependence
         DPSI_OFFSET_IMAC = 4mV  # Potential at half saturation
-        J_IMAC = 0.5 / iVT / Volt / mM   # Fraction of ROS in IMAC conductance
+        J_IMAC = (0.5 / iVT) * Volt / mM   # Fraction of ROS in IMAC conductance
         α_IMAC = 0.4Hz / mM^2 / 0.1Hz    # IMAC sensitivity to mitochondrial SOX (Nivala, 2011)
         β_IMAC = 10000Hz / mM^2 / 100Hz  # IMAC sensitivity to cytoplasmic SOX (Nivala, 2011)
         k_IMAC = 800 # IMAC activity (Nivala, 2011)
@@ -86,7 +86,7 @@ function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
     fv_imac = GL_IMAC + G_MAX_IMAC / (1 + exp(κ_IMAC * (DPSI_OFFSET_IMAC + dpsi)))
 
     eqs = [
-        vTrROS ~ J_IMAC * gIMAC * exprel(dpsi) * (sox_m * exp(iVT * dpsi) - sox_i) ,
+        vTrROS ~ J_IMAC * gIMAC * exprel(iVT * dpsi) * (sox_m * exp(iVT * dpsi) - sox_i) ,
         oIMAC ~ sox_i^2 * β_IMAC * sox_m^2 * α_IMAC / (1 + sox_i^2 * β_IMAC) / (1 + sox_m^2 * α_IMAC),
         gIMAC ~ k_IMAC * oIMAC * fv_imac,
         vIMAC ~ gIMAC * dpsi,

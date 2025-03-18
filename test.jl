@@ -15,14 +15,14 @@ sts = unknowns(sys)
 u0 = build_u0(sys)
 alg = KenCarp47()
 opts = (; reltol=1e-6, abstol=1e-6, progress=true)
-
 prob = ODEProblem(sys, u0, tend)
 
 sol = solve(prob, alg; opts...)  ## Warm-up
 plot(sol, idxs=[sys.sox_i, sys.sox_m])
+sol[sys.sox_i]
 plot(sol, idxs=[sys.vHres, sys.vHu + sys.vANT, sys.vNaCa + 2sys.vUni, sys.vIMAC])
 
-prob300 = ODEProblem(sys, u0, tend, [DOX => 310μM, ET_SOD_I=>1μM, J_IMAC=>2e10])
+prob300 = ODEProblem(sys, u0, tend, [DOX => 310μM, ET_SOD_I=>1μM])
 sol300 = solve(prob300, alg; opts...)
 sol300[sys.dpsi]
 
