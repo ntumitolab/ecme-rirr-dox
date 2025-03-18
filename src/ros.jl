@@ -11,7 +11,8 @@ function _vsod(sox, h2o2, K1, K3, K5, KI_H2O2, E0)
     return 2 * E0 * K5 * K1 * sox * (K1 + k3′) / denom
 end
 
-_vsod_simple(sox, h2o2, K1, K3, K5, KI_H2O2, E0) = 2 * E0 * K1 * sox
+"Simple SOD formulation"
+_vsod_simple(sox, h2o2, K1, K3, K5, KI_H2O2, E0) = 2 * E0 * K1 * sox * hil(KI_H2O2, h2o2)
 
 "ROS diffusion and detox system"
 function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
@@ -19,9 +20,9 @@ function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
         # superoxide dismutase (SOD)
         K1_SOD = 1200 / mM / ms     # 2nd order rate constant of SOD
         K3_SOD = 24 / mM / ms       # 2nd order rate constant of SOD
-        K5_SOD = 0.24Hz        # 1st order rate constant of SOD
+        K5_SOD = 0.24Hz             # 1st order rate constant of SOD
         KI_H2O2_SOD = 0.5mM         # Inhibition constant of H2O2
-        ET_SOD_I = 1.43μM  	    # Cytosolic SOD concentration (Zhou, 2009)
+        ET_SOD_I = 1.43μM      # Cytosolic SOD concentration (Zhou, 2009)
         ET_SOD_M = 0.3μM            # Mitochondrial SOD concentration
         # glutathione peroxidase (GPX)
         𝚽1_GPX = 5E-3mM * ms  # Rate constant of GPX
@@ -51,11 +52,14 @@ function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
         A_IMAC = 0.001      # Basal IMAC conductance factor
         B_IMAC = 10000      # Activation IMAC conductance factor by cytoplasmic superoxide
         KCC_SOX_IMAC = 10μM # Activation constant by cytoplasmic superoxide of IMAC
-        GL_IMAC = 35μM / second / Volt  # Leak conductance of IMAC (Zhou, 2009)
-        G_MAX_IMAC = GL_IMAC * 100  # Maximal conductance of IMAC (Zhou, 2009)
+        GL_IMAC = 78.2μM / second / Volt    # Leak conductance of IMAC (Nivala, 2011)
+        G_MAX_IMAC = GL_IMAC * 100          # Maximal conductance of IMAC (Nivala, 2011)
         κ_IMAC = 0.07 / mV      # Steepness factor OF IMAC voltage dependence
         DPSI_OFFSET_IMAC = 4mV  # Potential at half saturation
-        J_IMAC = 0.2            # Fraction of ROS in IMAC conductance
+        J_IMAC = 0.5 / iVT / Volt / mM   # Fraction of ROS in IMAC conductance
+        α_IMAC = 0.4Hz / mM^2 / 0.1Hz    # IMAC sensitivity to mitochondrial SOX (Nivala, 2011)
+        β_IMAC = 10000Hz / mM^2 / 100Hz  # IMAC sensitivity to cytoplasmic SOX (Nivala, 2011)
+        k_IMAC = 800 # IMAC activity (Nivala, 2011)
     end
 
     @variables begin
@@ -73,18 +77,18 @@ function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
         vCAT(t)   # Catalase flux
         vTrROS(t) # SOX flux via IMAC
         vIMAC(t)  # Anion ion flux across IMM
+        oIMAC(t)  # IMAC open probability (Nivala, 2011)
         gIMAC(t)  # IMAC conductance
-        ΔVROS(t)  # Reversal potential of ROS
     end
 
     act_imac = (A_IMAC + B_IMAC * hil(sox_i, KCC_SOX_IMAC))
-    # (Kembro, 2013) and (Gauthier, 2013) formulation for voltage dependence, which is different from (Zhou, 2009).
+    # (Kembro, 2013) and (Gauthier, 2013) formulation for voltage dependence, which is different from (Zhou, 2009) and (Cortassa, 2004).
     fv_imac = GL_IMAC + G_MAX_IMAC / (1 + exp(κ_IMAC * (DPSI_OFFSET_IMAC + dpsi)))
 
     eqs = [
-        ΔVROS ~ nernst(sox_i, sox_m, -1),
-        vTrROS ~ J_IMAC * gIMAC * (dpsi + ΔVROS),
-        gIMAC ~ act_imac * fv_imac,
+        vTrROS ~ J_IMAC * gIMAC * exprel(dpsi) * (sox_m * exp(iVT * dpsi) - sox_i) ,
+        oIMAC ~ sox_i^2 * β_IMAC * sox_m^2 * α_IMAC / (1 + sox_i^2 * β_IMAC) / (1 + sox_m^2 * α_IMAC),
+        gIMAC ~ k_IMAC * oIMAC * fv_imac,
         vIMAC ~ gIMAC * dpsi,
         vGR_i ~ ET_GR * K1_GR * hil(nadph_i, KM_NADPH_GR) * hil(gssg_i, KM_GSSG_GR),
         vGPX_i ~ ET_GPX * h2o2_i * gsh_i / (𝚽1_GPX * gsh_i + 𝚽2_GPX * h2o2_i),

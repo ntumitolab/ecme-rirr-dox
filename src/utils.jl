@@ -94,11 +94,11 @@ exprel(x) = x / expm1(x)
 "Acid dissociation polynomial"
 _poly(h, iKA) = h * iKA + 1
 _poly(h, iKA, mg, iKMG) = h * iKA + +mg * iKMG + 1
+
 #=
 Get propotions of AXP from dissociation constants
 Returns AXPn-, HAXP, MgAXP, poly (the denominator polynomial)
 =#
-
 function _breakdown_axp(axp, h, mg, iKA, iKMG)
     poly = _poly(h, iKA, mg, iKMG)
     axpn = axp / poly
