@@ -4,6 +4,7 @@ ROS scavenging system
 
 """
 Rate of superoxide dismutase. Based on (McAdam, 1977)
+The activity will be capped at high concentrations of SOX.
 """
 function _vsod(sox, h2o2, K1, K3, K5, KI_H2O2, E0)
     k3′ = K3 * (1 + h2o2 / KI_H2O2)
@@ -15,13 +16,12 @@ end
 function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
     @parameters begin
         # superoxide dismutase (SOD)
-        K1_SOD = 1200 / mM / ms     # 2nd order rate constant of SOD
-        K3_SOD = 24 / mM / ms       # 2nd order rate constant of SOD
-        K5_SOD = 0.24Hz        # 1st order rate constant of SOD
-        KI_H2O2_SOD = 0.5mM         # Inhibition constant of H2O2
-        # ET_SOD_I = 1.43μM  	    # Cytosolic SOD concentration (Zhou, 2009)
-        ET_SOD_I = 3μM              # Cytosolic SOD concentration
-        ET_SOD_M = 0.3μM            # Mitochondrial SOD concentration
+        K1_SOD = 1200 / mM / ms     # Reaction rate constant of SOD
+        K3_SOD = 24 / mM / ms       # Inhibition rate constant of SOD
+        K5_SOD = 0.24Hz             # Recovery rate constant of SOD
+        KI_H2O2_SOD = 500μM         # H2O2 inhibition constant of SOD
+        ET_SOD_I = 3μM              # Cytosolic SOD concentration # 1.43μM (Zhou, 2009)
+        ET_SOD_M = 0.3μM            # Mitochondrial SOD concentration # (Kembro, 2013)
         # glutathione peroxidase (GPX)
         𝚽1_GPX = 5E-3mM * ms  # Rate constant of GPX
         𝚽2_GPX = 0.75mM * ms  # Rate constant of GPX
@@ -75,7 +75,8 @@ function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
         ΔVROS(t)  # Reversal potential of ROS
     end
 
-    fv_imac = GL_IMAC + G_MAX_IMAC * expit(κ_IMAC * (dpsi - DPSI_OFFSET_IMAC))
+    # Notice that
+    fv_imac = GL_IMAC + G_MAX_IMAC / (1 + exp(κ_IMAC * (DPSI_OFFSET_IMAC - dpsi)))
     gimac = (A_IMAC + B_IMAC * hil(sox_i, KCC_SOX_IMAC)) * fv_imac
 
     eqs = [
