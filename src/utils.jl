@@ -72,6 +72,12 @@ hil(x, k=one(x)) = x / (x + k)
 hil(x, k, n) = hil(NaNMath.pow(x, n), NaNMath.pow(k, n))
 
 """
+Repressive Hill/MM function
+"""
+hilr(x, k=one(x)) = hil(k, x)
+hilr(x, k, n) = hil(k, x, n)
+
+"""
 Logistic sigmoid function.
 
     expit(x[, a=1, b=1]) = a / (b + exp(-x))
