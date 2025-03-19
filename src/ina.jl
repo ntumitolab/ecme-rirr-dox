@@ -1,5 +1,5 @@
 "Sodium and background currents"
-function get_ina_sys(na_i, na_o, ca_i, ca_o, vm; name=:inasys)
+function get_ina_sys(; na_i, na_o, ca_i, ca_o, vm, name=:inasys)
     @parameters begin
         G_NA = 12.8mScm⁻²
         P_NSNA = 1.75E-7cm * Hz
