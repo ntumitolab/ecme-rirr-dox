@@ -4,7 +4,7 @@
 β_ca_csqn(ca, KM_CA_CSQN=0.8mM, ET_CSQN=5.0mM) = β_ca(ca, KM_CA_CSQN, ET_CSQN)
 
 "Calcium recycle currents"
-function get_jca_sys(atp_i, adp_i, ca_i, ca_nsr, ca_jsr, ca_ss, ca_o, na_i, na_o, vm; name=:caresys)
+function get_jca_sys(; atp_i, adp_i, ca_i, ca_nsr, ca_jsr, ca_ss, ca_o, na_i, na_o, vm, name=:caresys)
     @variables begin
         Jup(t)
         IPMCA(t)

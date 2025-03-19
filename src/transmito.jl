@@ -43,7 +43,8 @@ function get_mitoh_sys(na_m, na_i, h_m, h_i, pi_m, pi_i; name=:mitohsys)
     return ODESystem(eqs, t; name)
 end
 
-function get_mitoca_sys(na_i, ca_m, ca_i, dpsi; name=:mitocasys)
+"Mitochondrial calcium handling"
+function get_mitoca_sys(; na_i, ca_m, ca_i, dpsi, name=:mitocasys)
     @parameters begin
         # Mitochondrial NCE (NCLX)
         VMAX_NCLX = 0.1μM / ms
