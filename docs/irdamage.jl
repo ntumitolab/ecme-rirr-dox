@@ -40,7 +40,7 @@ plot(sol, idxs=[Q_n + Q_p, Qdot_n, QH2_n+QH2_p, Qdot_p], title="Q cycle", legend
 
 plot(sol, idxs=[Q_n + Q_p, Qdot_n, QH2_n+QH2_p, Qdot_p], title="Q cycle", legend=:right, tspan=(185second, 190second)) |> PNG
 
-plot(sol, idxs=[sys.vHresC3, ], title="ETC resp rate", legend=:right, tspan=(180second, 190second)) |> PNG
+plot(sol, idxs=[sys.vHresC1, sys.vHresC3, sys.vHresC4], title="ETC resp rate", legend=:right) |> PNG
 
 # Q cycle revive here
 plot(sol, idxs=[Q_n, Q_p], title="Q", legend=:right, tspan=(180second, 184second)) |> PNG
