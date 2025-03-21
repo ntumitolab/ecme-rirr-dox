@@ -289,7 +289,7 @@ function get_etc_sys(;
         KEQ9_C3 = 0.2697
         K010_C3 = 1700 / minute / mM
         KEQ10_C3 = 1.4541
-        K33_C3 = 148148 / minute
+        K33_C3 = 148148 / minute / mM
         KEQ33_C3 = 2.1145
     end
 
