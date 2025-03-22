@@ -25,19 +25,21 @@ cb = PresetTimeCallback(60.0second, affect!)
 @time sol = solve(prob, alg; reltol=1e-6, abstol=1e-6, progress=true, dt=1e-6, callback=cb)
 
 @unpack vm, dpsi, atp_i, adp_i = sys
-plot(sol, idxs=dpsi)
-
-plot(sol, idxs=vm)
-
-plot(sol, idxs=[atp_i/ adp_i]) |> PNG
+pl_mmp = plot(sol, idxs=dpsi, lab=false, title="MMP", xlabel="Time (ms)", ylabel="Voltage (mV)")
+pl_vm = plot(sol, idxs=vm, lab=false, title="AP", xlabel="Time (ms)", ylabel="Voltage (mV)")
+pl_atp = plot(sol, idxs=[atp_i/ adp_i], lab=false, title="ATP:ADP", xlabel="Time (ms)", ylabel="Ratio")
 
 @unpack cit, isoc, oaa, akg, scoa, suc, fum, mal= sys
-plot(sol, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal], legend=:right, title="CAC metabolites") |> PNG
+pl_cac = plot(sol, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal], legend=:topright, title="CAC metabolites", xlabel="Time (ms)", ylabel="Conc. (μM)")
+@unpack Q_n, Qdot_n, QH2_n, QH2_p, Qdot_p, Q_p, fes_ox, fes_rd, cytc_ox, cytc_rd = sys
+pl_q = plot(sol, idxs=[Q_n, Q_p, Qdot_n, QH2_n, QH2_p, Qdot_p], title="Q cycle", legend=:left, xlabel="Time (ms)", ylabel="Conc. (μM)")
+pl_ros = plot(sol, idxs=100 * sys.vROS / (sys.vO2 + sys.vROS), title="ROS generation", lab=falsexlabel="Time (ms)", ylabel="Fraction of O2 consumption (%)")
+
+plot(pl_mmp, pl_vm, pl_atp, pl_cac, pl_q, pl_ros, size=(1200, 800)) |> PNG
+
+savefig("poster.png")
 
 # Because Qdot_n recovers?
-@unpack Q_n, Qdot_n, QH2_n, QH2_p, Qdot_p, Q_p, fes_ox, fes_rd, cytc_ox, cytc_rd = sys
-plot(sol, idxs=[Q_n + Q_p, Qdot_n, QH2_n+QH2_p, Qdot_p], title="Q cycle", legend=:right) |> PNG
-
 plot(sol, idxs=[Q_n + Q_p, Qdot_n, QH2_n+QH2_p, Qdot_p], title="Q cycle", legend=:right, tspan=(185second, 190second)) |> PNG
 
 plot(sol, idxs=[sys.vHresC1, sys.vHresC3, sys.vHresC4], title="ETC resp rate", legend=:right) |> PNG
