@@ -60,7 +60,7 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m=8mM, mg_m=0.
         KM_NAD_MDH = 224.4μM
 
         ### AAT (alanine aminotransferase)
-        KF_AAT = 21.7 / (μM * mM) #TODO: THIS IS WEIRD
+        KF_AAT = 21.4Hz / mM
         KEQ_AAT = 6.6
         GLU = 10.0mM        # Glutamate
         ASP = GLU           # Aspartate
@@ -97,7 +97,7 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m=8mM, mg_m=0.
 
     v_idh = let
         vmax = KCAT_IDH * ET_IDH
-        a = NaNMath.pow(isoc / KM_ISOC_IDH , NI_ISOC_IDH) * (1 + adp_m / KM_ADP_IDH) * (1 + ca_m / KM_CA_IDH)
+        a = NaNMath.pow(isoc / KM_ISOC_IDH, NI_ISOC_IDH) * (1 + adp_m / KM_ADP_IDH) * (1 + ca_m / KM_CA_IDH)
         b = nad_m / KM_NAD_IDH * hil(KI_NADH_IDH, nadh_m)
         h = 1 + h_m / KH1_IDH + KH2_IDH / h_m
         vmax * a * b / (h * a * b + a + b + 1)
