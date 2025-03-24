@@ -53,8 +53,8 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
         # Calcium buffering
         KM_CA_CMDN = 2.38μM
         ET_CMDN = 50μM
-        KM_CA_CSQN = 0.8mM
-        ET_CSQN = 5.0mM
+        KM_CA_CSQN = 800μM
+        ET_CSQN = 5mM
         δCA = 3E-4          # Mito. Ca buffering factor
         # constant concentrations
         O2(t) = 6μM          # Oxygen concentration
@@ -63,11 +63,11 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
         nadph_i = 0.075mM   # Cytosolic NADPH (Gauthier-2013) # 1.0mM (Li-2015)
         pi_m = 8.6512mM     # Inorganic phosphate (Gauthier-2013 and Kembro-2013)
         k_o = 5.4mM         # Extracellular potassium
-        na_o = 140.0mM      # Extracellular sodium
-        ca_o = 2.0mM        # Extracellular calcium
-        mg_i = 1.0mM        # Cytosolic magnesium (Gauthier-2013) # 3.1mM (Li-2015)
+        na_o = 140mM      # Extracellular sodium
+        ca_o = 2mM        # Extracellular calcium
+        mg_i = 1mM        # Cytosolic magnesium (Gauthier-2013) # 3.1mM (Li-2015)
         mg_m = 0.4mM        # Mitochondrial magnesium (li-2015)
-        pi_i = 3.0mM        # Cytosolic inorganic phosphate
+        pi_i = 3mM        # Cytosolic inorganic phosphate
     end
 
     @variables begin

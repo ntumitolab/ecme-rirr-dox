@@ -1,7 +1,8 @@
 # TCA cycle model, default parameters values from Gauthier et al. (2013)
 function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m=8mM, mg_m=0.4mM, use_mg=false, name=:tcasys)
     @parameters begin
-        TCA_T = 1300μM  # Total TCA metabolite pool (mM)
+        TCA_T = 1300μM  # Total TCA metabolite pool
+
         ### Citrate synthase
         # KCAT = 1.5891E-4 # Gauthier (2013), cellular model
         KCAT_CS = 0.23523Hz # Gauthier (2013), mitochondrial model
@@ -59,7 +60,7 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m=8mM, mg_m=0.
         KM_NAD_MDH = 224.4μM
 
         ### AAT (alanine aminotransferase)
-        KF_AAT = 21.7 / (μM * mM)
+        KF_AAT = 21.7 / (μM * mM) #TODO: THIS IS WEIRD
         KEQ_AAT = 6.6
         GLU = 10.0mM        # Glutamate
         ASP = GLU           # Aspartate
