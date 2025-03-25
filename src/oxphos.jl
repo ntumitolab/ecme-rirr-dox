@@ -49,17 +49,17 @@ function get_etc_sys(;
         ρC1 = 5mM # Adjusted # 8.85mM, Concentration of complex I, from Gauthier et al. (2013)
         dpsi_B_C1 = 50.0mV   # Phase boundary potential
         # Transition rates
-        K12_C1 = 633.96 / (μM^2 * ms)
+        K12_C1 = 6.3396e11Hz/mM^2
         K21_C1 = 5Hz
         K56_C1 = 100Hz
-        K65_C1 = 25119 / (μM^2 * ms)
-        K61_C1 = 33290 / ms
-        K16_C1 = 432.7642Hz
+        K65_C1 = 2.5119e13Hz/mM^2
+        K61_C1 = 1e7Hz
+        K16_C1 = 130Hz
         K23_C1 = 3886.7Hz / sqrt(mM)
-        K32_C1 = 9129.5 / ms
+        K32_C1 = 9.1295e6Hz
         K34_C1 = 639.1364Hz
         K43_C1 = 3.2882Hz / sqrt(mM)
-        K47_C1 = 15.962 / (μM * ms)
+        K47_C1 = 1.5962E7Hz/mM
         K74_C1 = 65.2227Hz
         K75_C1 = 24.615E3Hz
         K57_C1 = 1.1667E3Hz / sqrt(mM)
@@ -289,7 +289,7 @@ function get_etc_sys(;
         KEQ9_C3 = 0.2697
         K010_C3 = 1700 / minute / mM
         KEQ10_C3 = 1.4541
-        K33_C3 = 148148 / minute
+        K33_C3 = 148148 / minute / mM
         KEQ33_C3 = 2.1145
     end
 
@@ -367,7 +367,7 @@ function get_etc_sys(;
     return ODESystem([c1eqs; c2eqs; c4eqs; c3eqs], t; name)
 end
 
-function get_c5_sys(dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=1, C5_INHIB=1; use_mg=false, mg_i=0mM, mg_m=0mM, name=:c5sys)
+function get_c5_sys(; dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=1, C5_INHIB=1, use_mg=false, mg_i=1mM, mg_m=0.4mM, name=:c5sys)
     @parameters begin
         ρF1 = 5.0mM                 # Concentration of ATP synthase
         P1_C5 = 1.346E-8

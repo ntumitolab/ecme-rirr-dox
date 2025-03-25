@@ -1,68 +1,66 @@
 # TCA cycle model, default parameters values from Gauthier et al. (2013)
-function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false, name=:tcasys)
+function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m=8mM, mg_m=0.4mM, use_mg=false, name=:tcasys)
     @parameters begin
-        TCA_T = 1.3mM  # Total TCA metabolite pool (mM)
+        TCA_T = 1300μM  # Total TCA metabolite pool
+
         ### Citrate synthase
-        # KCAT = 1.5891E-4 # Gauthier (2013), cellular model
         KCAT_CS = 0.23523Hz # Gauthier (2013), mitochondrial model
-        ET_CS = 0.4mM
-        KM_ACCOA_CS = 0.0126mM
-        KM_OAA_CS = 6.4E-4mM
-        # ACCOA = 1.0  # Li, 2015
-        ACCOA = 0.1mM  # De Oliveira (2016)
+        ET_CS = 400μM
+        KM_ACCOA_CS = 12.6μM
+        KM_OAA_CS = 0.64μM
+        ACCOA = 1000μM  # 100μM
 
         ### ACO (aconitase)
         KF_ACO = 0.1Hz # Adjusted
         KEQ_ACO = 2.22
 
         ### IDH3 (Isocitrate dehydrogenase, NADH-producing)
-        KI_NADH_IDH = 0.19mM
-        KCAT_IDH = 535Hz
-        ET_IDH = 0.109mM
+        KI_NADH_IDH = 190μM
+        KCAT_IDH = 30Hz
+        ET_IDH = 109μM
         KH1_IDH = 1E-5mM
         KH2_IDH = 9E-4mM
-        KM_ISOC_IDH = 1.52mM
+        KM_ISOC_IDH = 1520μM
         NI_ISOC_IDH = 2
-        KM_NAD_IDH = 0.923mM
-        KM_ADP_IDH = 0.62mM
-        KM_CA_IDH = 5E-4mM
+        KM_NAD_IDH = 923μM
+        KM_ADP_IDH = 620μM
+        KM_CA_IDH = 0.5μM
 
         ### KGDH (alpha-ketoglutarate dehydrogenase)
-        ET_KGDH = 0.5mM
-        KCAT_KGDH = 17.9Hz
-        KM_AKG_KGDH = 30mM
+        ET_KGDH = 500μM
+        KCAT_KGDH = 50Hz
+        KM_AKG_KGDH = 1940μM
         KM_NAD_KGDH = 38.7mM
-        KH1_KGDH = 4E-5mM
-        KH2_KGDH = 7E-5mM
-        KM_MG_KGDH = 0.0308mM
-        KM_CA_KGDH = 1.5E-4mM
+        KH1_KGDH = 0.04μM
+        KH2_KGDH = 0.07μM
+        KM_MG_KGDH = 30.8μM
+        KM_CA_KGDH = 0.15μM
         NI_AKG_KGDH = 1.2
 
         ### SL (Succinyl-coA lyase)
-        COA = 0.02mM
-        KF_SL = 0.0284 / (mM * ms)
-        KEQ_SL = 3.115mM
+        COA = 20μM
+        KF_SL = 28 / (μM * ms)
+        KEQ_SL = 3.115
 
         ### FH (Fumarate hydrase) parameters
         KF_FH = 8.3Hz
         KEQ_FH = 1.0
 
         ### MDH (Malate dehydrogenase)
+        KCAT_MDH = 126Hz
+        ET_MDH = 154μM
         KH1_MDH = 1.131E-5mM
         KH2_MDH = 26.7mM
         KH3_MDH = 6.68E-9mM
         KH4_MDH = 5.62E-6mM
         K_OFFSET_MDH = 3.99E-2
-        KCAT_MDH = 0.1259 / ms
-        ET_MDH = 0.154mM
-        KM_MAL_MDH = 1.493mM
-        KI_OAA_MDH = 3.1E-3mM
-        KM_NAD_MDH = 0.2244mM
+        KM_MAL_MDH = 1493μM
+        KI_OAA_MDH = 3.1μM
+        KM_NAD_MDH = 224.4μM
 
         ### AAT (alanine aminotransferase)
-        KF_AAT = 0.0217 / (ms * mM)
+        KF_AAT = 21.4Hz / mM
         KEQ_AAT = 6.6
-        # KASP_AAT = 1.5E-6 / ms # Aspartate consumption rate
         GLU = 10.0mM        # Glutamate
         ASP = GLU           # Aspartate
     end
@@ -77,18 +75,15 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
         vMDH(t)
         vAAT(t)
         vSDH(t)
-        oaa(t) = 0.011576938766421891mM
+        oaa(t) = 11.6μM
         cit(t) # Conserved
-        isoc(t) = 0.05159054318098895mM     # isocitrate
-        akg(t) = 0.051145197718677655mM     # alpha-ketoglutarate
-        scoa(t) = 0.03508849487000582mM     # succinyl-CoA
-        suc(t) = 0.0019107469302081612mM    # succinate
-        fum(t) = 0.1751906841603877mM       # fumarate
-        mal(t) = 0.15856757152954906mM      # malate
+        isoc(t) = 51.6μM     # isocitrate
+        akg(t) = 51μM     # alpha-ketoglutarate
+        scoa(t) = 35μM     # succinyl-CoA
+        suc(t) = 1.9μM   # succinate
+        fum(t) = 175μM       # fumarate
+        mal(t) = 160μM      # malate
     end
-
-    v_cs = KCAT_CS * ET_CS * hil(ACCOA, KM_ACCOA_CS) * hil(oaa, KM_OAA_CS)
-    v_aco = KF_ACO * (cit - isoc / KEQ_ACO)
 
     v_kgdh = let
         f_mgca = (1 + mg_m / KM_MG_KGDH) * (1 + ca_m / KM_CA_KGDH)
@@ -101,7 +96,7 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
 
     v_idh = let
         vmax = KCAT_IDH * ET_IDH
-        a = NaNMath.pow(isoc / KM_ISOC_IDH , NI_ISOC_IDH) * (1 + adp_m / KM_ADP_IDH) * (1 + ca_m / KM_CA_IDH)
+        a = NaNMath.pow(isoc / KM_ISOC_IDH, NI_ISOC_IDH) * (1 + adp_m / KM_ADP_IDH) * (1 + ca_m / KM_CA_IDH)
         b = nad_m / KM_NAD_IDH * hil(KI_NADH_IDH, nadh_m)
         h = 1 + h_m / KH1_IDH + KH2_IDH / h_m
         vmax * a * b / (h * a * b + a + b + 1)
@@ -119,30 +114,29 @@ function get_tca_sys(atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, mg_m; use_mg=false,
 
     v_sl = let
         if use_mg
-            atp4, hatp, _, poly_atp = breakdown_atp(atp_m, h_m, mg_m)
-            _, _, _, poly_adp = breakdown_adp(adp_m, h_m, mg_m)
+            atp4, hatp, _, atp_poly = breakdown_atp(atp_m, h_m, mg_m)
+            _, _, _, adp_poly = breakdown_adp(adp_m, h_m, mg_m)
             pi_poly = pipoly(h_m)
             suc_poly = sucpoly(h_m)
-            keapp = KEQ * (poly_atp * suc_poly) / (poly_adp * pi_poly)
-            KF_SL * (scoa * adp_m - suc * (atp4 + hatp) * COA / keapp)
+            keq = KEQ_SL * (atp_poly * suc_poly) / (adp_poly * pi_poly)
+            atp = atp4 + hatp
         else
-            KF_SL * (scoa * adp_m - suc * atp_m * COA / KEQ_SL)
+            keq = KEQ_SL
+            atp = atp_m
         end
+        KF_SL * (scoa * adp_m * pi_m - suc * atp * COA / keq)
     end
-
-    v_fh = KF_FH * (fum - mal / KEQ_FH)
-    v_aat = KF_AAT * (oaa * GLU - akg * ASP / KEQ_AAT)
 
     eqs = [
         TCA_T ~ cit + isoc + oaa + akg + scoa + suc + fum + mal,
-        vCS ~ v_cs,
-        vACO ~ v_aco ,
+        vCS ~ KCAT_CS * ET_CS * hil(ACCOA, KM_ACCOA_CS) * hil(oaa, KM_OAA_CS),
+        vACO ~ KF_ACO * (cit - isoc / KEQ_ACO),
         vIDH ~ v_idh,
         vKGDH ~ v_kgdh,
         vSL ~ v_sl,
-        vFH ~ v_fh,
+        vFH ~ KF_FH * (fum - mal / KEQ_FH),
         vMDH ~ v_mdh,
-        vAAT ~ v_aat,
+        vAAT ~ KF_AAT * (oaa * GLU - akg * ASP / KEQ_AAT),
         D(isoc) ~ vACO - vIDH,
         D(akg) ~ vIDH - vKGDH + vAAT,
         D(scoa) ~ vKGDH - vSL,

@@ -4,6 +4,7 @@ ROS scavenging system
 
 """
 Rate of superoxide dismutase. Based on (McAdam, 1977)
+The activity will be capped at high concentrations of SOX.
 """
 function _vsod(sox, h2o2, K1, K3, K5, KI_H2O2, E0)
     k3′ = K3 * (1 + h2o2 / KI_H2O2)
@@ -12,16 +13,15 @@ function _vsod(sox, h2o2, K1, K3, K5, KI_H2O2, E0)
 end
 
 "ROS diffusion and detox system"
-function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
+function get_ros_sys(; dpsi, sox_m, nadph_i=75μM, V_MITO_V_MYO=0.615, name=:rossys)
     @parameters begin
         # superoxide dismutase (SOD)
-        K1_SOD = 1200 / mM / ms     # 2nd order rate constant of SOD
-        K3_SOD = 24 / mM / ms       # 2nd order rate constant of SOD
-        K5_SOD = 0.24Hz        # 1st order rate constant of SOD
-        KI_H2O2_SOD = 0.5mM         # Inhibition constant of H2O2
-        # ET_SOD_I = 1.43μM  	    # Cytosolic SOD concentration (Zhou, 2009)
-        ET_SOD_I = 3μM              # Cytosolic SOD concentration
-        ET_SOD_M = 0.3μM            # Mitochondrial SOD concentration
+        K1_SOD = 1200 / mM / ms     # Reaction rate constant of SOD
+        K3_SOD = 24 / mM / ms       # Inhibition rate constant of SOD
+        K5_SOD = 0.24Hz             # Recovery rate constant of SOD
+        KI_H2O2_SOD = 500μM         # H2O2 inhibition constant of SOD
+        ET_SOD_I = 3μM              # Cytosolic SOD concentration # 1.43μM (Zhou, 2009)
+        ET_SOD_M = 0.3μM            # Mitochondrial SOD concentration # (Kembro, 2013)
         # glutathione peroxidase (GPX)
         𝚽1_GPX = 5E-3mM * ms  # Rate constant of GPX
         𝚽2_GPX = 0.75mM * ms  # Rate constant of GPX
@@ -48,40 +48,43 @@ function get_ros_sys(dpsi, sox_m, nadph_i, V_MITO_V_MYO=0.615; name=:rossys)
         FR_CAT = 0.05 / mM  # H2O2 inhibition factor of CAT
         # IMAC (Inner mitochondrial anion channel) from Cortassa et al. (2004)
         A_IMAC = 0.001      # Basal IMAC conductance factor
-        B_IMAC = 10000      # Activation IMAC conductance factor by cytoplasmic superoxide
+        B_IMAC = 10000      # Activated IMAC conductance factor by cytoplasmic superoxide
         KCC_SOX_IMAC = 10μM # Activation constant by cytoplasmic superoxide of IMAC
         GL_IMAC = 3.5E-8mM / ms / mV  # Leak conductance of IMAC (Zhou, 2009)
         G_MAX_IMAC = GL_IMAC * 100  # Maximal conductance of IMAC (Zhou, 2009)
-        κ_IMAC = 0.07 / mV  # Steepness factor
-        DPSI_OFFSET_IMAC = 4mV  # Potential at half saturation
-        J_IMAC = 0.1  # Fraction of ROS in IMAC conductance
+        k_IMAC = -0.07 / mV          # Steepness factor of IMAC (some papers say it's +0.07/mV)
+        DPSI_OFFSET_IMAC = 4mV      # Potential at half saturation
+        J_IMAC = 0.5                # Fraction of superoxide in IMAC conductance
     end
 
     @variables begin
-        sox_i(t) = 1.0222129545264641nM
-        h2o2_i(t) = 0.755888231084137nM
+        sox_i(t) = 1nM
+        h2o2_i(t) = 0.76nM
         # h2o2_m(t)
         gsh_i(t) # Conserved
         # gsh_m(t)
-        gssg_i(t) = 2.220885967007533μM
+        gssg_i(t) = 2.22μM
         # gssg_m(t)
         # nadph_m(t)
         vSOD_i(t)
         vGPX_i(t)
         vGR_i(t)
-        vCAT(t)   # Catalase flux
-        vTrROS(t) # SOX flux via IMAC
-        vIMAC(t)  # IMAC ion flux
-        ΔVROS(t)  # Reversal potential of ROS
+        vCAT(t)     # Catalase flux
+        vTrROS(t)   # SOX flux via IMAC
+        vIMAC(t)    # IMAC ion flux
+        gIMAC(t)    # IMAC conductance
+        fv_IMAC(t)  # IMAC activated by voltage
+        fa_IMAC(t)  # IMAC activated by ROS
+        ΔVROS(t)    # Reversal potential of ROS
     end
-
-    fv_imac = GL_IMAC + G_MAX_IMAC * expit(κ_IMAC * (dpsi - DPSI_OFFSET_IMAC))
-    gimac = (A_IMAC + B_IMAC * hil(sox_i, KCC_SOX_IMAC)) * fv_imac
 
     eqs = [
         ΔVROS ~ nernst(sox_i, sox_m, -1),
-        vTrROS ~ J_IMAC * gimac * (dpsi + ΔVROS),
-        vIMAC ~ gimac * dpsi,
+        vTrROS ~ J_IMAC * gIMAC * (dpsi + ΔVROS),
+        vIMAC ~ gIMAC * dpsi,
+        gIMAC ~ fv_IMAC * fa_IMAC,
+        fv_IMAC ~ GL_IMAC + G_MAX_IMAC / (1 + exp(k_IMAC * (DPSI_OFFSET_IMAC - dpsi))),
+        fa_IMAC ~ A_IMAC + B_IMAC * hil(sox_i, KCC_SOX_IMAC),
         vGR_i ~ ET_GR * K1_GR * hil(nadph_i, KM_NADPH_GR) * hil(gssg_i, KM_GSSG_GR),
         vGPX_i ~ ET_GPX * h2o2_i * gsh_i / (𝚽1_GPX * gsh_i + 𝚽2_GPX * h2o2_i),
         vCAT ~ 2 * K1_CAT * ET_CAT * h2o2_i * exp(-FR_CAT * h2o2_i),
