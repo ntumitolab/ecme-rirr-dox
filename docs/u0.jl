@@ -4,12 +4,12 @@ using ProgressLogging
 using OrdinaryDiffEq
 using ModelingToolkit
 using ECMEDox
-using ECMEDox: second, mM, Hz, μM, cm
+using ECMEDox: second, mM, Hz, μM, cm, μAcm⁻²
 using Plots
 using DisplayAs: PNG
 
 tend = 1000.0second
-bcl = 2.0second
+bcl = 1.0second
 @named sys = build_model(; bcl, tend)
 u0 = build_u0(sys)
 sts = unknowns(sys)

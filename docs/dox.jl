@@ -19,13 +19,13 @@ u0 = build_u0(sys)
 alg = KenCarp47()
 opts = (; reltol=1e-6, abstol=1e-6, progress=true)
 
-# The collapse of MMP is between 286uM and 287uM of DOX
-doxrange = 285μM:1μM:290μM
+# The collapse of MMP is between 309uM and 310uM of DOX
+doxrange = 308μM:1μM:312μM
 prob = ODEProblem(sys, u0, tend)
 prob_func = (prob, i, repeat) -> remake(prob, p=[DOX => doxrange[i]])
 eprob = EnsembleProblem(prob; prob_func, safetycopy=false)
 
-@time sim = solve(eprob, KenCarp47(); trajectories=length(doxrange), opts...)
+@time sim = solve(eprob, alg; trajectories=length(doxrange), opts...)
 
 fig = plot(title="MMP")
 for (i, dox) in enumerate(doxrange)
