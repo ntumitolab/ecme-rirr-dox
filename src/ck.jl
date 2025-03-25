@@ -5,8 +5,8 @@ function get_ck_sys(; atp_i, adp_i, name=:cksys)
         KCK_MT = 1.33E-3Hz  # Rate constant of creatine kinase (juxta-mitochondrial)
         KTR_CR = 2Hz        # Diffusion rate of creatine phosphate
         KEQ_CK = 0.0095     # Eqilibrium constant of creatine kinase (PCr-forming)
-        K_ATPASE_CYTO = 0.0013Hz # Basal consumption of cytosolic ATP
-        ΣCR = 25mM        # Pool of creatine and creatine phosphate
+        K_ATPASE_CYTO = 0.0013Hz # Basal consumption rate of cytosolic ATP
+        ΣCR = 25mM          # Pool of creatine and creatine phosphate
         ΣA_ic = 8mM         # Pool of cytosolic ATP/ADP
     end
 

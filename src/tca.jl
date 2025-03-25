@@ -1,9 +1,9 @@
 # TCA cycle model, default parameters values from Gauthier et al. (2013)
 function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m=8mM, mg_m=0.4mM, use_mg=false, name=:tcasys)
     @parameters begin
-        TCA_T = 1300μM  # Total TCA metabolite pool (mM)
+        TCA_T = 1300μM  # Total TCA metabolite pool
+
         ### Citrate synthase
-        # KCAT = 1.5891E-4 # Gauthier (2013), cellular model
         KCAT_CS = 0.23523Hz # Gauthier (2013), mitochondrial model
         ET_CS = 400μM
         KM_ACCOA_CS = 12.6μM
@@ -16,7 +16,7 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m=8mM, mg_m=0.
 
         ### IDH3 (Isocitrate dehydrogenase, NADH-producing)
         KI_NADH_IDH = 190μM
-        KCAT_IDH = 535Hz
+        KCAT_IDH = 30Hz
         ET_IDH = 109μM
         KH1_IDH = 1E-5mM
         KH2_IDH = 9E-4mM
@@ -28,8 +28,8 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m=8mM, mg_m=0.
 
         ### KGDH (alpha-ketoglutarate dehydrogenase)
         ET_KGDH = 500μM
-        KCAT_KGDH = 17.9Hz
-        KM_AKG_KGDH = 500μM
+        KCAT_KGDH = 50Hz
+        KM_AKG_KGDH = 1940μM
         KM_NAD_KGDH = 38.7mM
         KH1_KGDH = 0.04μM
         KH2_KGDH = 0.07μM
@@ -39,7 +39,7 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m=8mM, mg_m=0.
 
         ### SL (Succinyl-coA lyase)
         COA = 20μM
-        KF_SL = 28.4 / (μM * ms)
+        KF_SL = 28 / (μM * ms)
         KEQ_SL = 3.115
 
         ### FH (Fumarate hydrase) parameters
@@ -47,19 +47,19 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m=8mM, mg_m=0.
         KEQ_FH = 1.0
 
         ### MDH (Malate dehydrogenase)
+        KCAT_MDH = 126Hz
+        ET_MDH = 154μM
         KH1_MDH = 1.131E-5mM
         KH2_MDH = 26.7mM
         KH3_MDH = 6.68E-9mM
         KH4_MDH = 5.62E-6mM
         K_OFFSET_MDH = 3.99E-2
-        KCAT_MDH = 0.1259 / ms
-        ET_MDH = 154μM
         KM_MAL_MDH = 1493μM
         KI_OAA_MDH = 3.1μM
         KM_NAD_MDH = 224.4μM
 
         ### AAT (alanine aminotransferase)
-        KF_AAT = 21.7 / (μM * mM)
+        KF_AAT = 21.4Hz / mM
         KEQ_AAT = 6.6
         GLU = 10.0mM        # Glutamate
         ASP = GLU           # Aspartate
@@ -96,7 +96,7 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m=8mM, mg_m=0.
 
     v_idh = let
         vmax = KCAT_IDH * ET_IDH
-        a = NaNMath.pow(isoc / KM_ISOC_IDH , NI_ISOC_IDH) * (1 + adp_m / KM_ADP_IDH) * (1 + ca_m / KM_CA_IDH)
+        a = NaNMath.pow(isoc / KM_ISOC_IDH, NI_ISOC_IDH) * (1 + adp_m / KM_ADP_IDH) * (1 + ca_m / KM_CA_IDH)
         b = nad_m / KM_NAD_IDH * hil(KI_NADH_IDH, nadh_m)
         h = 1 + h_m / KH1_IDH + KH2_IDH / h_m
         vmax * a * b / (h * a * b + a + b + 1)
