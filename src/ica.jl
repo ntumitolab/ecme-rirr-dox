@@ -1,7 +1,5 @@
-# Calcium buffer by CMDN and CSQN
+# Calcium buffering by CMDN or CSQN
 β_ca(ca, KM, ET) = hil((ca + KM)^2, KM * ET)
-β_ca_cmdn(ca, KM_CA_CMDN=2.38μM, ET_CMDN=50μM) = β_ca(ca, KM_CA_CMDN, ET_CMDN)
-β_ca_csqn(ca, KM_CA_CSQN=0.8mM, ET_CSQN=5.0mM) = β_ca(ca, KM_CA_CSQN, ET_CSQN)
 
 "Calcium recycle currents"
 function get_jca_sys(; atp_i, adp_i, ca_i, ca_nsr, ca_jsr, ca_ss, ca_o, na_i, na_o, vm, name=:caresys)
