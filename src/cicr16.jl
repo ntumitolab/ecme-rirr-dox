@@ -8,7 +8,7 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
         f_LCC = 0.3 / ms
         g_LCC = 2 / ms
         γ_LCC = 0.1875 / (ms * mM)
-        P_CA_LCC = 1.24E-3cm * Hz # 1.24E-3cm * Hz
+        P_CA_LCC = 1E-3cm * Hz # 1.24E-3cm * Hz
         P_K_LCC = 1.11E-11cm * Hz
         I_CA_HALF_LCC = -0.4583μAcm⁻²
     end
