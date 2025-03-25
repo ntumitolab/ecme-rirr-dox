@@ -9,7 +9,7 @@ using Plots
 using DisplayAs: PNG
 
 tend = 1000.0second
-bcl = 1second
+bcl = 2.0second
 @named sys = build_model(; bcl, tend)
 u0 = build_u0(sys)
 sts = unknowns(sys)
@@ -18,5 +18,6 @@ prob = ODEProblem(sys, u0, tend, [])
 @time sol = solve(prob, alg; reltol=1e-6, abstol=1e-6, progress=true)
 
 for i in sts
-    println("sys.", i, " => ", sol[i][end], ",")
+    istr = replace(string(i), "(t)" => "")
+    println("sys.", istr, " => ", sol[i][end], ",")
 end
