@@ -27,6 +27,7 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
     @parameters begin
         iStim(t) = 0μAcm⁻²      # Stimulation current
         DOX(t) = 0mM            # Doxorubicin concentration
+        O2(t) = 6μM          # Oxygen concentration
         MT_PROT = 1             # OXPHOS protein content
         ΣA_m = 1.01mM           # Mitochondrial ATP + ADP pool (Gauthier-2013)
         ΣA_i = 8mM              # Cytosolic ATP + ADP pool (Li-2015)
@@ -56,8 +57,8 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
         KM_CA_CSQN = 800μM
         ET_CSQN = 5mM
         δCA = 3E-4          # Mito. Ca buffering factor
+
         # constant concentrations
-        O2(t) = 6μM          # Oxygen concentration
         h_i(t) = exp10(-7) * Molar   # Cytosolic proton concentration
         h_m(t) = exp10(-7.6) * Molar # Mitochondrial proton concentration
         nadph_i = 0.075mM   # Cytosolic NADPH (Gauthier-2013) # 1.0mM (Li-2015)
@@ -121,13 +122,13 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
     eqs = [
         D(vm) ~ -iCM * (INa + ICaL + IK + IK1 + IKp + INaCa + INaK + INsNa + IPMCA + ICaB + INaB + iStim + IKatp + ICaK),
         D(na_i) ~ -A_CAP_V_MYO_F * (INa + INaB + INsNa + 3INaCa + 3INaK),
-        D(k_i) ~ -A_CAP_V_MYO_F * (IK + IK1 + IKp + IKatp + iStim - 2 * INaK + ICaK),
+        D(k_i) ~ -A_CAP_V_MYO_F * (IK + IK1 + IKp + IKatp + iStim - 2INaK + ICaK),
         D(ca_i) ~ β_ca(ca_i, KM_CA_CMDN, ET_CMDN) * (Jxfer - Jup - Jtrpn - 0.5 * A_CAP_V_MYO_F * (IPMCA + ICaB - 2INaCa) + V_MITO_V_MYO * (vNaCa - vUni)),
         D(ca_nsr) ~ (V_MYO * Jup - V_JSR * Jtr) / V_NSR,
         D(ca_jsr) ~ β_ca(ca_jsr, KM_CA_CSQN, ET_CSQN) * (Jtr - Jrel),
         D(ca_ss) ~ β_ca(ca_ss, KM_CA_CMDN, ET_CMDN) * ((V_JSR * Jrel - V_MYO * Jxfer) / V_SS - 0.5ICaL * A_CAP_V_SS_F),
         D(ca_m) ~ δCA * (vUni - vNaCa),
-        D(adp_i) ~ vCK_mito - V_MITO_V_MYO * vANT + vAm + 0.5Jup + A_CAP_V_MYO_F * (IPMCA + INaK),
+        D(adp_i) ~ -V_MITO_V_MYO * vANT + vCK_mito + vAm + 0.5Jup + A_CAP_V_MYO_F * (IPMCA + INaK),
         D(adp_m) ~ vANT - vSL - vC5,
         D(nadh_m) ~ -vNADHC1 + vIDH + vKGDH + vMDH,
         D(dpsi) ~ iCMito * (vHres - vHu - vANT - vHleak - vNaCa - 2vUni - vIMAC),
