@@ -130,7 +130,7 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
         D(adp_i) ~ vCK_mito - V_MITO_V_MYO * vANT + vAm + 0.5Jup + A_CAP_V_MYO_F * (IPMCA + INaK),
         D(adp_m) ~ vANT - vSL - vC5,
         D(nadh_m) ~ -vNADHC1 + vIDH + vKGDH + vMDH,
-        D(dpsi) ~ iCMito * (vHres - vHu - vANT - vHleak - vNaCa - 2vUni - vTrROS),
+        D(dpsi) ~ iCMito * (vHres - vHu - vANT - vHleak - vNaCa - 2vUni - vIMAC),
         D(sox_m) ~ vROS - vTrROS,
         ΣA_i ~ atp_i + adp_i,
         ΣA_m ~ atp_m + adp_m,
