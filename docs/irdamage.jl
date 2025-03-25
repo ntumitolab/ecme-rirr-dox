@@ -1,4 +1,4 @@
-# Ischemic reperfusion damage
+# # Ischemic reperfusion damage
 using ProgressLogging
 using OrdinaryDiffEq
 using ModelingToolkit
