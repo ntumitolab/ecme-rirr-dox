@@ -9,7 +9,7 @@ using Plots
 using DisplayAs: PNG
 
 #---
-tend = 160.0second
+tend = 100.0second
 bcl = 1.0second
 @named sys = build_model(; bcl, tend)
 u0 = build_u0(sys)
@@ -18,12 +18,17 @@ alg = KenCarp47()
 @unpack O2, J_IMAC = sys
 prob = ODEProblem(sys, u0, tend, [O2 => 6nM])
 
-affect!(integrator) = integrator.ps[O2] = 6μM
-cb = PresetTimeCallback(120.0second, affect!)
+reoxygen! = (integrator) -> begin
+    integrator.ps[sys.O2] = 6μM
+    set_proposed_dt!(integrator, 1e-6)
+end
+
+cb = PresetTimeCallback(60.0second, reoxygen!)
 
 #---
 @time sol = solve(prob, alg; reltol=1e-6, abstol=1e-6, progress=true, dt=1e-6, callback=cb)
 
+#---
 @unpack vm, dpsi, atp_i, adp_i = sys
 pl_mmp = plot(sol, idxs=dpsi, lab=false, title="(A) Mito. memb. potential", xlabel="", ylabel="Voltage (mV)")
 pl_mmp = vline!(pl_mmp, [120.0second], lines=(:dash, :black), lab=false)
