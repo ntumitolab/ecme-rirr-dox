@@ -19,13 +19,13 @@ u0 = build_u0(sys)
 alg = KenCarp47()
 opts = (; reltol=1e-6, abstol=1e-6, progress=true)
 
-# The collapse of MMP is between 296uM and 297uM of DOX
+# The collapse of MMP is between 295uM and 297uM of DOX
 doxrange = 296μM:1μM:300μM
 prob = ODEProblem(sys, u0, tend, [sys.k_IMAC => -0.07, sys.J_IMAC=>0.5])
 prob_func = (prob, i, repeat) -> remake(prob, p=[DOX => doxrange[i]])
 eprob = EnsembleProblem(prob; prob_func)
 
-@time sim = solve(eprob, alg, EnsembleSerial(); trajectories=length(doxrange), opts...)
+@time sim = solve(eprob, alg, EnsembleThreads(); trajectories=length(doxrange), opts...)
 
 fig = plot(title="MMP")
 for (i, dox) in enumerate(doxrange)
@@ -34,11 +34,11 @@ end
 plot!(fig, ylabel="mV", xlabel="Time (s)") |> PNG
 
 #---
-fig = plot(title="ATP:ADP")
+fig = plot(title="ATP")
 for (i, dox) in enumerate(doxrange)
-    plot!(fig, sim[i], idxs=(sys.t/1000, [sys.atp_i / sys.adp_i]), lab="DOX = $(dox) μM")
+    plot!(fig, sim[i], idxs=(sys.t/1000, sys.atp_i), lab="DOX = $(dox) μM")
 end
-plot!(fig, ylabel="Ratio", xlabel="Time (s)", legend=:right) |> PNG
+plot!(fig, ylabel="Conc. (μM)", xlabel="Time (s)", legend=:right, ylim=(0, 8mM)) |> PNG
 
 #---
 fig = plot(title="ATP synthase")
@@ -59,7 +59,7 @@ fig = plot(title="Mitochondrial superoxide")
 for (i, dox) in enumerate(doxrange)
     plot!(fig, sim[i], idxs=(sys.t/1000, sys.sox_m), lab="DOX = $(dox) μM")
 end
-plot!(fig, ylabel="Conc. (μM)", xlabel="Time (s)", legend=:right) |> PNG
+plot!(fig, ylabel="Conc. (μM)", xlabel="Time (s)", legend=:topright) |> PNG
 
 #---
 fig = plot(title="Superoxide production")
