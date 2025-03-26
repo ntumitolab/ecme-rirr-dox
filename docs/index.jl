@@ -1,4 +1,4 @@
-# # ECEM-DOX model
+# # ECME-RIRR-DOX model
 # Cardiomyocyte electrophysiology and bioenergetics model with doxorubicin perturbation.
 # ## Runtime information
 using InteractiveUtils

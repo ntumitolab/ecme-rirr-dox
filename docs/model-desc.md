@@ -1,4 +1,4 @@
-# RIRR-DOX model description
+# ECME-RIRR-DOX model description
 
 ## TCA cycle rates
 
