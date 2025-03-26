@@ -34,7 +34,7 @@ pl_mmp = plot(sol, idxs=dpsi, lab=false, title="(A) Mito. memb. potential", xlab
 pl_mmp = vline!(pl_mmp, [60.0second], lines=(:dash, :black), lab=false)
 pl_vm = plot(sol, idxs=vm, lab=false, title="(B) Action potential", xlabel="", ylabel="Voltage (mV)")
 pl_vm = vline!(pl_vm, [60.0second], lines=(:dash, :black), lab=false)
-pl_atp = plot(sol, idxs=[atp_i/ adp_i], lab=false, title="(C) ATP:ADP", xlabel="", ylabel="Ratio")
+pl_atp = plot(sol, idxs=atp_i, lab=false, title="(C) ATP", xlabel="", ylabel="Conc. (μM)")
 pl_atp = vline!(pl_atp, [60.0second], lines=(:dash, :black), lab=false)
 @unpack cit, isoc, oaa, akg, scoa, suc, fum, mal = sys
 pl_cac = plot(sol, idxs=sys.suc, legend=false, title="(D) Succinate", xlabel="Time (ms)", ylabel="Conc. (μM)")
@@ -46,6 +46,5 @@ pl_ros = plot(sol, idxs=100 * sys.vROS / (sys.vO2 + sys.vROS), title="(F) ROS ge
 pl_ros = vline!(pl_ros, [60.0second], lines=(:dash, :black), lab=false)
 plot(pl_mmp, pl_vm, pl_atp, pl_cac, pl_q, pl_ros, size=(1200, 800)) |> PNG
 
-
 #---
-plot(sol, )
+plot(sol, idxs=sys.nadh_m, title="NADH (mito)")
