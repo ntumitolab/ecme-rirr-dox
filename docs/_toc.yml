@@ -6,6 +6,6 @@ root: index
 chapters:
   - file: dox
   - file: u0
-  - file: enzflux
   - file: irdamage
+  - file: enzflux
   - file: model-desc
