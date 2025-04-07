@@ -6,25 +6,22 @@ Some are adjusted by An-Chi Wei to prevent negative concentrations
 =#
 "Electron transport chain (ETC)"
 function get_etc_sys(;
-    DOX=0,
-    MT_PROT=1,
-    O2=6μM,
-    h_i=exp10(-7) * Molar,
-    h_m=exp10(-7.6) * Molar,
-    name=:etcsys
+    DOX=0,       # Doxorubcin
+    MT_PROT=1,   # OXPHOS protein content scale
+    O2=6μM,      # Oxygen
+    h_i=exp10(-7) * Molar,      # IMS proton conc
+    h_m=exp10(-7.6) * Molar,    # Matrix proton conc
+    name=:etcsys,
+    ROTENONE_BLOCK = 0,
+    ANTIMYCIN_BLOCK = 0,
+    MYXOTHIAZOLE_BLOCK = 0,
+    CYANIDE_BLOCK = 0,
+    OLIGOMYCIN_BLOCK = 0
 )
     @parameters begin
-        KI_DOX_C1 = 400μM  # DOX inhibition concentration (IC50) on complex I
-        KI_DOX_C2 = 2000μM # DOX inhibition concentration (IC50) on complex II
         KI_DOX_C3 = 185μM  # DOX inhibition concentration (IC50) on complex III
         KI_DOX_C4 = 165μM  # DOX inhibition concentration (IC50) on complex IV
-        K_RC_DOX = 1E3 / 15mM  # DOX redox cycling constant
-        ROTENONE_BLOCK(t) = 0
-        ANTIMYCIN_BLOCK(t) = 0
-        MYXOTHIAZOLE_BLOCK(t) = 0
-        CYANIDE_BLOCK(t) = 0
-        OLIGOMYCIN_BLOCK(t) = 0
-        E_O2_SOX = -150mV  # O2/Superoxide redox potential
+        E_O2_SOX = -160mV  # O2/Superoxide redox potential
         E_FMN = -375mV     # FMN/FMN- redox potential
     end
 
@@ -46,8 +43,10 @@ function get_etc_sys(;
 
     # Complex I
     @parameters begin
+        KI_DOX_C1 = 400μM  # DOX inhibition concentration (IC50) on complex I
+        K_RC_DOX = 1000 / 15mM  # DOX redox cycling constant
         ρC1 = 5mM # Adjusted # 8.85mM, Concentration of complex I, from Gauthier et al. (2013)
-        dpsi_B_C1 = 50.0mV   # Phase boundary potential
+        dpsi_B_C1 = 50mV   # Phase boundary potential
         # Transition rates
         K12_C1 = 6.3396e11Hz/mM^2
         K21_C1 = 5Hz
@@ -172,9 +171,12 @@ function get_etc_sys(;
 
     # Reversible complex II (SDH)
     @parameters begin
+        KI_DOX_C2 = 2000μM # DOX inhibition concentration (IC50) on complex II
         K_C2 = 250 / (minute * mM)   # Reaction rate constant of SDH (complex II)
-        KI_OAA_C2 = 0.15mM      # Inhibition constant for OAA
-        KEQ_C2 = 1.0            # Equlibrium constant of SDH
+        KI_OAA_C2 = 150μM       # Inhibition constant for OAA
+        EmFUM = 40mV            # midpoint potential of FUM -> SUC
+        EmQ = 100mV             # midpoint potential of Q -> QH2
+        KEQ_C2 = exp(-2iVT * (EmQ - EmFUM)) # (Reverse) equlibrium constant of SDH
     end
 
     @variables vSDH(t)
@@ -182,7 +184,7 @@ function get_etc_sys(;
 
     # complex IV (CCO)
     @parameters begin
-        ρC4 = 0.325mM
+        ρC4 = 325μM
         δ₅ = 0.5
         K34_C4 = 1.7667E28 / minute / mM^7
         K43_C4 = 1.7402 / minute / mM^4
@@ -252,7 +254,7 @@ function get_etc_sys(;
 
     # complex III and the Q cycle
     @parameters begin
-        ρC3 = 0.325mM
+        ρC3 = 325μM
         Q_T = 4.0mM  # Total CoQ pool
         E_QH_QH2p = +290mV
         E_Qp_Qdotp = -160mV
@@ -309,13 +311,14 @@ function get_etc_sys(;
     end
 
     c3eqs = let
+        fHi = h_i / 1E-7Molar
         C3_INHIB = hil(KI_DOX_C3, DOX, 3) * (1 - ANTIMYCIN_BLOCK)  # complex III inhibition by DOX and antimycin
         C3_CONC = ρC3 * MT_PROT
         v1 = vQC1 + vSDH # Q reduction
         v2 = KD_Q * (QH2_n - QH2_p) # QH2 diffusion
         # v3 = QH2 to FeS
         Qo_avail = (C3_CONC - Qdot_p) / C3_CONC
-        v3 = K03_C3 * (1 - MYXOTHIAZOLE_BLOCK) * (KEQ3_C3 * Qo_avail * fes_ox * (h_i / 1E-7Molar) * QH2_p - fes_rd * Qdot_p)
+        v3 = K03_C3 * (1 - MYXOTHIAZOLE_BLOCK) * (KEQ3_C3 * Qo_avail * fes_ox * QH2_p - fes_rd * Qdot_p * fHi^2)
         # v4 = Qdot_p and bH
         el4 = exp(-iVT * α_C3 * δ₁_C3 * dpsi)
         er4 = exp(iVT * α_C3 * (1 - δ₁_C3) * dpsi)
