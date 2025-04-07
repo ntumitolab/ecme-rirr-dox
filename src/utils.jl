@@ -40,8 +40,8 @@ const mSμF = μAμF / mV          # conductance density
 const Faraday = 96485Columb / mol # Faraday constant (columb / mol)
 const T₀ = 310Kelvin            # Default temp (37C)
 const RGAS = 8.314Joule / Kelvin / mol # Ideal gas constant (J/K⋅mol)
-const VT = RGAS * T₀ / Faraday  # Thermal voltage (@37C), 26.7 mV
-const iVT = inv(VT)             # Reciprocal of thermal voltage (0.037 per mV)
+const VT = RGAS * T₀ / Faraday     # Thermal voltage (@37C), 26.7 mV
+const iVT = Faraday / (RGAS * T₀)  # Reciprocal of thermal voltage (0.037 per mV)
 
 # Dissociation and affinity constants
 const KWATER = 1E-14 * Molar^2
@@ -88,11 +88,11 @@ exprel(x) = x / expm1(x)
 "Acid dissociation polynomial"
 _poly(h, iKA) = h * iKA + 1
 _poly(h, iKA, mg, iKMG) = h * iKA + +mg * iKMG + 1
+
 #=
 Get propotions of AXP from dissociation constants
 Returns AXPn-, HAXP, MgAXP, poly (the denominator polynomial)
 =#
-
 function _breakdown_axp(axp, h, mg, iKA, iKMG)
     poly = _poly(h, iKA, mg, iKMG)
     axpn = axp / poly

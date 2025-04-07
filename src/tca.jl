@@ -61,8 +61,8 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m=8mM, mg_m=0.
         ### AAT (alanine aminotransferase)
         KF_AAT = 21.4Hz / mM
         KEQ_AAT = 6.6
-        GLU = 10.0mM        # Glutamate
-        ASP = GLU           # Aspartate
+        GLU = 10mM        # Glutamate
+        ASP = GLU         # Aspartate
     end
 
     @variables begin
