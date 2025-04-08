@@ -180,7 +180,7 @@ function get_etc_sys(;
     end
 
     @variables vSDH(t)
-    c2eqs = [vSDH ~ K_C2 * (Q_n * suc - QH2_n * fum / KEQ_C2) * hil(KI_OAA_C2, oaa) * hil(KI_DOX_C2, DOX, 3)]
+    c2eqs = [vSDH ~ K_C2 * (Q_n * suc - QH2_n * fum * KEQ_C2) * hil(KI_OAA_C2, oaa) * hil(KI_DOX_C2, DOX, 3)]
 
     # complex IV (CCO)
     @parameters begin
