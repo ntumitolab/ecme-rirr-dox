@@ -17,7 +17,7 @@ u0 = build_u0(sys)
 sts = unknowns(sys)
 alg = TRBDF2()
 @unpack O2 = sys
-prob = ODEProblem(sys, u0, tend, [O2 => 6nM, sys.KEQ_C2 => 10.0])
+prob = ODEProblem(sys, u0, tend, [O2 => 6nM])
 
 reoxygen! = (integrator) -> begin
     integrator.ps[sys.O2] = 6μM

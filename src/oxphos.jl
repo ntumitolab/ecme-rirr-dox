@@ -45,7 +45,7 @@ function get_etc_sys(;
     @parameters begin
         KI_DOX_C1 = 400μM  # DOX inhibition concentration (IC50) on complex I
         K_RC_DOX = 1000 / 15mM  # DOX redox cycling constant
-        ρC1 = 5mM # Adjusted # 8.85mM, Concentration of complex I, from Gauthier et al. (2013)
+        ρC1 = 8.85mM       # Activity of complex I, from Gauthier et al. (2013)
         dpsi_B_C1 = 50mV   # Phase boundary potential
         # Transition rates
         K12_C1 = 6.3396e11Hz/mM^2
@@ -180,7 +180,7 @@ function get_etc_sys(;
     end
 
     @variables vSDH(t)
-    c2eqs = [vSDH ~ K_C2 * (Q_n * suc - QH2_n * fum / KEQ_C2) * hil(KI_OAA_C2, oaa) * hil(KI_DOX_C2, DOX, 3)]
+    c2eqs = [vSDH ~ K_C2 * (Q_n * suc - QH2_n * fum * KEQ_C2) * hil(KI_OAA_C2, oaa) * hil(KI_DOX_C2, DOX, 3)]
 
     # complex IV (CCO)
     @parameters begin
