@@ -17,7 +17,12 @@ alg = TRBDF2()
 prob = ODEProblem(sys, u0, tend)
 @time sol = solve(prob, alg; reltol=1e-6, abstol=1e-6, progress=true)
 
+#---
 for i in sts
     istr = replace(string(i), "(t)" => "")
     println("sys.", istr, " => ", sol[i][end], ",")
 end
+
+# Citric acid cycle metabolites
+@unpack cit, isoc, oaa, akg, scoa, suc, fum, mal = sys
+plot(sol, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal], legend=:right, title="CAC metabolites") |> PNG
