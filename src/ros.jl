@@ -16,10 +16,10 @@ end
 function get_ros_sys(; dpsi, sox_m, nadph_i=75μM, V_MITO_V_MYO=0.615, name=:rossys)
     @parameters begin
         # superoxide dismutase (SOD)
-        K1_SOD = 1200 / mM / ms     # Reaction rate constant of SOD
-        K3_SOD = 24 / mM / ms       # Inhibition rate constant of SOD
-        K5_SOD = 0.24Hz             # Recovery rate constant of SOD
-        KI_H2O2_SOD = 500μM         # H2O2 inhibition constant of SOD
+        K1_SOD = 1200 / mM / ms     # Reaction rate constant of SOD (Zhou, 2009)
+        K3_SOD = 24 / mM / ms       # Inhibition rate constant of SOD (Zhou, 2009)
+        K5_SOD = 0.24Hz             # Recovery rate constant of SOD (Zhou, 2009)
+        KI_H2O2_SOD = 500μM         # H2O2 inhibition constant of SOD (Zhou, 2009)
         ET_SOD_I = 3μM              # Cytosolic SOD concentration # 1.43μM in (Zhou, 2009)
         ET_SOD_M = 0.3μM            # Mitochondrial SOD concentration # (Kembro, 2013)
         # glutathione peroxidase (GPX)
