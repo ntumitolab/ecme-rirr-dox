@@ -11,12 +11,12 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m=8mM, mg_m=0.
         ACCOA = 1000μM  # 100μM
 
         ### ACO (aconitase)
-        KF_ACO = 0.1Hz # Adjusted
+        KF_ACO = 12.5Hz # Adjusted
         KEQ_ACO = 2.22
 
         ### IDH3 (Isocitrate dehydrogenase, NADH-producing)
         KI_NADH_IDH = 190μM
-        KCAT_IDH = 30Hz
+        KCAT_IDH = 41Hz
         ET_IDH = 109μM
         KH1_IDH = 1E-5mM
         KH2_IDH = 9E-4mM
@@ -59,7 +59,7 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m=8mM, mg_m=0.
         KM_NAD_MDH = 224.4μM
 
         ### AAT (alanine aminotransferase)
-        KF_AAT = 21.4Hz / mM
+        KF_AAT = 0.644Hz / mM
         KEQ_AAT = 6.6
         GLU = 10mM        # Glutamate
         ASP = GLU         # Aspartate

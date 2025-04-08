@@ -45,7 +45,7 @@ function get_etc_sys(;
     @parameters begin
         KI_DOX_C1 = 400μM  # DOX inhibition concentration (IC50) on complex I
         K_RC_DOX = 1000 / 15mM  # DOX redox cycling constant
-        ρC1 = 5mM # Adjusted # 8.85mM, Concentration of complex I, from Gauthier et al. (2013)
+        ρC1 = 8.85mM       # Activity of complex I, from Gauthier et al. (2013)
         dpsi_B_C1 = 50mV   # Phase boundary potential
         # Transition rates
         K12_C1 = 6.3396e11Hz/mM^2
