@@ -16,12 +16,12 @@ bcl = 1second
 @unpack DOX, ρC4, ρC3 = sys
 sts = unknowns(sys)
 u0 = build_u0(sys)
-alg = KenCarp47()
+alg = TRBDF2()
 opts = (; reltol=1e-6, abstol=1e-6, progress=true)
 
 # The collapse of MMP is between 295uM and 297uM of DOX
-doxrange = 296μM:1μM:300μM
-prob = ODEProblem(sys, u0, tend, [sys.k_IMAC => -0.07, sys.J_IMAC=>0.5])
+doxrange = 400μM:10μM:500μM
+prob = ODEProblem(sys, u0, tend, [sys.ET_SOD_I=> 0.1μM])
 prob_func = (prob, i, repeat) -> remake(prob, p=[DOX => doxrange[i]])
 eprob = EnsembleProblem(prob; prob_func)
 

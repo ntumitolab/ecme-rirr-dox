@@ -14,7 +14,7 @@ bcl = 1.0second
 u0 = build_u0(sys)
 sts = unknowns(sys)
 alg = TRBDF2()
-prob = ODEProblem(sys, u0, tend)
+prob = ODEProblem(sys, u0, tend, [sys.ET_SOD_I => 2μM])
 @time sol = solve(prob, alg; reltol=1e-6, abstol=1e-6, progress=true)
 
 #---
@@ -26,3 +26,7 @@ end
 # Citric acid cycle metabolites
 @unpack cit, isoc, oaa, akg, scoa, suc, fum, mal = sys
 plot(sol, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal], legend=:right, title="CAC metabolites") |> PNG
+
+plot(sol, idxs=sys.vIMAC)
+
+plot(sol, idxs=sys.sox_i)

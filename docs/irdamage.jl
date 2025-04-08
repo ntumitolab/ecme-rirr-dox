@@ -17,7 +17,7 @@ u0 = build_u0(sys)
 sts = unknowns(sys)
 alg = TRBDF2()
 @unpack O2 = sys
-prob = ODEProblem(sys, u0, tend, [O2 => 6nM, sys.KEQ_C2 => 10.0])
+prob = ODEProblem(sys, u0, tend, [O2 => 6nM, sys.ET_SOD_I=> 0.1μM])
 
 reoxygen! = (integrator) -> begin
     integrator.ps[sys.O2] = 6μM
@@ -48,4 +48,11 @@ pl_ros = vline!(pl_ros, [60.0second], lines=(:dash, :black), lab=false)
 plot(pl_mmp, pl_vm, pl_atp, pl_cac, pl_q, pl_ros, size=(1200, 800)) |> PNG
 
 #---
-plot(sol, idxs=sys.nadh_m, title="NADH (mito)")
+plot(sol, idxs=sys.nadh_m, title="NADH (mito)") |> PNG
+
+# Why?
+
+plot(sol, idxs=[sys.vIDH, sys.vKGDH, sys.vMDH, sys.vNADHC1], title="NADH (mito)") |> PNG
+
+#---
+plot(sol, idxs=[sys.sox_i, sys.sox_m, sys.h2o2_i], title="ROS")  |> PNG
