@@ -42,6 +42,7 @@ const T₀ = 310Kelvin            # Default temp (37C)
 const RGAS = 8.314Joule / Kelvin / mol # Ideal gas constant (J/K⋅mol)
 const VT = RGAS * T₀ / Faraday     # Thermal voltage (@37C), 26.7 mV
 const iVT = Faraday / (RGAS * T₀)  # Reciprocal of thermal voltage (0.037 per mV)
+const mMHz = mM * Hz               # Flux rate
 
 # Dissociation and affinity constants
 const KWATER = 1E-14 * Molar^2
