@@ -40,8 +40,8 @@ pl_atp = vline!(pl_atp, [60.0second], lines=(:dash, :black), lab=false)
 @unpack cit, isoc, oaa, akg, scoa, suc, fum, mal = sys
 pl_cac = plot(sol, idxs=sys.suc, legend=false, title="(D) Succinate", xlabel="Time (ms)", ylabel="Conc. (μM)")
 pl_cac = vline!(pl_cac, [60.0second], lines=(:dash, :black), lab=false)
-@unpack Q_n, Qdot_n, QH2_n, QH2_p, Qdot_p, Q_p, fes_ox, fes_rd, cytc_ox, cytc_rd = sys
-pl_q = plot(sol, idxs=[Q_n, Q_p, Qdot_n, QH2_n, QH2_p, Qdot_p], title="(E) Q cycle", legend=:left, xlabel="Time (ms)", ylabel="Conc. (μM)")
+@unpack Q_n, SQn, QH2_n, QH2_p, SQp, Q_p, fes_ox, fes_rd, cytc_ox, cytc_rd = sys
+pl_q = plot(sol, idxs=[Q_n, Q_p, SQn, QH2_n, QH2_p, SQp], title="(E) Q cycle", legend=:left, xlabel="Time (ms)", ylabel="Conc. (μM)")
 pl_q = vline!(pl_q, [60.0second], lines=(:dash, :black), lab=false)
 pl_ros = plot(sol, idxs=100 * sys.vROS / (sys.vO2 + sys.vROS), title="(F) ROS generation", lab=false, xlabel="Time (ms)", ylabel="Fraction of O2 consumption (%)")
 pl_ros = vline!(pl_ros, [60.0second], lines=(:dash, :black), lab=false)

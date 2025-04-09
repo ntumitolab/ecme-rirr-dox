@@ -25,29 +25,26 @@ include("u0.jl")
 
 function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80μAcm⁻², tstart=0second, tend=10second, duty=0.5ms)
     @parameters begin
-        iStim(t) = 0μAcm⁻²      # Stimulation current
-        DOX(t) = 0mM            # Doxorubicin concentration
-        O2(t) = 6μM          # Oxygen concentration
-        MT_PROT = 1             # OXPHOS protein content
-        ΣA_m = 1.01mM           # Mitochondrial ATP + ADP pool (Gauthier-2013)
-        ΣA_i = 8mM              # Cytosolic ATP + ADP pool (Li-2015)
-        ΣNAD_m = 1mM           # Mitochondrial NAD + NADH pool # 1.0mM (Gauthier-2013)
-        ΣNADP_m = 0.1mM         # Mitochondrial NADP + NADPH pool (Gauthier-2013)
-
-        CM = 1μFcm⁻²          # Plasma membrane capacitance
-        iCM = inv(CM)
-        CM_MITO = 1.812μM / mV  # Inner mitochondrial membrane capacitance
-        iCMito = inv(CM_MITO)
+        iStim(t) = 0μAcm⁻²          # Stimulation current
+        DOX(t) = 0mM                # Doxorubicin concentration
+        O2(t) = 6μM                 # Oxygen concentration
+        MT_PROT = 1                 # OXPHOS protein content
+        ΣA_m = 1.01mM               # Mitochondrial ATP + ADP pool (Gauthier-2013)
+        ΣA_i = 8mM                  # Cytosolic ATP + ADP pool (Li-2015)
+        ΣNAD_m = 1mM                # Mitochondrial NAD + NADH pool # 1.0mM (Gauthier-2013)
+        ΣNADP_m = 0.1mM             # Mitochondrial NADP + NADPH pool (Gauthier-2013)
+        iCM = inv(1μFcm⁻²)          # inverse of Plasma membrane capacitance
+        iCMito = inv(1.812μM / mV)  # inverse of inner mitochondrial membrane capacitance
 
         # Cell geometries
-        A_CAP = 1.534E-4cm²
-        V_MYO = 25.84pL
-        V_MT = 15.89pL
-        V_NSR = 1.4pL
-        V_JSR = 0.16pL
-        V_SS = 0.495E-3pL
+        A_CAP = 1.534E-4cm²         # capacitance area
+        V_MYO = 25.84pL             # Cytosol volume
+        V_MT = 15.89pL              # Mitochondrial (matrix) volume
+        V_NSR = 1.4pL               # Network SR volume
+        V_JSR = 0.16pL              # Junctional SR volume
+        V_SS = 0.495E-3pL           # Dyadic space volume
         V_MITO_V_MYO = V_MT / V_MYO         # Ratio of mitochondrial matrix to cytosolic ion diffusion space
-        # Conversion factor from current density (μA/cm²) to ion traslocation rate (μM/ms)
+        # Conversion factor from current density (μA/cm²) to ion flux (μM/ms)
         A_CAP_V_MYO_F = A_CAP / (V_MYO * Faraday)
         A_CAP_V_SS_F = A_CAP / (V_SS * Faraday)
 
@@ -64,11 +61,11 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
         nadph_i = 0.075mM   # Cytosolic NADPH (Gauthier-2013) # 1.0mM (Li-2015)
         pi_m = 8.6512mM     # Inorganic phosphate (Gauthier-2013 and Kembro-2013)
         k_o = 5.4mM         # Extracellular potassium
-        na_o = 140mM      # Extracellular sodium
-        ca_o = 2mM        # Extracellular calcium
-        mg_i = 1mM        # Cytosolic magnesium (Gauthier-2013) # 3.1mM (Li-2015)
+        na_o = 140mM        # Extracellular sodium
+        ca_o = 2mM          # Extracellular calcium
+        mg_i = 1mM          # Cytosolic magnesium (Gauthier-2013) # 3.1mM (Li-2015)
         mg_m = 0.4mM        # Mitochondrial magnesium (li-2015)
-        pi_i = 3mM        # Cytosolic inorganic phosphate
+        pi_i = 3mM          # Cytosolic inorganic phosphate
     end
 
     @variables begin
