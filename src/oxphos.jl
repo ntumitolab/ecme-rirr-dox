@@ -15,8 +15,7 @@ function get_etc_sys(;
     ROTENONE_BLOCK = 0,
     ANTIMYCIN_BLOCK = 0,
     MYXOTHIAZOLE_BLOCK = 0,
-    CYANIDE_BLOCK = 0,
-    OLIGOMYCIN_BLOCK = 0
+    CYANIDE_BLOCK = 0
 )
     @parameters begin
         KI_DOX_C3 = 185μM  # DOX inhibition concentration (IC50) on complex III
