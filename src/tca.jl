@@ -77,11 +77,11 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m=8mM, mg_m=0.
         vSDH(t)
         oaa(t) = 11.6μM
         cit(t) # Conserved
-        isoc(t) = 51.6μM     # isocitrate
-        akg(t) = 51μM     # alpha-ketoglutarate
-        scoa(t) = 35μM     # succinyl-CoA
-        suc(t) = 1.9μM   # succinate
-        fum(t) = 175μM       # fumarate
+        isoc(t) = 51.6μM    # isocitrate
+        akg(t) = 51μM       # alpha-ketoglutarate
+        scoa(t) = 35μM      # succinyl-CoA
+        suc(t) = 1.9μM      # succinate
+        fum(t) = 175μM      # fumarate
         mal(t) = 160μM      # malate
     end
 

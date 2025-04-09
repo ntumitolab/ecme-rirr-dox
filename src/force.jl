@@ -15,7 +15,7 @@ function get_force_sys(; atp_i, adp_i, ca_i, name=:forcesys)
         V_MAX_AM = 7.2mM * Hz      # Maximal rate of ATP hydrolysis by myofibrils (AM ATPase)
         KM_ATP_AM = 30μM           # ATP half saturation constant of AM ATPase
         KI_ADP_AM = 260μM          # ADP inhibition constant of AM ATPase
-        ζ = 0.1                    # Conversion factor normalizing to  physiological force (N/mm²)
+        ζ_AM = 0.1                    # Conversion factor normalizing to  physiological force (N/mm²)
     end
 
     @variables begin
@@ -63,7 +63,7 @@ function get_force_sys(; atp_i, adp_i, ca_i, name=:forcesys)
     v54 = G01_OFF * x_n1
 
     eqs = [
-        force ~ ζ * (x_p1 + x_n1 + 2 * x_p2 + 3 * x_p3) / (P1_MAX + 2P2_MAX + 3P3_MAX),
+        force ~ ζ_AM * (x_p1 + x_n1 + 2 * x_p2 + 3 * x_p3) / (P1_MAX + 2P2_MAX + 3P3_MAX),
         force_normal ~ (x_p1 + x_p2 + x_p3 + x_n1) / (P1_MAX + P2_MAX + P3_MAX),
         vAm ~ V_MAX_AM / (F01 + F12 + F23) * hil(atp_i * hil(KI_ADP_AM, adp_i), KM_ATP_AM) * (F01 * x_p0 + F12 * x_p1 + F23 * x_p2),
         ΣLTRPN ~ ltr_ca + ltr_free,

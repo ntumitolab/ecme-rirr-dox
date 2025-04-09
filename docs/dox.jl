@@ -77,8 +77,8 @@ end
 plot!(fig, ylabel="Percentage (%)", xlabel="Time (s)", legend=:right) |> PNG
 
 #----
-@unpack Q_n, Qdot_n, QH2_n, QH2_p, Qdot_p, Q_p, fes_ox, fes_rd, cytc_ox, cytc_rd = sys
-plot(sim[end], idxs=[Q_n + Q_p, Qdot_n, QH2_n+QH2_p, Qdot_p], title="Q cycle ", legend=:right) |> PNG
+@unpack Q_n, SQn, QH2_n, QH2_p, SQp, Q_p, fes_ox, fes_rd, cytc_ox, cytc_rd = sys
+plot(sim[end], idxs=[Q_n + Q_p, SQn, QH2_n+QH2_p, SQp], title="Q cycle ", legend=:right) |> PNG
 
 #---
 @unpack cit, isoc, oaa, akg, scoa, suc, fum, mal = sys
@@ -132,8 +132,8 @@ plot!(fig, sol2, idxs=idxs, label="C3 500", xlabel="Time (s)", legend=:right)
 fig |> PNG
 
 # Q cycle : reduced Q pool (QH2 accumulation)
-@unpack Q_n, Qdot_n, QH2_n, QH2_p, Qdot_p, Q_p, fes_ox, fes_rd, cytc_ox, cytc_rd = sys
-plot(sol0, idxs=[Q_n + Q_p, Qdot_n, QH2_n+QH2_p, Qdot_p], title="Q cycle (DOX=296uM)", legend=:right) |> PNG
+@unpack Q_n, SQn, QH2_n, QH2_p, SQp, Q_p, fes_ox, fes_rd, cytc_ox, cytc_rd = sys
+plot(sol0, idxs=[Q_n + Q_p, SQn, QH2_n+QH2_p, SQp], title="Q cycle (DOX=296uM)", legend=:right) |> PNG
 
 # Succinate accumulation and CAC slowed down.
 @unpack cit, isoc, oaa, akg, scoa, suc, fum, mal= sys

@@ -4,10 +4,10 @@ function get_ck_sys(; atp_i, adp_i, name=:cksys)
         KCK_IN = 0.14Hz     # Rate constant of creatine kinase (cytosolic)
         KCK_MT = 1.33E-3Hz  # Rate constant of creatine kinase (juxta-mitochondrial)
         KTR_CR = 2Hz        # Diffusion rate of creatine phosphate
-        KEQ_CK = 0.0095     # Eqilibrium constant of creatine kinase (PCr-forming)
-        K_ATPASE_CYTO = 0.0013Hz # Basal consumption rate of cytosolic ATP
+        iKEQ_CK = inv(0.0095) # Eqilibrium constant of creatine kinase (Cr-forming)
+        KATPASE_CYTO = 1.3E-3Hz # Basal consumption rate of cytosolic ATP
         ΣCR = 25mM          # Pool of creatine and creatine phosphate
-        ΣA_ic = 8mM         # Pool of cytosolic ATP/ADP
+        ΣA_ic = 8mM         # Pool of cytosolic ATP + ADP
     end
 
     @variables begin
@@ -25,10 +25,10 @@ function get_ck_sys(; atp_i, adp_i, name=:cksys)
         ΣCR ~ cr_ic + crp_ic,
         ΣCR ~ cr_i + crp_i,
         ΣA_ic ~ adp_ic + atp_ic,
-        vCK_mito ~ KCK_MT * (atp_i * cr_i - adp_i * crp_i / KEQ_CK),
-        vCK_cyto ~ KCK_IN * (atp_ic * cr_ic - adp_ic * crp_ic / KEQ_CK),
+        vCK_mito ~ KCK_MT * (atp_i * cr_i - adp_i * crp_i * iKEQ_CK),
+        vCK_cyto ~ KCK_IN * (atp_ic * cr_ic - adp_ic * crp_ic * iKEQ_CK),
         vTR_crp ~ KTR_CR * (crp_i - crp_ic),
-        D(adp_ic) ~ vCK_cyto + K_ATPASE_CYTO * atp_ic,
+        D(adp_ic) ~ vCK_cyto + KATPASE_CYTO * atp_ic,
         D(crp_i) ~ vCK_mito - vTR_crp,
         D(crp_ic) ~ vTR_crp + vCK_cyto
     ]

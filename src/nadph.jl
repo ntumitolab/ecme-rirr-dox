@@ -29,7 +29,7 @@ function get_nadph_sys(h_m, isoc, akg, ΔμH; name=:nadphsys)
         nad_m(t)
     end
 
-    vidh2 = let
+    v_idh2 = let
         f_h = hil(KM_H_IDH2, h_m)
         f_isoc = isoc / KM_ISOC_IDH2
         f_nadp = nadp_m / (KM_NADP_IDH2 * hil(nadp_m, KI_NADP_IDH2))
@@ -37,10 +37,10 @@ function get_nadph_sys(h_m, isoc, akg, ΔμH; name=:nadphsys)
         f_nadph = nadph_m / KM_NADPH_IDH2
         denom = (1 + f_isoc + f_akg) * (1 + f_nadp + f_nadph)
         num = (VF_IDH2 * f_isoc * f_nadp - VB_IDH2 * f_akg * f_nadph)
-        vidh2 = num * f_h / denom
+        num * f_h / denom
     end
 
-    vthd = let
+    v_thd = let
         # Corrected an error from both the paper and code from Gauthier et al.
         vNAD = exp(iVT * X_THD * (1.0 - D_THD) * ΔμH)
         fNAD = nad_m / KM_NAD_THD
@@ -52,8 +52,8 @@ function get_nadph_sys(h_m, isoc, akg, ΔμH; name=:nadphsys)
         fNADPH = nadph_m / KM_NADPH_THD
         denom = 1 + fNAD + fNADH + fNADP + fNADPH + (fNADPH + fvNAD) * (fNADPH + fvNADP)
         num = KF_THD * fNADH * fvNADP - KB_THD * fvNAD * fNADPH
-        vthd = ET_THD * num / denom
+        ET_THD * num / denom
     end
 
-    return ODESystem([vIDH2 ~ vidh2, vTHD ~ vthd], t; name)
+    return ODESystem([vIDH2 ~ v_idh2, vTHD ~ v_thd], t; name)
 end
