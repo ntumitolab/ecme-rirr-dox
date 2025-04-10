@@ -153,13 +153,13 @@ function get_etc_sys(;
     @parameters begin
         ρC4 = 325μM
         δ₅ = 0.5
-        K34_C4 = 1.7667E28 / minute / mM^7
-        K43_C4 = 1.7402 / minute / mM^4
-        K35_C4 = 45000 / minute / mM
-        K36_C4 = 2.8955E25 / minute / mM^4
-        K63_C4 = 2.8955E10 / minute / mM^3
-        K37_C4 = 1.7542E12 / minute / mM
-        K73_C4 = 1.7542E4 / minute / mM
+        K34_C4 = 2.9445e10Hz / mM^3 # pH7
+        K43_C4 = 2.9E-6Hz / mM^3
+        K35_C4 = 750Hz / mM
+        K36_C4 = 4.826e11Hz / mM
+        K63_C4 = 4.826Hz / mM
+        K37_C4 = 2.92367e6Hz
+        K73_C4 = 0.029236Hz  # pH7
         KI_DOX_C4 = 165μM  # DOX inhibition concentration (IC50) on complex IV
     end
 
@@ -184,17 +184,18 @@ function get_etc_sys(;
         C4_CONC = ρC4 * MT_PROT
         aδ = exp(-iVT * δ₅ * dpsi)
         a1mδ = exp(iVT * (1 - δ₅) * dpsi)
-        f_hm = h_m * aδ
-        f_hi = h_i * a1mδ
+        f_hm = h_m / (1E-7Molar) * aδ
+        f_hi = h_i / (1E-7Molar) * a1mδ
         f_cr = cytc_rd
         f_co = cytc_ox * a1mδ
         a12 = K34_C4 * f_cr^3 * f_hm^4  # a12 = K34 * exp(-δ₅ * 4 * vfrt) * cytc_rd^3 * h_m^4
-        a14 = K73_C4 * f_hi  # K73 * exp((1 - δ₅) * F_RT * dpsi) * h_i
         a21 = K43_C4 * f_co^3 * f_hi # K43 * exp((1 - δ₅) * 4 * vfrt) * cytc_ox^3 * h_i
         a23 = C4_INHIB * K35_C4 * O2
+        a32 = 0
         a34 = K36_C4 * f_cr * f_hm^3 # K36 * exp(-δ₅ * 3 * vfrt) * cytc_rd * h_m^3
-        a41 = K37_C4 * f_hm  # K37 * exp(-δ₅ * vfrt) * h_m
         a43 = K63_C4 * f_co * f_hi^2  # K63 * exp((1 - δ₅) * 3 * vfrt) * cytc_ox * h_i^2
+        a41 = K37_C4 * f_hm  # K37 * exp(-δ₅ * vfrt) * h_m
+        a14 = K73_C4 * f_hi  # K73 * exp((1 - δ₅) * F_RT * dpsi) * h_i
 
         # Weight of each state (from KA pattern)
         den = C4_e1 + C4_e2 + C4_e3 + C4_e4
@@ -205,17 +206,17 @@ function get_etc_sys(;
         v37 = C4_CONC * (a41 * C4_YOH - a14 * C4_Y)
 
         c4eqs = [
-            C4_e1 ~ a21 * a41 * a34 + a41 * a34 * a23,
+            C4_e1 ~ a41 * a34 * (a21 + a23),
             C4_e2 ~ a12 * a41 * a34,
-            C4_e3 ~ a23 * a12 * a41 + a43 * a14 * a21 + a23 * a43 * a12 + a23 * a43 * a14,
-            C4_e4 ~ a14 * a34 * a21 + a34 * a23 * a12 + a34 * a23 * a14,
+            C4_e3 ~ a23 * a12 * (a41 + a43) + a43 * a14 * (a21 + a23),
+            C4_e4 ~ a34 * (a14 * (a21 + a23) + a23 * a12),
             C4_Y ~ C4_e1 / den,
             C4_Yr ~ C4_e2 / den,
             C4_YO ~ C4_e3 / den,
             C4_YOH ~ C4_e4 / den,
             vO2 ~ v35,
-            vHresC4 ~ v34 + 2 * v36 + v37,
-            vCytcOx ~ 3 * v34 + v35,
+            vCytcOx ~ 4vO2,
+            vHresC4 ~ vCytcOx,
             C4_CONC ~ cytc_rd + cytc_ox
         ]
     end
