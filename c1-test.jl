@@ -28,9 +28,9 @@ function get_c1_sys(; name=:c1sys,
         KQH2_C1 = 0.05 / μM   # Association constant for QH2
         K1_C1 = 100Hz
         K2_C1 = 1000Hz
-        K3_C1 = 0.01Hz / μM
+        K3_C1 = 1E-3Hz / μM
         KEQ3_C1 = exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
-        K4_C1 = 0.005Hz / μM
+        K4_C1 = 5E-4Hz / μM
         KEQ4_C1 = exp(iVT * (Em_O2_SOX - Em_Q_SQ_C1))
     end
 
@@ -95,7 +95,7 @@ end
 sys = get_c1_sys(; Qn, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
 tend = 100.0ms
-prob = ODEProblem(sys, [], tend)
+prob = ODEProblem(sys, [], tend, [sys.K1_C1 => 10Hz])
 
 sol = solve(prob)
 
@@ -105,7 +105,9 @@ sol[sys.KEQ1_C1][end]
 sol[sys.KEQ2_C1][end]
 sol[sys.SQ_C1][end]
 sol[sys.vROS_C1][end]
+sol[sys.vNADH_C1][end]
 
 @unpack v1_C1, v2_C1, v3_C1, v4_C1 = sys
+plot(sol, idxs=[v1_C1, v2_C1, v3_C1, v4_C1], tspan=(20, 40))
 @unpack vQ_C1, vQH2_C1, vROS_C1, vNADH_C1 = sys
 plot(sol, idxs=[vQ_C1, vQH2_C1, vROS_C1, vNADH_C1], tspan=(20, 40))
