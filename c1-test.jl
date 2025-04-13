@@ -1,5 +1,7 @@
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
+using SteadyStateDiffEq
+using OrdinaryDiffEq
 using NaNMath
 using ECMEDox
 using ECMEDox: mM, μM, iVT, mV, Molar, Hz, ms
@@ -89,7 +91,7 @@ function c1_markevich(; name=:c1sys,
         vROS_C1 ~ vROSIf + vROSIq,
         vNADH_C1 ~ -0.5 * (v2 + v3 + v5),
         TN_C1 ~ -vNADH_C1 / ET_C1,
-        ROSshunt_C1 ~ -vROS_C1 / vNADH_C1,
+        ROSshunt_C1 ~ 0.5vROS_C1 / (-vNADH_C1-vQH2_C1+vQ_C1),
         ET_C1 ~ I_C1 + Q_C1 + SQ_C1 + QH2_C1,
         D(Q_C1) ~ v1 - v2 + v6,
         D(SQ_C1) ~ v2 - v3 - v6,
@@ -197,24 +199,60 @@ end
 end
 
 markevich = c1_markevich(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
-
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
+dpsirange = 100mV:10mV:200mV
+alter_dpsi = (prob, i, repeat) -> remake(prob, p=[dpsi => dpsirange[i]])
+
 tend = 1000.0ms
-prob_m = ODEProblem(markevich, [], tend, [])
-prob_g = ODEProblem(gauthier, [], tend, [])
+prob_m = SteadyStateProblem(markevich, [])
+prob_g = SteadyStateProblem(gauthier, [])
+alg = DynamicSS(Rodas5P())
+# Try
+@time sol_m = solve(prob_m, alg)
+@time sol_g = solve(prob_g, alg)
 
-sol_m = solve(prob_m)
-sol_g = solve(prob_g)
+# Change in MMP
+dpsirange = 100mV:5mV:200mV
+alter_dpsi = (prob, i, repeat) -> remake(prob, p=[dpsi => dpsirange[i]])
 
-sol_m[markevich.TN_C1][end]
-sol_g[gauthier.TN_C1][end]
+eprob_g = EnsembleProblem(prob_g; prob_func = alter_dpsi)
+eprob_m = EnsembleProblem(prob_m; prob_func = alter_dpsi)
+@time sim_g = solve(eprob_g, alg, EnsembleSerial(); trajectories=length(dpsirange))
+@time sim_m = solve(eprob_m, alg, EnsembleSerial(); trajectories=length(dpsirange))
 
-sol_m[markevich.vROSIf][end]
-sol_m[markevich.vROSIq][end]
-sol_m[markevich.ROSshunt_C1][end]
-sol_g[gauthier.ROSshunt_C1][end]
+# MMP vs NADH turnover
+xs = dpsirange
+ys_g = map(sim_g) do sol
+    sol[gauthier.TN_C1] * 1000
+end
+ys_m = map(sim_m) do sol
+    sol[markevich.TN_C1]
+end
+plot(xs, [ys_g ys_m], xlabel="MMP (mV)", ylabel="NADH turnover", label=["Gauthier (Hz)" "Markevich (kHz)"])
 
-plot(sol_m, idxs=[markevich.vQ_C1, markevich.vQH2_C1, markevich.vROS_C1, markevich.vNADH_C1], tspan=(20, 40))
+# MMP vs ROS production
+xs = dpsirange
+ys_g = map(sim_g) do sol
+    sol[gauthier.ROSshunt_C1]
+end
+ys_m = map(sim_m) do sol
+    sol[markevich.ROSshunt_C1] |> abs
+end
+plot(xs, [ys_g ys_m], xlabel="MMP (mV)", ylabel="ROS production", label=["Gauthier" "Markevich"])
 
-plot(sol_g)
+ys_if = map(sim_m) do sol
+    sol[markevich.vROSIf] |> abs
+end
+ys_iq = map(sim_m) do sol
+    sol[markevich.vROSIq] |> abs
+end
+plot(xs, [ys_if ys_iq], xlabel="MMP (mV)", ylabel="ROS production", label=["IF" "IQ"])
+
+sol_m[markevich.TN_C1]
+sol_g[gauthier.TN_C1]
+
+sol_m[markevich.vROSIf]
+sol_m[markevich.vROSIq]
+sol_m[markevich.ROSshunt_C1]
+sol_g[gauthier.ROSshunt_C1]
