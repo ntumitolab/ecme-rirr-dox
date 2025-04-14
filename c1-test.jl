@@ -3,9 +3,9 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 using SteadyStateDiffEq
 using OrdinaryDiffEq
 using NaNMath
+using Plots
 using ECMEDox
 using ECMEDox: mM, μM, iVT, mV, Molar, Hz, ms
-using Plots
 
 # Adapted from Markevich, 2015
 function c1_markevich(; name=:c1sys,
@@ -21,8 +21,8 @@ function c1_markevich(; name=:c1sys,
         Em_FMN_FMNH = -340mV      # FMN/FMNH- avg redox potential
         Em_N2 = -80mV
         Em_Q_SQ_C1 = -300mV       # -213mV in Markevich, 2015
-        Em_SQ_QH2_C1 = +500mV     # ~ 800mV in Markevich, 2015
-        ET_C1 = 0.4mM             # Activity of complex I
+        Em_SQ_QH2_C1 = +500mV     # 800mV in Markevich, 2015
+        ET_C1 = 3μM               # Activity of complex I
         KI_NAD_C1 = 1mM
         KI_NADH_C1 = 50μM
         KD_NAD_C1 = 25μM
@@ -36,9 +36,9 @@ function c1_markevich(; name=:c1sys,
         K3_C1 = 2.7E6Hz / μM
         K4_C1 = 1000Hz
         KEQ4_C1 = 20μM            # Dissociation constant for QH2
-        K5_C1 = 2Hz / μM
+        K5_C1 = 2Hz / μM          # SOX production rate from If site
         KEQ5_C1 = exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
-        K6_C1 = 0.04Hz / μM
+        K6_C1 = 0.04Hz / μM       # SOX production rate from Iq site
         KEQ6_C1 = exp(iVT * (Em_O2_SOX - Em_Q_SQ_C1))
     end
 
@@ -74,7 +74,7 @@ function c1_markevich(; name=:c1sys,
     v5 = K5_C1 * ET_C1 * (fFMNH_C1 * O2 - fFMNsq_C1 * sox_m / KEQ5_C1)
     # Quinone site ROS generation
     v6 = K6_C1 * (SQ_C1 * O2 - Q_C1 * sox_m / KEQ6_C1)
-
+    # FeS N2 reduction ratio
     rN2 = exp(iVT * (Em_N2 - Em_NAD)) * (nadh / nad)
 
     eqs = [
@@ -198,13 +198,10 @@ end
 markevich = c1_markevich(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
-prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 3μM])
+prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 3μM, markevich.K5_C1 => 0.02Hz / μM, markevich.K6_C1 => 0.0004Hz / μM])
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(Rodas5P())
 ealg = EnsembleThreads()
-# Try
-@time sol_m = solve(prob_m, alg)
-@time sol_g = solve(prob_g, alg)
 
 # Change in MMP
 dpsirange = 100mV:5mV:200mV
@@ -216,24 +213,25 @@ eprob_m = EnsembleProblem(prob_m; prob_func=alter_dpsi, safetycopy=false)
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(dpsirange))
 
 # MMP vs NADH turnover
-# markevich model has more sensitivity
+# markevich model has a steeper dependence
+xs = dpsirange
 ys_g = map(sim_g) do sol
     sol[gauthier.vNADH_C1]
 end
 ys_m = map(sim_m) do sol
     sol[markevich.vNADH_C1]
 end
-plot(xs, [ys_g ys_m], xlabel="MMP (mV)", ylabel="NADH consumption (μM/ms)", label=["Gauthier" "Markevich"])
+plot(xs, [ys_g ys_m], xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", label=["Gauthier" "Markevich"])
 
 # MMP vs ROS production
 xs = dpsirange
 ys_g = map(sim_g) do sol
-    sol[gauthier.vROS_C1]
+    sol[gauthier.vROS_C1] * 1000
 end
 ys_m = map(sim_m) do sol
-    sol[markevich.vROS_C1]
+    sol[markevich.vROS_C1] * 1000
 end
-plot(xs, [ys_g ys_m], xlabel="MMP (mV)", ylabel="ROS production", label=["Gauthier" "Markevich"])
+plot(xs, [ys_g ys_m], xlabel="MMP (mV)", ylabel="ROS production (μM/s)", label=["Gauthier" "Markevich"])
 
 ys_if = map(sim_m) do sol
     sol[markevich.vROSIf]
@@ -273,3 +271,54 @@ ys_m = map(sim_m) do sol
 end
 
 plot(xs, [ys_g ys_m], xlabel="NADH (μM)", ylabel="ROS production", label=["Gauthier" "Markevich"])
+
+# Changing Q
+qh2range = 10μM:10μM:1990μM
+alter_qh2 = (prob, i, repeat) -> remake(prob, p=[QH2_n => qh2range[i], Q_n=>2000μM - qh2range[i]])
+
+eprob_g = EnsembleProblem(prob_g; prob_func=alter_qh2, safetycopy=false)
+eprob_m = EnsembleProblem(prob_m; prob_func=alter_qh2, safetycopy=false)
+@time sim_g = solve(eprob_g, alg, ealg; trajectories=length(qh2range))
+@time sim_m = solve(eprob_m, alg, ealg; trajectories=length(qh2range))
+
+# QH2 vs turnover
+xs = qh2range
+ys_g = map(sim_g) do sol
+    sol[gauthier.vNADH_C1]
+end
+ys_m = map(sim_m) do sol
+    sol[markevich.vNADH_C1]
+end
+
+plot(xs, [ys_g ys_m], xlabel="QH2 (μM)", ylabel="NADH consumption (μM/ms)", label=["Gauthier" "Markevich"])
+
+# QH2 vs ROS production
+xs = qh2range
+ys_g = map(sim_g) do sol
+    sol[gauthier.vROS_C1]
+end
+ys_m = map(sim_m) do sol
+    sol[markevich.vROS_C1]
+end
+
+plot(xs, [ys_g ys_m], xlabel="QH2 (μM)", ylabel="ROS production", label=["Gauthier" "Markevich"])
+
+ys_if = map(sim_m) do sol
+    sol[markevich.vROSIf]
+end
+ys_iq = map(sim_m) do sol
+    sol[markevich.vROSIq]
+end
+plot(xs, [ys_if ys_iq], xlabel="QH2 (μM)", ylabel="ROS production", label=["IF" "IQ"])
+
+ys_qc1 = map(sim_m) do sol
+    sol[markevich.Q_C1]
+end
+ys_sqc1 = map(sim_m) do sol
+    sol[markevich.SQ_C1]
+end
+ys_qh2c1 = map(sim_m) do sol
+    sol[markevich.QH2_C1]
+end
+
+plot(xs, [ys_qc1 ys_sqc1 ys_qh2c1], xlabel="QH2 (μM)", ylabel="ROS production", label=["Q_C1" "SQ_C1" "QH2_C1"])
