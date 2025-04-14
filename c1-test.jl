@@ -17,24 +17,25 @@ function c1_markevich(; name=:c1sys,
     @parameters begin
         Em_O2_SOX = -160mV        # O2/Superoxide redox potential
         Em_FMNsq_FMNH = -375mV    # FMN semiquinone/FMNH- redox potential
-        Em_NAD = -320mV           # NAD/NADH redox potential
-        Em_FMN_FMNH = -340mV      # FMN/FMNH- redox potential
+        Em_NAD = -320mV           # NAD/NADH avg redox potential
+        Em_FMN_FMNH = -340mV      # FMN/FMNH- avg redox potential
         Em_N2 = -80mV
-        Em_Q_SQ_C1 = -400mV       # -213mV
-        Em_SQ_QH2_C1 = +600mV
-        ET_C1 = 0.4mM  # Activity of complex I
+        Em_Q_SQ_C1 = -300mV       # -213mV in Markevich, 2015
+        Em_SQ_QH2_C1 = +500mV     # ~ 800mV in Markevich, 2015
+        ET_C1 = 0.4mM             # Activity of complex I
         KI_NAD_C1 = 1mM
         KI_NADH_C1 = 50μM
         KD_NAD_C1 = 25μM
         KD_NADH_C1 = 100μM
-        KI_DOX_C1 = 400μM  # DOX inhibition concentration (IC50) on complex I
+        # DOX IC50 on complex I
+        KI_DOX_C1 = 400μM
         K1_C1 = 10Hz / μM
-        KEQ1_C1 = 0.1 / μM     # Association constant for Q
+        KEQ1_C1 = 0.1 / μM        # Association constant for Q
         K2_C1 = 4E5Hz / μM
         KEQ2_C1 = exp(iVT * (Em_Q_SQ_C1 - Em_N2))
         K3_C1 = 2.7E6Hz / μM
         K4_C1 = 1000Hz
-        KEQ4_C1 = 20μM
+        KEQ4_C1 = 20μM            # Dissociation constant for QH2
         K5_C1 = 2Hz / μM
         KEQ5_C1 = exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
         K6_C1 = 0.04Hz / μM
@@ -57,8 +58,7 @@ function c1_markevich(; name=:c1sys,
         vROSIf(t)
         vROSIq(t)
         vROS_C1(t)
-        TN_C1(t) # Turnover number
-        ROSshunt_C1(t)
+        TN_C1(t) # NADH turnover number
     end
 
     # Q association
@@ -91,7 +91,6 @@ function c1_markevich(; name=:c1sys,
         vROS_C1 ~ vROSIf + vROSIq,
         vNADH_C1 ~ -0.5 * (v2 + v3 + v5),
         TN_C1 ~ -vNADH_C1 / ET_C1,
-        ROSshunt_C1 ~ 0.5vROS_C1 / (-vNADH_C1-vQH2_C1+vQ_C1),
         ET_C1 ~ I_C1 + Q_C1 + SQ_C1 + QH2_C1,
         D(Q_C1) ~ v1 - v2 + v6,
         D(SQ_C1) ~ v2 - v3 - v6,
@@ -104,7 +103,7 @@ function c1_gauthier(; name=:c1sys,
     Q_n=3.0mM, QH2_n=0.3mM, nad=500μM, nadh=500μM,
     dpsi=150mV, O2=6μM, sox_m=0.001μM,
     h_i=exp10(-7) * Molar, h_m=exp10(-7.6) * Molar,
-    C1_INHIB = 1)
+    C1_INHIB=1)
     @parameters begin
         ET_C1 = 8.85mM      # Activity of complex I
         dpsi_B_C1 = 50mV   # Phase boundary potential
@@ -119,7 +118,7 @@ function c1_gauthier(; name=:c1sys,
         K32_C1 = 9.1295e6Hz
         K34_C1 = 639.1364Hz
         K43_C1 = 3.2882Hz / sqrt(mM)
-        K47_C1 = 1.5962E7Hz/mM
+        K47_C1 = 1.5962E7Hz / mM
         K74_C1 = 65.2227Hz
         K75_C1 = 24.615E3Hz
         K57_C1 = 1.1667E3Hz / sqrt(mM)
@@ -136,11 +135,10 @@ function c1_gauthier(; name=:c1sys,
         C1_5(t) = 0
         C1_6(t) = 0
         C1_7(t) = 0
-        vQC1(t)
-        vNADHC1(t)
-        vROSC1(t)
+        vQ_C1(t)
+        vNADH_C1(t)
+        vROS_C1(t)
         TN_C1(t) # Turnover number
-        ROSshunt_C1(t)
     end
 
     fhi = h_i / 1E-7Molar
@@ -174,18 +172,17 @@ function c1_gauthier(; name=:c1sys,
     v42 = a42 * C1_4 - a24 * C1_2
 
     eqs = [
-        ET_C1 ~ C1_1+C1_2+C1_3+C1_4+C1_5+C1_6+C1_7,
+        ET_C1 ~ C1_1 + C1_2 + C1_3 + C1_4 + C1_5 + C1_6 + C1_7,
         D(C1_1) ~ v61 - v12,
         D(C1_3) ~ v23 - v34,
         D(C1_4) ~ v34 - v47 - v42,
         D(C1_7) ~ v47 - v75,
         D(C1_5) ~ v75 - v56,
         D(C1_6) ~ v56 - v61,
-        vQC1 ~ -0.5v47,
-        vROSC1 ~ v42,
-        vNADHC1 ~ -v23,
-        TN_C1 ~ -vNADHC1 / ET_C1,
-        ROSshunt_C1 ~ -vROSC1 / vNADHC1,
+        vQ_C1 ~ -0.5v47,
+        vROS_C1 ~ v42,
+        vNADH_C1 ~ -v23,
+        TN_C1 ~ -vNADH_C1 / ET_C1,
     ]
     return ODESystem(eqs, t; name)
 end
@@ -201,13 +198,10 @@ end
 markevich = c1_markevich(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
-dpsirange = 100mV:10mV:200mV
-alter_dpsi = (prob, i, repeat) -> remake(prob, p=[dpsi => dpsirange[i]])
-
-tend = 1000.0ms
-prob_m = SteadyStateProblem(markevich, [])
+prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 3μM])
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(Rodas5P())
+ealg = EnsembleThreads()
 # Try
 @time sol_m = solve(prob_m, alg)
 @time sol_g = solve(prob_g, alg)
@@ -216,43 +210,66 @@ alg = DynamicSS(Rodas5P())
 dpsirange = 100mV:5mV:200mV
 alter_dpsi = (prob, i, repeat) -> remake(prob, p=[dpsi => dpsirange[i]])
 
-eprob_g = EnsembleProblem(prob_g; prob_func = alter_dpsi)
-eprob_m = EnsembleProblem(prob_m; prob_func = alter_dpsi)
-@time sim_g = solve(eprob_g, alg, EnsembleSerial(); trajectories=length(dpsirange))
-@time sim_m = solve(eprob_m, alg, EnsembleSerial(); trajectories=length(dpsirange))
+eprob_g = EnsembleProblem(prob_g; prob_func=alter_dpsi, safetycopy=false)
+eprob_m = EnsembleProblem(prob_m; prob_func=alter_dpsi, safetycopy=false)
+@time sim_g = solve(eprob_g, alg, ealg; trajectories=length(dpsirange))
+@time sim_m = solve(eprob_m, alg, ealg; trajectories=length(dpsirange))
 
 # MMP vs NADH turnover
-xs = dpsirange
+# markevich model has more sensitivity
 ys_g = map(sim_g) do sol
-    sol[gauthier.TN_C1] * 1000
+    sol[gauthier.vNADH_C1]
 end
 ys_m = map(sim_m) do sol
-    sol[markevich.TN_C1]
+    sol[markevich.vNADH_C1]
 end
-plot(xs, [ys_g ys_m], xlabel="MMP (mV)", ylabel="NADH turnover", label=["Gauthier (Hz)" "Markevich (kHz)"])
+plot(xs, [ys_g ys_m], xlabel="MMP (mV)", ylabel="NADH consumption (μM/ms)", label=["Gauthier" "Markevich"])
 
 # MMP vs ROS production
 xs = dpsirange
 ys_g = map(sim_g) do sol
-    sol[gauthier.ROSshunt_C1]
+    sol[gauthier.vROS_C1]
 end
 ys_m = map(sim_m) do sol
-    sol[markevich.ROSshunt_C1] |> abs
+    sol[markevich.vROS_C1]
 end
 plot(xs, [ys_g ys_m], xlabel="MMP (mV)", ylabel="ROS production", label=["Gauthier" "Markevich"])
 
 ys_if = map(sim_m) do sol
-    sol[markevich.vROSIf] |> abs
+    sol[markevich.vROSIf]
 end
 ys_iq = map(sim_m) do sol
-    sol[markevich.vROSIq] |> abs
+    sol[markevich.vROSIq]
 end
 plot(xs, [ys_if ys_iq], xlabel="MMP (mV)", ylabel="ROS production", label=["IF" "IQ"])
 
-sol_m[markevich.TN_C1]
-sol_g[gauthier.TN_C1]
+# Changing NADH
+nadhrange = 10μM:10μM:990μM
+alter_nadh = (prob, i, repeat) -> remake(prob, p=[nadh => nadhrange[i], nad=>1000μM - nadhrange[i]])
 
-sol_m[markevich.vROSIf]
-sol_m[markevich.vROSIq]
-sol_m[markevich.ROSshunt_C1]
-sol_g[gauthier.ROSshunt_C1]
+eprob_g = EnsembleProblem(prob_g; prob_func=alter_nadh, safetycopy=false)
+eprob_m = EnsembleProblem(prob_m; prob_func=alter_nadh, safetycopy=false)
+@time sim_g = solve(eprob_g, alg, ealg; trajectories=length(nadhrange))
+@time sim_m = solve(eprob_m, alg, ealg; trajectories=length(nadhrange))
+
+# NADH vs turnover
+xs = nadhrange
+ys_g = map(sim_g) do sol
+    sol[gauthier.vNADH_C1]
+end
+ys_m = map(sim_m) do sol
+    sol[markevich.vNADH_C1]
+end
+
+plot(xs, [ys_g ys_m], xlabel="NADH (μM)", ylabel="NADH consumption (μM/ms)", label=["Gauthier" "Markevich"])
+
+# NADH vs ROS production
+xs = nadhrange
+ys_g = map(sim_g) do sol
+    sol[gauthier.vROS_C1]
+end
+ys_m = map(sim_m) do sol
+    sol[markevich.vROS_C1]
+end
+
+plot(xs, [ys_g ys_m], xlabel="NADH (μM)", ylabel="ROS production", label=["Gauthier" "Markevich"])
