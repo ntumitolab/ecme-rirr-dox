@@ -7,6 +7,87 @@ using Plots
 using ECMEDox
 using ECMEDox: mM, μM, iVT, mV, Molar, Hz, ms
 
+function c1_2state(; name=:c1sys,
+    Q_n=3.0mM, QH2_n=0.3mM,
+    nad=500μM, nadh=500μM,
+    dpsi=150mV, O2=6μM, sox_m=0.001μM,
+    h_i=exp10(-7) * Molar, h_m=exp10(-7.6) * Molar,)
+
+    @parameters begin
+        Em_O2_SOX = -160mV        # O2/Superoxide redox potential
+        Em_FMNsq_FMNH = -375mV    # FMN semiquinone/FMNH- redox potential
+        Em_NAD = -320mV           # NAD/NADH avg redox potential
+        Em_FMN_FMNH = -340mV      # FMN/FMNH- avg redox potential
+        Em_N2 = -80mV
+        Em_Q_SQ_C1 = -350mV       # -213mV in Markevich, 2015
+        Em_SQ_QH2_C1 = +550mV     # 800mV in Markevich, 2015
+        ET_C1 = 3μM               # Activity of complex I
+        KI_NAD_C1 = 1000μM
+        KI_NADH_C1 = 50μM
+        KD_NAD_C1 = 25μM
+        KD_NADH_C1 = 100μM
+        # First electron transfer
+        K1_C1 = 10Hz / μM
+        KaQ_C1 = 0.01 / μM        # Association constant for Q
+        # Second electron transfer
+        K2_C1 = 1000Hz
+        KdQH2_C1 = 100μM          # Dissociation constant for QH2
+        # If site SOX production
+        K5_C1 = 2Hz / μM
+        KEQ5_C1 = exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
+        # Iq site SOX production
+        K6_C1 = 0.04Hz / μM
+        KEQ6_C1 = exp(iVT * (Em_O2_SOX - Em_Q_SQ_C1))
+    end
+
+    @variables begin
+        I_C1(t) # Conserved
+        SQ_C1(t) = 0
+        fFMNH_C1(t)  # fraction of fully-reduced FMN
+        fFMNsq_C1(t) # fraction of FMN semiquinone
+        KEQ1_C1(t)
+        KEQ2_C1(t)
+        vQ_C1(t)
+        vQH2_C1(t)
+        vNADH_C1(t)
+        vROSIf(t)
+        vROSIq(t)
+        vROS_C1(t)
+        TN_C1(t) # NADH turnover number
+    end
+
+    k1 = K1_C1
+    km1 = K1_C1 / KEQ1_C1 / KaQ_C1
+    v1 = k1 * Q_n * I_C1 - km1 * SQ_C1
+
+    fhm = h_m / 1E-7Molar
+    k2 = K2_C1
+    km2 = K2_C1 / KEQ2_C1 / KdQH2_C1
+    v2 = k2 * SQ_C1 * fhm^2 - km2 * I_C1 * QH2_n
+
+    # Flavin site ROS generation
+    v5 = K5_C1 * ET_C1 * (fFMNH_C1 * O2 - fFMNsq_C1 * sox_m / KEQ5_C1)
+    # Quinone site ROS generation
+    v6 = K6_C1 * (SQ_C1 * O2 - I_C1 * Q_n * sox_m / KEQ6_C1 / KaQ_C1)
+
+    eqs = [
+        fFMNH_C1 ~ inv(1 + nad / KD_NAD_C1 + nadh / KI_NADH_C1 + exp(2iVT * (Em_FMN_FMNH - Em_NAD) * (nad / nadh) * (1 + nad / KI_NAD_C1 + nadh / KD_NADH_C1))),
+        fFMNsq_C1 ~ exp(iVT * (Em_FMNsq_FMNH - Em_FMN_FMNH)) * fFMNH_C1,
+        KEQ1_C1 ~ exp(iVT * (Em_Q_SQ_C1 - Em_NAD)) * (nadh / nad),
+        KEQ2_C1 ~ exp(iVT * (Em_SQ_QH2_C1 - Em_NAD - 3dpsi)) * (h_m / h_i)^3 * (nadh / nad),
+        vQ_C1 ~ -v1 + v6,
+        vQH2_C1 ~ v2,
+        vROSIf ~ v5,
+        vROSIq ~ v6,
+        vROS_C1 ~ vROSIf + vROSIq,
+        vNADH_C1 ~ -0.5 * (v1 + v2 + v5),
+        TN_C1 ~ -vNADH_C1 / ET_C1,
+        ET_C1 ~ I_C1 + SQ_C1,
+        D(SQ_C1) ~ v1 - v2 - v6,
+    ]
+    return ODESystem(eqs, t; name)
+end
+
 # Adapted from Markevich, 2015
 function c1_markevich(; name=:c1sys,
     Q_n=3.0mM, QH2_n=0.3mM,
@@ -195,6 +276,41 @@ end
     dpsi = 150mV
 end
 
+twostate = c1_2state(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
+prob = SteadyStateProblem(twostate, [twostate.ET_C1 => 3μM, twostate.K5_C1 => 0.02Hz / μM, twostate.K6_C1 => 0.0004Hz / μM, twostate.K1_C1 => 1Hz / μM, twostate.K2_C1 => 10000Hz])
+alg = DynamicSS(Rodas5P())
+ealg = EnsembleThreads()
+
+dpsirange = 100mV:5mV:200mV
+alter_dpsi = (prob, i, repeat) -> remake(prob, p=[dpsi => dpsirange[i]])
+eprob = EnsembleProblem(prob; prob_func=alter_dpsi, safetycopy=false)
+@time sim = solve(eprob, alg, ealg; trajectories=length(dpsirange))
+
+#---
+xs = dpsirange
+ys = map(sim) do sol
+    sol[twostate.vNADH_C1]
+end
+
+plot(xs, ys, xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)")
+
+#---
+xs = dpsirange
+ys = map(sim) do sol
+    sol[twostate.SQ_C1]
+end
+
+plot(xs, ys, xlabel="MMP (mV)")
+
+#---
+xs = dpsirange
+ys = map(sim) do sol
+    sol[twostate.KEQ2_C1]
+end
+
+plot(xs, ys, xlabel="MMP (mV)", yscale=:log10)
+
+#---
 markevich = c1_markevich(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
