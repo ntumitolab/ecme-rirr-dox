@@ -4,8 +4,9 @@
 format: jb-book
 root: index
 chapters:
+  - file: model-desc
   - file: dox
   - file: u0
   - file: irdamage
   - file: enzflux
-  - file: model-desc
+  - file: c1-test

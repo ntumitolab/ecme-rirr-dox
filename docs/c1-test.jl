@@ -14,37 +14,37 @@ function c1_2state(; name=:c1sys,
     h_i=exp10(-7) * Molar, h_m=exp10(-7.6) * Molar,)
 
     @parameters begin
-        Em_O2_SOX = -160mV        # O2/Superoxide redox potential
-        Em_FMNsq_FMNH = -375mV    # FMN semiquinone/FMNH- redox potential
-        Em_NAD = -320mV           # NAD/NADH avg redox potential
-        Em_FMN_FMNH = -340mV      # FMN/FMNH- avg redox potential
+        Em_O2_SOX = -160mV        ## O2/Superoxide redox potential
+        Em_FMNsq_FMNH = -375mV    ## FMN semiquinone/FMNH- redox potential
+        Em_NAD = -320mV           ## NAD/NADH avg redox potential
+        Em_FMN_FMNH = -340mV      ## FMN/FMNH- avg redox potential
         Em_N2 = -80mV
-        Em_Q_SQ_C1 = -350mV       # -213mV in Markevich, 2015
-        Em_SQ_QH2_C1 = +550mV     # 800mV in Markevich, 2015
-        ET_C1 = 3μM               # Activity of complex I
+        Em_Q_SQ_C1 = -350mV       ## -213mV in Markevich, 2015
+        Em_SQ_QH2_C1 = +550mV     ## 800mV in Markevich, 2015
+        ET_C1 = 3μM               ## Activity of complex I
         KI_NAD_C1 = 1000μM
         KI_NADH_C1 = 50μM
         KD_NAD_C1 = 25μM
         KD_NADH_C1 = 100μM
-        # First electron transfer
+        ## First electron transfer
         K1_C1 = 10Hz / μM
-        KaQ_C1 = 0.01 / μM        # Association constant for Q
-        # Second electron transfer
+        KdQ_C1 = 1000μM         ## Association constant for Q
+        ## Second electron transfer
         K2_C1 = 1000Hz
-        KdQH2_C1 = 100μM          # Dissociation constant for QH2
-        # If site SOX production
+        KdQH2_C1 = 1000μM          ## Dissociation constant for QH2
+        ## If site SOX production
         K5_C1 = 2Hz / μM
         KEQ5_C1 = exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
-        # Iq site SOX production
+        ## Iq site SOX production
         K6_C1 = 0.04Hz / μM
         KEQ6_C1 = exp(iVT * (Em_O2_SOX - Em_Q_SQ_C1))
     end
 
     @variables begin
-        I_C1(t) # Conserved
+        I_C1(t) ## Conserved
         SQ_C1(t) = 0
-        fFMNH_C1(t)  # fraction of fully-reduced FMN
-        fFMNsq_C1(t) # fraction of FMN semiquinone
+        fFMNH_C1(t)  ## fraction of fully-reduced FMN
+        fFMNsq_C1(t) ## fraction of FMN semiquinone
         KEQ1_C1(t)
         KEQ2_C1(t)
         vQ_C1(t)
@@ -53,11 +53,11 @@ function c1_2state(; name=:c1sys,
         vROSIf(t)
         vROSIq(t)
         vROS_C1(t)
-        TN_C1(t) # NADH turnover number
+        TN_C1(t) ## NADH turnover number
     end
 
     k1 = K1_C1
-    km1 = K1_C1 / KEQ1_C1 / KaQ_C1
+    km1 = K1_C1 / KEQ1_C1 * KdQ_C1
     v1 = k1 * Q_n * I_C1 - km1 * SQ_C1
 
     fhm = h_m / 1E-7Molar
@@ -65,16 +65,16 @@ function c1_2state(; name=:c1sys,
     km2 = K2_C1 / KEQ2_C1 / KdQH2_C1
     v2 = k2 * SQ_C1 * fhm^2 - km2 * I_C1 * QH2_n
 
-    # Flavin site ROS generation
+    ## Flavin site ROS generation
     v5 = K5_C1 * ET_C1 * (fFMNH_C1 * O2 - fFMNsq_C1 * sox_m / KEQ5_C1)
-    # Quinone site ROS generation
-    v6 = K6_C1 * (SQ_C1 * O2 - I_C1 * Q_n * sox_m / KEQ6_C1 / KaQ_C1)
+    ## Quinone site ROS generation
+    v6 = K6_C1 * (SQ_C1 * O2 - I_C1 * Q_n * sox_m / KEQ6_C1 / KdQ_C1)
 
     eqs = [
         fFMNH_C1 ~ inv(1 + nad / KD_NAD_C1 + nadh / KI_NADH_C1 + exp(2iVT * (Em_FMN_FMNH - Em_NAD) * (nad / nadh) * (1 + nad / KI_NAD_C1 + nadh / KD_NADH_C1))),
         fFMNsq_C1 ~ exp(iVT * (Em_FMNsq_FMNH - Em_FMN_FMNH)) * fFMNH_C1,
         KEQ1_C1 ~ exp(iVT * (Em_Q_SQ_C1 - Em_NAD)) * (nadh / nad),
-        KEQ2_C1 ~ exp(iVT * (Em_SQ_QH2_C1 - Em_NAD - 3dpsi)) * (h_m / h_i)^3 * (nadh / nad),
+        KEQ2_C1 ~ exp(iVT * (Em_SQ_QH2_C1 - Em_NAD - 4dpsi)) * (h_m / h_i)^4 * (nadh / nad),
         vQ_C1 ~ -v1 + v6,
         vQH2_C1 ~ v2,
         vROSIf ~ v5,
@@ -96,30 +96,30 @@ function c1_markevich(; name=:c1sys,
     h_i=exp10(-7) * Molar, h_m=exp10(-7.6) * Molar,
     DOX=0μM, ROTENONE_BLOCK=0)
     @parameters begin
-        Em_O2_SOX = -160mV        # O2/Superoxide redox potential
-        Em_FMNsq_FMNH = -375mV    # FMN semiquinone/FMNH- redox potential
-        Em_NAD = -320mV           # NAD/NADH avg redox potential
-        Em_FMN_FMNH = -340mV      # FMN/FMNH- avg redox potential
+        Em_O2_SOX = -160mV        ## O2/Superoxide redox potential
+        Em_FMNsq_FMNH = -375mV    ## FMN semiquinone/FMNH- redox potential
+        Em_NAD = -320mV           ## NAD/NADH avg redox potential
+        Em_FMN_FMNH = -340mV      ##FMN/FMNH- avg redox potential
         Em_N2 = -80mV
-        Em_Q_SQ_C1 = -300mV       # -213mV in Markevich, 2015
-        Em_SQ_QH2_C1 = +500mV     # 800mV in Markevich, 2015
-        ET_C1 = 3μM               # Activity of complex I
+        Em_Q_SQ_C1 = -300mV       ## -213mV in Markevich, 2015
+        Em_SQ_QH2_C1 = +500mV     ## 800mV in Markevich, 2015
+        ET_C1 = 3μM               ## Activity of complex I
         KI_NAD_C1 = 1mM
         KI_NADH_C1 = 50μM
         KD_NAD_C1 = 25μM
         KD_NADH_C1 = 100μM
-        # DOX IC50 on complex I
+        ## DOX IC50 on complex I
         KI_DOX_C1 = 400μM
         K1_C1 = 10Hz / μM
-        KEQ1_C1 = 0.1 / μM        # Association constant for Q
+        KEQ1_C1 = 0.1 / μM        ## Association constant for Q
         K2_C1 = 4E5Hz / μM
         KEQ2_C1 = exp(iVT * (Em_Q_SQ_C1 - Em_N2))
         K3_C1 = 2.7E6Hz / μM
         K4_C1 = 1000Hz
-        KEQ4_C1 = 20μM            # Dissociation constant for QH2
-        K5_C1 = 2Hz / μM          # SOX production rate from If site
+        KEQ4_C1 = 20μM            ## Dissociation constant for QH2
+        K5_C1 = 2Hz / μM          ## SOX production rate from If site
         KEQ5_C1 = exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
-        K6_C1 = 0.04Hz / μM       # SOX production rate from Iq site
+        K6_C1 = 0.04Hz / μM       ## SOX production rate from Iq site
         KEQ6_C1 = exp(iVT * (Em_O2_SOX - Em_Q_SQ_C1))
     end
 
@@ -128,8 +128,8 @@ function c1_markevich(; name=:c1sys,
         Q_C1(t) = 0
         SQ_C1(t) = 0
         QH2_C1(t) = 0
-        fFMNH_C1(t)  # fraction of fully-reduced FMN
-        fFMNsq_C1(t) # fraction of FMN semiquinone
+        fFMNH_C1(t)  ## fraction of fully-reduced FMN
+        fFMNsq_C1(t) ## fraction of FMN semiquinone
         N2_C1(t)
         N2m_C1(t)
         KEQ3_C1(t)
@@ -139,23 +139,23 @@ function c1_markevich(; name=:c1sys,
         vROSIf(t)
         vROSIq(t)
         vROS_C1(t)
-        TN_C1(t) # NADH turnover number
+        TN_C1(t) ## NADH turnover number
     end
 
-    # Q association
+    ## Q association
     v1 = K1_C1 * (I_C1 * Q_n - Q_C1 / KEQ1_C1)
-    # First electron transfer
+    ## First electron transfer
     v2 = K2_C1 * (Q_C1 * N2m_C1 - SQ_C1 * N2_C1 / KEQ2_C1)
-    # Second electron transfer
+    ## Second electron transfer
     fhm = h_m / 1E-7Molar
     v3 = K3_C1 * (SQ_C1 * N2m_C1 * fhm^2 - QH2_C1 * N2_C1 / KEQ3_C1)
-    # QH2 dissociation
+    ## QH2 dissociation
     v4 = K4_C1 * (QH2_C1 - I_C1 * QH2_n / KEQ4_C1)
-    # Flavin site ROS generation
+    ## Flavin site ROS generation
     v5 = K5_C1 * ET_C1 * (fFMNH_C1 * O2 - fFMNsq_C1 * sox_m / KEQ5_C1)
-    # Quinone site ROS generation
+    ## Quinone site ROS generation
     v6 = K6_C1 * (SQ_C1 * O2 - Q_C1 * sox_m / KEQ6_C1)
-    # FeS N2 reduction ratio
+    ## FeS N2 reduction ratio
     rN2 = exp(iVT * (Em_N2 - Em_NAD)) * (nadh / nad)
 
     eqs = [
@@ -164,7 +164,7 @@ function c1_markevich(; name=:c1sys,
         KEQ3_C1 ~ exp(iVT * (Em_SQ_QH2_C1 - Em_N2 - 4dpsi)) * (h_m / h_i)^4,
         N2m_C1 ~ ET_C1 * rN2 / (1 + rN2),
         ET_C1 ~ N2m_C1 + N2_C1,
-        # Positive: production; negative: consumption
+        ## Positive: production; negative: consumption
         vQ_C1 ~ -v1,
         vQH2_C1 ~ v4,
         vROSIf ~ v5,
@@ -186,13 +186,13 @@ function c1_gauthier(; name=:c1sys,
     h_i=exp10(-7) * Molar, h_m=exp10(-7.6) * Molar,
     C1_INHIB=1)
     @parameters begin
-        ET_C1 = 8.85mM      # Activity of complex I
-        dpsi_B_C1 = 50mV   # Phase boundary potential
-        # Transition rates
-        K12_C1 = 6339.6Hz # pH = 7
+        ET_C1 = 8.85mM      ## Activity of complex I
+        dpsi_B_C1 = 50mV    ## Phase boundary potential
+        ## Transition rates
+        K12_C1 = 6339.6Hz ## pH = 7
         K21_C1 = 5Hz
         K56_C1 = 100Hz
-        K65_C1 = 251190Hz # pH = 7
+        K65_C1 = 251190Hz ## pH = 7
         K61_C1 = 1e7Hz
         K16_C1 = 130Hz
         K23_C1 = 3886.7Hz / sqrt(mM)
@@ -204,13 +204,13 @@ function c1_gauthier(; name=:c1sys,
         K75_C1 = 24.615E3Hz
         K57_C1 = 1.1667E3Hz / sqrt(mM)
         K42_C1 = 6.0318Hz / mM
-        Em_O2_SOX = -160mV         # O2/Superoxide redox potential
-        Em_FMNH2_FMNH = -375mV     # FMNH/FMNH2 redox potential
+        Em_O2_SOX = -160mV         ## O2/Superoxide redox potential
+        Em_FMNH2_FMNH = -375mV     ## FMNH/FMNH2 redox potential
     end
 
     @variables begin
         C1_1(t) = 0
-        C1_2(t) # Conserved
+        C1_2(t) ## Conserved
         C1_3(t) = 0
         C1_4(t) = 0
         C1_5(t) = 0
@@ -219,13 +219,13 @@ function c1_gauthier(; name=:c1sys,
         vQ_C1(t)
         vNADH_C1(t)
         vROS_C1(t)
-        TN_C1(t) # Turnover number
+        TN_C1(t) ## Turnover number
     end
 
     fhi = h_i / 1E-7Molar
     fhm = h_m / 1E-7Molar
     fv = exp(iVT * (dpsi - dpsi_B_C1))
-    # State transition rates
+    ## State transition rates
     a12 = K12_C1 * fhm^2
     a21 = K21_C1
     a65 = K65_C1 * fhi^2
@@ -276,50 +276,17 @@ end
     dpsi = 150mV
 end
 
-twostate = c1_2state(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
-prob = SteadyStateProblem(twostate, [twostate.ET_C1 => 3μM, twostate.K5_C1 => 0.02Hz / μM, twostate.K6_C1 => 0.0004Hz / μM, twostate.K1_C1 => 1Hz / μM, twostate.K2_C1 => 10000Hz])
-alg = DynamicSS(Rodas5P())
-ealg = EnsembleThreads()
-
-dpsirange = 100mV:5mV:200mV
-alter_dpsi = (prob, i, repeat) -> remake(prob, p=[dpsi => dpsirange[i]])
-eprob = EnsembleProblem(prob; prob_func=alter_dpsi, safetycopy=false)
-@time sim = solve(eprob, alg, ealg; trajectories=length(dpsirange))
-
-#---
-xs = dpsirange
-ys = map(sim) do sol
-    sol[twostate.vNADH_C1]
-end
-
-plot(xs, ys, xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)")
-
-#---
-xs = dpsirange
-ys = map(sim) do sol
-    sol[twostate.SQ_C1]
-end
-
-plot(xs, ys, xlabel="MMP (mV)")
-
-#---
-xs = dpsirange
-ys = map(sim) do sol
-    sol[twostate.KEQ2_C1]
-end
-
-plot(xs, ys, xlabel="MMP (mV)", yscale=:log10)
 
 #---
 markevich = c1_markevich(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
-prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 3μM, markevich.K5_C1 => 0.02Hz / μM, markevich.K6_C1 => 0.0004Hz / μM])
+prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 3μM, markevich.K5_C1 => 0.02Hz / μM, markevich.K6_C1 => 0.0004Hz / μM, markevich.KEQ1_C1 => 0.02 / μM, markevich.KEQ4_C1 => 50μM])
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(Rodas5P())
 ealg = EnsembleThreads()
 
-# Change in MMP
+# ## Varying MMP
 dpsirange = 100mV:5mV:200mV
 alter_dpsi = (prob, i, repeat) -> remake(prob, p=[dpsi => dpsirange[i]])
 
@@ -349,6 +316,7 @@ ys_m = map(sim_m) do sol
 end
 plot(xs, [ys_g ys_m], xlabel="MMP (mV)", ylabel="ROS production (μM/s)", label=["Gauthier" "Markevich"])
 
+#---
 ys_if = map(sim_m) do sol
     sol[markevich.vROSIf]
 end
@@ -357,7 +325,23 @@ ys_iq = map(sim_m) do sol
 end
 plot(xs, [ys_if ys_iq], xlabel="MMP (mV)", ylabel="ROS production", label=["IF" "IQ"])
 
-# Changing NADH
+#---
+ys_qc1 = map(sim_m) do sol
+    sol[markevich.Q_C1]
+end
+ys_sqc1 = map(sim_m) do sol
+    sol[markevich.SQ_C1]
+end
+ys_qh2c1 = map(sim_m) do sol
+    sol[markevich.QH2_C1]
+end
+ys_c1 = map(sim_m) do sol
+    sol[markevich.I_C1]
+end
+
+plot(xs, [ys_c1 ys_qc1 ys_sqc1 ys_qh2c1], xlabel="MMP (mV)", ylabel="Fraction", label=["I_C1" "Q_C1" "SQ_C1" "QH2_C1"])
+
+# ## Varying NADH
 nadhrange = 10μM:10μM:990μM
 alter_nadh = (prob, i, repeat) -> remake(prob, p=[nadh => nadhrange[i], nad=>1000μM - nadhrange[i]])
 
@@ -388,7 +372,23 @@ end
 
 plot(xs, [ys_g ys_m], xlabel="NADH (μM)", ylabel="ROS production", label=["Gauthier" "Markevich"])
 
-# Changing Q
+#---
+ys_qc1 = map(sim_m) do sol
+    sol[markevich.Q_C1]
+end
+ys_sqc1 = map(sim_m) do sol
+    sol[markevich.SQ_C1]
+end
+ys_qh2c1 = map(sim_m) do sol
+    sol[markevich.QH2_C1]
+end
+ys_c1 = map(sim_m) do sol
+    sol[markevich.I_C1]
+end
+
+plot(xs, [ys_c1 ys_qc1 ys_sqc1 ys_qh2c1], xlabel="MMP (mV)", ylabel="Fraction", label=["I_C1" "Q_C1" "SQ_C1" "QH2_C1"])
+
+# ## Varying Q
 qh2range = 10μM:10μM:1990μM
 alter_qh2 = (prob, i, repeat) -> remake(prob, p=[QH2_n => qh2range[i], Q_n=>2000μM - qh2range[i]])
 
@@ -427,6 +427,7 @@ ys_iq = map(sim_m) do sol
 end
 plot(xs, [ys_if ys_iq], xlabel="QH2 (μM)", ylabel="ROS production", label=["IF" "IQ"])
 
+#---
 ys_qc1 = map(sim_m) do sol
     sol[markevich.Q_C1]
 end
@@ -436,5 +437,8 @@ end
 ys_qh2c1 = map(sim_m) do sol
     sol[markevich.QH2_C1]
 end
+ys_c1 = map(sim_m) do sol
+    sol[markevich.I_C1]
+end
 
-plot(xs, [ys_qc1 ys_sqc1 ys_qh2c1], xlabel="QH2 (μM)", ylabel="ROS production", label=["Q_C1" "SQ_C1" "QH2_C1"])
+plot(xs, [ys_c1 ys_qc1 ys_sqc1 ys_qh2c1], xlabel="QH2 (μM)", ylabel="Fraction", label=["I_C1" "Q_C1" "SQ_C1" "QH2_C1"])
