@@ -420,6 +420,7 @@ end
 
 plot(xs, [ys_g ys_m], xlabel="QH2 (μM)", ylabel="ROS production", label=["Gauthier" "Markevich"])
 
+#---
 ys_if = map(sim_m) do sol
     sol[markevich.vROSIf]
 end
