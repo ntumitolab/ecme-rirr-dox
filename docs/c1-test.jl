@@ -1,4 +1,5 @@
 # # Complex I model
+# Comparing Gauthier, Markevich, and simplified complex I models
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
 using SteadyStateDiffEq
@@ -8,7 +9,8 @@ using Plots
 using ECMEDox
 using ECMEDox: mM, μM, iVT, mV, Molar, Hz, ms
 
-# Adapted from Markevich, 2015
+# From Markevich, 2015
+# https://pmc.ncbi.nlm.nih.gov/articles/PMC4426091/
 function c1_markevich_full(; name=:c1markevich_full,
     Q_n=1.8mM, QH2_n=0.2mM,
     nad=500μM, nadh=500μM,
@@ -17,7 +19,7 @@ function c1_markevich_full(; name=:c1markevich_full,
     DOX=0μM, ROTENONE_BLOCK=0)
     @parameters begin
         Em_O2_SOX = -160mV        ## O2/Superoxide redox potential
-        Em_FMN_FMNsq = -387mV      ## FMN/FMNH- avg redox potential
+        Em_FMN_FMNsq = -387mV     ## FMN/FMNH- avg redox potential
         Em_FMNsq_FMNH = -293mV    ## FMN semiquinone/FMNH- redox potential
         Em_FMN_FMNH = -340mV      ## FMN/FMNH- avg redox potential
         Em_NAD = -320mV           ## NAD/NADH avg redox potential
@@ -156,7 +158,8 @@ function c1_markevich_full(; name=:c1markevich_full,
     return ODESystem(eqs, t; name)
 end
 
-# Adapted from Markevich, 2015
+# simplified from Markevich, 2015
+# Assuming immediate eletron transfer from NADH to iron-sulfur chain
 function c1_markevich(; name=:c1sys,
     Q_n=3.0mM, QH2_n=0.3mM,
     nad=500μM, nadh=500μM,
@@ -248,6 +251,7 @@ function c1_markevich(; name=:c1sys,
     return ODESystem(eqs, t; name)
 end
 
+# From Gauthier 2012
 function c1_gauthier(; name=:c1sys,
     Q_n=3.0mM, QH2_n=0.3mM, nad=500μM, nadh=500μM,
     dpsi=150mV, O2=6μM, sox_m=0.001μM,
@@ -337,8 +341,8 @@ function c1_gauthier(; name=:c1sys,
 end
 
 @parameters begin
-    Q_n = 3.0mM
-    QH2_n = 0.3mM
+    Q_n = 1.8mM
+    QH2_n = 0.2mM
     nad = 500μM
     nadh = 500μM
     dpsi = 150mV
@@ -350,7 +354,7 @@ m_full = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
 prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 3μM, markevich.K5_C1 => 0.02Hz / μM, markevich.K6_C1 => 0.0004Hz / μM, markevich.KEQ1_C1 => 0.02 / μM, markevich.KEQ4_C1 => 50μM])
-prob_mf = SteadyStateProblem(m_full, [m_full.ET_C1 => 3μM, m_full.K16_C1 => 0.02Hz / μM, m_full.K17_C1 => 0.0004Hz / μM])
+prob_mf = SteadyStateProblem(m_full, [m_full.ET_C1 => 17μM, m_full.K16_C1 => 0.02Hz / μM, m_full.K17_C1 => 0.0004Hz / μM])
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(Rodas5P())
 ealg = EnsembleThreads()
@@ -366,23 +370,20 @@ eprob_g = EnsembleProblem(prob_g; prob_func=alter_dpsi, safetycopy=false)
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(dpsirange))
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(dpsirange))
 
+# Helper function
+extract(sim, k) = map(s -> s[k], sim)
 # MMP vs NADH turnover
 # markevich model has a steeper dependence
 xs = dpsirange
-ys_g = map(sim_g) do sol
-    sol[gauthier.vNADH_C1]
-end
-ys_m = map(sim_m) do sol
-    sol[markevich.vNADH_C1]
-end
-ys_mf = map(sim_mf) do sol
-    sol[m_full.vNADH_C1]
-end
+ys_g = extract(sim_g, gauthier.vNADH_C1)
+ys_m = extract(sim_m, markevich.vNADH_C1)
+ys_mf = extract(sim_mf, m_full.vNADH_C1)
 
 plot(xs, [ys_g ys_m ys_mf], xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", label=["Gauthier" "Markevich" "Markevich (full)"])
 
 # MMP vs ROS production
 xs = dpsirange
+
 ys_g = map(sim_g) do sol
     sol[gauthier.vROS_C1] * 1000
 end
