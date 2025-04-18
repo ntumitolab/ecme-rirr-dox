@@ -42,8 +42,8 @@ eqs = let
     d7 = v47 - v75
     d5 = v75 - v56
     d6 = v56 - v61
-    @assert isequal(d1 + d2 + d3 + d4 + d5+ d6 + d7, 0)
-    [d1, d2, d3, d4, d5, d6 , I1 + I2 + I3 + I4 + I5 + I6 + I7 - 1]
+    @assert isequal(d1 + d2 + d3 + d4 + d5 + d6 + d7, 0)
+    [d1, d2, d3, d4, d5, d6, I1 + I2 + I3 + I4 + I5 + I6 + I7 - 1]
 end
 
 @time sol = Symbolics.symbolic_solve(eqs, [I1, I2, I3, I4, I5, I6, I7])[1]
@@ -88,8 +88,8 @@ eqs = let
     d7 = v47
     d5 = v45 - v51
     d6 = -v61
-    @assert isequal(d1 + d2 + d3 + d4 + d5+ d6 + d7, 0)
-    [d1, d2, d3, d4, d5, d6 , FMN + FMN_NADH + FMNH_NAD + FMNH + FMNsq + FMN_NAD + FMNH_NADH - 1]
+    @assert isequal(d1 + d2 + d3 + d4 + d5 + d6 + d7, 0)
+    [d1, d2, d3, d4, d5, d6, FMN + FMN_NADH + FMNH_NAD + FMNH + FMNsq + FMN_NAD + FMNH_NADH - 1]
 end
 
 @time sol = Symbolics.symbolic_solve(eqs, [FMN, FMN_NADH, FMNH_NAD, FMNH, FMNsq, FMN_NAD, FMNH_NADH])[1]
