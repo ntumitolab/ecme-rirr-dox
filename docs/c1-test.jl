@@ -252,7 +252,7 @@ function c1_markevich(; name=:c1sys,
 end
 
 # From Gauthier 2012
-function c1_gauthier(; name=:c1sys,
+function c1_gauthier(; name=:c1gauthier,
     Q_n=3.0mM, QH2_n=0.3mM, nad=500μM, nadh=500μM,
     dpsi=150mV, O2=6μM, sox_m=0.001μM,
     h_i=exp10(-7) * Molar, h_m=exp10(-7.6) * Molar,
@@ -353,8 +353,8 @@ markevich = c1_markevich(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 m_full = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
-prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 3μM, markevich.K5_C1 => 0.02Hz / μM, markevich.K6_C1 => 0.0004Hz / μM, markevich.KEQ1_C1 => 0.02 / μM, markevich.KEQ4_C1 => 50μM])
-prob_mf = SteadyStateProblem(m_full, [m_full.ET_C1 => 17μM, m_full.K16_C1 => 0.02Hz / μM, m_full.K17_C1 => 0.0004Hz / μM])
+prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 3μM, markevich.K5_C1 => 0.004Hz / μM, markevich.K6_C1 => 0.0001Hz / μM, markevich.KEQ1_C1 => 0.02 / μM, markevich.KEQ4_C1 => 50μM])
+prob_mf = SteadyStateProblem(m_full, [m_full.ET_C1 => 17μM, m_full.K16_C1 => 0.001Hz / μM, m_full.K17_C1 => 0.001Hz / μM / 50])
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(Rodas5P())
 ealg = EnsembleThreads()
@@ -383,142 +383,121 @@ plot(xs, [ys_g ys_m ys_mf], xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", labe
 
 # MMP vs ROS production
 xs = dpsirange
-
-ys_g = map(sim_g) do sol
-    sol[gauthier.vROS_C1] * 1000
-end
-ys_m = map(sim_m) do sol
-    sol[markevich.vROS_C1] * 1000
-end
-ys_mf = map(sim_mf) do sol
-    sol[m_full.vROS_C1] * 1000
-end
+ys_g = extract(sim_g, gauthier.vROS_C1) .* 1000
+ys_m = extract(sim_m, markevich.vROS_C1) .* 1000
+ys_mf = extract(sim_mf, m_full.vROS_C1) .* 1000
 plot(xs, [ys_g ys_m ys_mf], xlabel="MMP (mV)", ylabel="ROS production (μM/s)", label=["Gauthier" "Markevich" "Markevich (full)"])
 
 #---
-ys_if = map(sim_mf) do sol
-    sol[m_full.vROSIf]
-end
-ys_iq = map(sim_mf) do sol
-    sol[m_full.vROSIq]
-end
-plot(xs, [ys_if ys_iq], xlabel="MMP (mV)", ylabel="ROS production", label=["IF" "IQ"])
+ys_if = extract(sim_mf, m_full.vROSIf)
+ys_iq = extract(sim_mf, m_full.vROSIq)
+plot(xs, [ys_if ys_iq], title="M model (full)", xlabel="MMP (mV)", ylabel="ROS production", label=["IF" "IQ"])
+
+# Inside the ODE system
+ys = stack(extract.(Ref(sim_mf), [m_full.Q_C1, m_full.SQ_C1, m_full.QH2_C1, m_full.Iq_C1]), dims=2)
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Fraction", label=["Q_C1" "SQ_C1" "QH2_C1" "Iq_C1"], legend=:right)
 
 #---
-ys_qc1 = map(sim_mf) do sol
-    sol[m_full.Q_C1]
-end
-ys_sqc1 = map(sim_mf) do sol
-    sol[m_full.SQ_C1]
-end
-ys_qh2c1 = map(sim_mf) do sol
-    sol[m_full.QH2_C1]
-end
-ys_c1 = map(sim_mf) do sol
-    sol[m_full.Iq_C1]
-end
+ys = stack(extract.(Ref(sim_mf), [m_full.N1ar_C1, m_full.N3r_C1, m_full.N2r_C1]), dims=2)
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Fraction", label=["N1ar" "N3r" "N2r"], legend=:right)
 
-plot(xs, [ys_c1 ys_qc1 ys_sqc1 ys_qh2c1], xlabel="MMP (mV)", ylabel="Fraction", label=["Iq_C1" "Q_C1" "SQ_C1" "QH2_C1"])
+#---
+@unpack FMN, FMN_NADH, FMNH_NAD, FMN_NAD, FMNH_NADH, FMNH, FMNsq= m_full
+ys = stack(extract.(Ref(sim_mf), [FMN, FMN_NADH, FMNH_NAD, FMN_NAD, FMNH_NADH, FMNH, FMNsq]), dims=2)
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Conc (μM)", label=["FMN" "FMN_NADH" "FMNH_NAD" "FMN_NAD" "FMNH_NADH" "FMNH" "FMNsq"], legend=:right, lw=1.5)
 
 # ## Varying NADH
 nadhrange = 10μM:10μM:990μM
-alter_nadh = (prob, i, repeat) -> remake(prob, p=[nadh => nadhrange[i], nad => 1000μM - nadhrange[i]])
+nadrange = 1000μM .- nadhrange
+alter_nadh = (prob, i, repeat) -> remake(prob, p=[nadh => nadhrange[i], nad => nadrange[i]])
 
 eprob_g = EnsembleProblem(prob_g; prob_func=alter_nadh, safetycopy=false)
 eprob_m = EnsembleProblem(prob_m; prob_func=alter_nadh, safetycopy=false)
+eprob_mf = EnsembleProblem(prob_mf; prob_func=alter_nadh, safetycopy=false)
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(nadhrange))
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(nadhrange))
+@time sim_mf = solve(eprob_mf, alg, ealg; trajectories=length(nadhrange))
 
 # NADH vs turnover
 xs = nadhrange
-ys_g = map(sim_g) do sol
-    sol[gauthier.vNADH_C1]
-end
-ys_m = map(sim_m) do sol
-    sol[markevich.vNADH_C1]
-end
+ys_g = extract(sim_g, gauthier.vNADH_C1)
+ys_m = extract(sim_m, markevich.vNADH_C1)
+ys_mf = extract(sim_mf, m_full.vNADH_C1)
 
-plot(xs, [ys_g ys_m], xlabel="NADH (μM)", ylabel="NADH consumption (μM/ms)", label=["Gauthier" "Markevich"])
+plot(xs, [ys_g ys_m ys_mf], xlabel="NADH (μM)", ylabel="NADH consumption (μM/ms)", label=["Gauthier" "Markevich" "Markevich (full)"])
 
 # NADH vs ROS production
 xs = nadhrange
-ys_g = map(sim_g) do sol
-    sol[gauthier.vROS_C1]
-end
-ys_m = map(sim_m) do sol
-    sol[markevich.vROS_C1]
-end
+ys_g = extract(sim_g, gauthier.vROS_C1)
+ys_m = extract(sim_m, markevich.vROS_C1)
+ys_mf = extract(sim_mf, m_full.vROS_C1)
 
-plot(xs, [ys_g ys_m], xlabel="NADH (μM)", ylabel="ROS production", label=["Gauthier" "Markevich"])
+plot(xs, [ys_g ys_m ys_mf], xlabel="NADH (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "Markevich (full)"])
 
 #---
-ys_qc1 = map(sim_m) do sol
-    sol[markevich.Q_C1]
-end
-ys_sqc1 = map(sim_m) do sol
-    sol[markevich.SQ_C1]
-end
-ys_qh2c1 = map(sim_m) do sol
-    sol[markevich.QH2_C1]
-end
-ys_c1 = map(sim_m) do sol
-    sol[markevich.I_C1]
-end
+ys_if = extract(sim_mf, m_full.vROSIf)
+ys_iq = extract(sim_mf, m_full.vROSIq)
+plot(xs, [ys_if ys_iq], title="M model (full)", xlabel="NADH (μM)", ylabel="ROS production", label=["IF" "IQ"])
 
-plot(xs, [ys_c1 ys_qc1 ys_sqc1 ys_qh2c1], xlabel="MMP (mV)", ylabel="Fraction", label=["I_C1" "Q_C1" "SQ_C1" "QH2_C1"])
+# Inside the ODE system
+ys = stack(extract.(Ref(sim_mf), [m_full.Q_C1, m_full.SQ_C1, m_full.QH2_C1, m_full.Iq_C1]), dims=2)
+plot(xs, ys, xlabel="NADH (μM)", ylabel="Fraction", label=["Q_C1" "SQ_C1" "QH2_C1" "Iq_C1"], legend=:right)
+
+#---
+ys = stack(extract.(Ref(sim_mf), [m_full.N1ar_C1, m_full.N3r_C1, m_full.N2r_C1]), dims=2)
+plot(xs, ys, xlabel="NADH (μM)", ylabel="Fraction", label=["N1ar" "N3r" "N2r"], legend=:right)
+
+#---
+@unpack FMN, FMN_NADH, FMNH_NAD, FMN_NAD, FMNH_NADH, FMNH, FMNsq= m_full
+ys = stack(extract.(Ref(sim_mf), [FMN, FMN_NADH, FMNH_NAD, FMN_NAD, FMNH_NADH, FMNH, FMNsq]), dims=2)
+plot(xs, ys, xlabel="NADH (μM)", ylabel="Conc (μM)", label=["FMN" "FMN_NADH" "FMNH_NAD" "FMN_NAD" "FMNH_NADH" "FMNH" "FMNsq"], legend=:right, lw=1.5)
 
 # ## Varying Q
 qh2range = 10μM:10μM:1990μM
-alter_qh2 = (prob, i, repeat) -> remake(prob, p=[QH2_n => qh2range[i], Q_n => 2000μM - qh2range[i]])
+qrange = 2000μM .- qh2range
+alter_qh2 = (prob, i, repeat) -> remake(prob, p=[QH2_n => qh2range[i], Q_n => qrange[i]])
 
 eprob_g = EnsembleProblem(prob_g; prob_func=alter_qh2, safetycopy=false)
 eprob_m = EnsembleProblem(prob_m; prob_func=alter_qh2, safetycopy=false)
+eprob_mf = EnsembleProblem(prob_mf; prob_func=alter_qh2, safetycopy=false)
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(qh2range))
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(qh2range))
-
-# QH2 vs turnover
+@time sim_mf = solve(eprob_mf, alg, ealg; trajectories=length(qh2range))
+# QH2 vs NADH turnover
 xs = qh2range
-ys_g = map(sim_g) do sol
-    sol[gauthier.vNADH_C1]
-end
-ys_m = map(sim_m) do sol
-    sol[markevich.vNADH_C1]
-end
+ys_g = extract(sim_g, gauthier.vNADH_C1)
+ys_m = extract(sim_m, markevich.vNADH_C1)
+ys_mf = extract(sim_mf, m_full.vNADH_C1)
 
-plot(xs, [ys_g ys_m], xlabel="QH2 (μM)", ylabel="NADH consumption (μM/ms)", label=["Gauthier" "Markevich"])
+plot(xs, [ys_g ys_m ys_mf], xlabel="QH2 (μM)", ylabel="NADH consumption (μM/ms)", label=["Gauthier" "Markevich" "Markevich (full)"])
 
 # QH2 vs ROS production
+# Gauthier model produces a lot of SOX on high QH2
 xs = qh2range
-ys_g = map(sim_g) do sol
-    sol[gauthier.vROS_C1]
-end
-ys_m = map(sim_m) do sol
-    sol[markevich.vROS_C1]
-end
-
-plot(xs, [ys_g ys_m], xlabel="QH2 (μM)", ylabel="ROS production", label=["Gauthier" "Markevich"])
+ys_g = extract(sim_g, gauthier.vROS_C1)
+ys_m = extract(sim_m, markevich.vROS_C1)
+ys_mf = extract(sim_mf, m_full.vROS_C1)
+plot(xs, [ys_g ys_m ys_mf], xlabel="QH2 (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "Markevich (full)"])
 
 #---
-ys_if = map(sim_m) do sol
-    sol[markevich.vROSIf]
-end
-ys_iq = map(sim_m) do sol
-    sol[markevich.vROSIq]
-end
-plot(xs, [ys_if ys_iq], xlabel="QH2 (μM)", ylabel="ROS production", label=["IF" "IQ"])
+@unpack C1_1, C1_2, C1_3, C1_4, C1_5, C1_6, C1_7 = gauthier
+ys = stack(extract.(Ref(sim_g), [C1_3, C1_4, C1_6]), dims=2)
+plot(xs, ys, xlabel="QH2 (μM)", ylabel="Conc (μM)", label=["C1_3" "C1_4" "C1_6"], legend=:right, lw=1.5)
 
 #---
-ys_qc1 = map(sim_m) do sol
-    sol[markevich.Q_C1]
-end
-ys_sqc1 = map(sim_m) do sol
-    sol[markevich.SQ_C1]
-end
-ys_qh2c1 = map(sim_m) do sol
-    sol[markevich.QH2_C1]
-end
-ys_c1 = map(sim_m) do sol
-    sol[markevich.I_C1]
-end
+ys_if = extract(sim_mf, m_full.vROSIf)
+ys_iq = extract(sim_mf, m_full.vROSIq)
+plot(xs, [ys_if ys_iq], title="M model (full)", xlabel="MMP (mV)", ylabel="ROS production", label=["IF" "IQ"])
 
-plot(xs, [ys_c1 ys_qc1 ys_sqc1 ys_qh2c1], xlabel="QH2 (μM)", ylabel="Fraction", label=["I_C1" "Q_C1" "SQ_C1" "QH2_C1"])
+# Inside the ODE system
+ys = stack(extract.(Ref(sim_mf), [m_full.Q_C1, m_full.SQ_C1, m_full.QH2_C1, m_full.Iq_C1]), dims=2)
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Fraction", label=["Q_C1" "SQ_C1" "QH2_C1" "Iq_C1"], legend=:right)
+
+#---
+ys = stack(extract.(Ref(sim_mf), [m_full.N1ar_C1, m_full.N3r_C1, m_full.N2r_C1]), dims=2)
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Fraction", label=["N1ar" "N3r" "N2r"], legend=:right)
+
+#---
+@unpack FMN, FMN_NADH, FMNH_NAD, FMN_NAD, FMNH_NADH, FMNH, FMNsq= m_full
+ys = stack(extract.(Ref(sim_mf), [FMN, FMN_NADH, FMNH_NAD, FMN_NAD, FMNH_NADH, FMNH, FMNsq]), dims=2)
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Conc (μM)", label=["FMN" "FMN_NADH" "FMNH_NAD" "FMN_NAD" "FMNH_NADH" "FMNH" "FMNsq"], legend=:right, lw=1.5)

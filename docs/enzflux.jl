@@ -68,3 +68,36 @@ w6 = numerator(sol[I6])
 
 #---
 w7 = numerator(sol[I7])
+
+# ## Test complex I model
+@variables a12 a21 a23 a32 a34 a43 a45 a54 a51 a15 a16 a61 a47 a74
+@variables FMN FMN_NAD FMN_NADH FMNH_NAD FMNH_NADH FMNH FMNsq
+
+eqs = let
+    v12 = FMN * a12 - FMN_NADH * a21
+    v23 = FMN_NADH * a23 - FMNH_NAD * a32
+    v34 = FMNH_NAD * a34 - FMNH * a43
+    v47 = FMNH * a47 - FMNH_NADH * a74
+    v45 = FMNH * a45 - FMNsq * a54
+    v51 = FMNsq * a51 - FMN * a15
+    v61 = FMN_NAD * a61 - FMN * a16
+    d1 = -v12 + v61 + v51
+    d2 = v12 - v23
+    d3 = v23 - v34
+    d4 = v34 - v47 - v45
+    d7 = v47
+    d5 = v45 - v51
+    d6 = -v61
+    @assert isequal(d1 + d2 + d3 + d4 + d5+ d6 + d7, 0)
+    [d1, d2, d3, d4, d5, d6 , FMN + FMN_NADH + FMNH_NAD + FMNH + FMNsq + FMN_NAD + FMNH_NADH - 1]
+end
+
+@time sol = Symbolics.symbolic_solve(eqs, [FMN, FMN_NADH, FMNH_NAD, FMNH, FMNsq, FMN_NAD, FMNH_NADH])[1]
+
+println(numerator(sol[FMN]))
+println(numerator(sol[FMN_NADH]))
+println(numerator(sol[FMNH_NAD]))
+println(numerator(sol[FMNH]))
+println(numerator(sol[FMNsq]))
+println(numerator(sol[FMN_NAD]))
+println(numerator(sol[FMNH_NADH]))
