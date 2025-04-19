@@ -49,25 +49,9 @@ end
 @time sol = Symbolics.symbolic_solve(eqs, [I1, I2, I3, I4, I5, I6, I7])[1]
 
 # Weights of all 7 states
-w1 = numerator(sol[I1])
-
-#---
-w2 = numerator(sol[I2])
-
-#---
-w3 = numerator(sol[I3])
-
-#---
-w4 = numerator(sol[I4])
-
-#---
-w5 = numerator(sol[I5])
-
-#---
-w6 = numerator(sol[I6])
-
-#---
-w7 = numerator(sol[I7])
+for k in (I1, I2, I3, I4, I5, I6, I7)
+    println(numerator(sol[k]))
+end
 
 # ## Test complex I model
 @variables a12 a21 a23 a32 a34 a43 a45 a54 a51 a15 a16 a61 a47 a74
@@ -94,10 +78,8 @@ end
 
 @time sol = Symbolics.symbolic_solve(eqs, [FMN, FMN_NADH, FMNH_NAD, FMNH, FMNsq, FMN_NAD, FMNH_NADH])[1]
 
-println(numerator(sol[FMN]))
-println(numerator(sol[FMN_NADH]))
-println(numerator(sol[FMNH_NAD]))
-println(numerator(sol[FMNH]))
-println(numerator(sol[FMNsq]))
-println(numerator(sol[FMN_NAD]))
-println(numerator(sol[FMNH_NADH]))
+for k in (FMN, FMN_NADH, FMNH_NAD, FMNH, FMNsq, FMN_NAD, FMNH_NADH)
+    println(k, " = ", numerator(sol[k]))
+end
+
+Symbolics.factors(a21*a32*a43*a51*a61*a74 + a21*a32*a43*a54*a61*a74 + a21*a32*a45*a51*a61*a74)
