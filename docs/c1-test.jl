@@ -27,8 +27,8 @@ function c1_markevich_full(; name=:c1markevich_full,
         Em_N2 = -80mV
         Em_N1a = -370mV
         Em_Q_SQ_C1 = -300mV       ## -213mV in Markevich, 2015
-        Em_SQ_QH2_C1 = +500mV     ## 800mV (?) in Markevich, 2015
-        ET_C1 = 17μM               ## Activity of complex I
+        Em_SQ_QH2_C1 = +500mV     ## ~800mV (?) in Markevich, 2015
+        ET_C1 = 17μM              ## Activity of complex I
         ## DOX IC50 on complex I
         KI_DOX_C1 = 400μM
         kf1_C1 = 83Hz / μM
