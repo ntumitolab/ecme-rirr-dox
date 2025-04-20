@@ -31,34 +31,34 @@ function c1_markevich_full(; name=:c1markevich_full,
         ET_C1 = 17μM               ## Activity of complex I
         ## DOX IC50 on complex I
         KI_DOX_C1 = 400μM
-        K1_C1 = 83Hz / μM
+        kf1_C1 = 83Hz / μM
         KEQ1_C1 = 0.01 / μM
-        K2_C1 = 1.44e12Hz
-        K3_C1 = 1e6Hz
+        kf2_C1 = 1.44e12Hz
+        kf3_C1 = 1e6Hz
         KEQ3_C1 = 25μM
         KEQ2_C1 = exp(iVT * (Em_FMN_FMNH - Em_NAD)) / KEQ1_C1 / KEQ3_C1
-        K4_C1 = 1Hz / μM
+        kf4_C1 = 1Hz / μM
         KEQ4_C1 = 0.001 / μM
-        K5_C1 = 2Hz / μM
+        kf5_C1 = 2Hz / μM
         KEQ5_C1 = 0.02 / μM
-        K6_C1 = 5e8Hz / μM
+        kf6_C1 = 5e8Hz / μM
         KEQ6_C1 = exp(iVT * (Em_N3 - Em_FMNsq_FMNH))
-        K7_C1 = 1E4Hz / μM
+        kf7_C1 = 1E4Hz / μM
         KEQ7_C1 = exp(iVT * (Em_N2 - Em_N3))
-        K8_C1 = 10Hz / μM
+        kf8_C1 = 10Hz / μM
         KEQ8_C1 = 0.1 / μM         ## Association constant for Q
-        K9_C1 = 4E5Hz / μM
+        kf9_C1 = 4E5Hz / μM
         KEQ9_C1 = exp(iVT * (Em_Q_SQ_C1 - Em_N2))
-        K10_C1 = 2e6Hz / μM
+        kf10_C1 = 2e6Hz / μM
         KEQ10_C1 = exp(iVT * (Em_N1a - Em_FMN_FMNsq))
-        K11_C1 = 1e9Hz / μM
+        kf11_C1 = 1e9Hz / μM
         KEQ11_C1 = exp(iVT * (Em_N3 - Em_FMN_FMNsq))
-        K13_C1 = 2.7e6Hz / μM
-        K14_C1 = 1000Hz
+        kf13_C1 = 2.7e6Hz / μM
+        kf14_C1 = 1000Hz
         KEQ14_C1 = 20μM            ## Dissociation constant for QH2
-        K16_C1 = 2Hz / μM          ## SOX production rate from If site
+        kf16_C1 = 2Hz / μM          ## SOX production rate from If site
         KEQ16_C1 = exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
-        K17_C1 = 0.04Hz / μM       ## SOX production rate from Iq site
+        kf17_C1 = 0.04Hz / μM       ## SOX production rate from Iq site
         KEQ17_C1 = exp(iVT * (Em_O2_SOX - Em_Q_SQ_C1))
     end
 
@@ -93,37 +93,37 @@ function c1_markevich_full(; name=:c1markevich_full,
 
     fhm = h_m / 1E-7Molar
     ## NADH + FMN = FMN.NADH
-    v1 = K1_C1 * (nadh * FMN - FMN_NADH / KEQ1_C1)
+    v1 = kf1_C1 * (nadh * FMN - FMN_NADH / KEQ1_C1)
     ## FMN.NADH = FMNH−.NAD+
-    v2 = K2_C1 * (FMN_NADH - FMNH_NAD / KEQ2_C1)
+    v2 = kf2_C1 * (FMN_NADH - FMNH_NAD / KEQ2_C1)
     ## FMNH−.NAD+ = FMNH− + NAD+
-    v3 = K3_C1 * (FMNH_NAD - FMNH * nad / KEQ3_C1)
+    v3 = kf3_C1 * (FMNH_NAD - FMNH * nad / KEQ3_C1)
     ## FMN + NAD+ = FMN.NAD+
-    v4 = K4_C1 * (nad * FMN - FMN_NAD / KEQ4_C1)
+    v4 = kf4_C1 * (nad * FMN - FMN_NAD / KEQ4_C1)
     ## FMNH− + NADH = FMNH−.NADH
-    v5 = K5_C1 * (FMNH * nadh - FMNH_NADH / KEQ5_C1)
+    v5 = kf5_C1 * (FMNH * nadh - FMNH_NADH / KEQ5_C1)
     ## FMNH− + N3 = FMNHsq + N3−
-    v6 = K6_C1 * (FMNH * N3_C1 - FMNsq * N3r_C1 / KEQ6_C1)
+    v6 = kf6_C1 * (FMNH * N3_C1 - FMNsq * N3r_C1 / KEQ6_C1)
     ## N3− + N2 = N3 + N2−
-    v7 = K7_C1 * (N3r_C1 * N2_C1 - N3_C1 * N2r_C1 / KEQ7_C1)
+    v7 = kf7_C1 * (N3r_C1 * N2_C1 - N3_C1 * N2r_C1 / KEQ7_C1)
     ## Q association
-    v8 = K8_C1 * (Iq_C1 * Q_n - Q_C1 / KEQ8_C1)
+    v8 = kf8_C1 * (Iq_C1 * Q_n - Q_C1 / KEQ8_C1)
     ## CI.Q + N2− = CIQsq + N2
-    v9 = K9_C1 * (Q_C1 * N2r_C1 - SQ_C1 * N2_C1 / KEQ9_C1)
+    v9 = kf9_C1 * (Q_C1 * N2r_C1 - SQ_C1 * N2_C1 / KEQ9_C1)
     ## FMNHsq + N1a = FMN + N1a− + Hi+
-    v10 = K10_C1 * (FMNsq * N1a_C1 - FMN * N1ar_C1 * fhm / KEQ10_C1)
+    v10 = kf10_C1 * (FMNsq * N1a_C1 - FMN * N1ar_C1 * fhm / KEQ10_C1)
     ## FMNHsq + N3 = FMN + N3− + Hi+
-    v11 = K11_C1 * (FMNsq * N3_C1 - FMN * N3r_C1 * fhm / KEQ11_C1)
+    v11 = kf11_C1 * (FMNsq * N3_C1 - FMN * N3r_C1 * fhm / KEQ11_C1)
     ## N2 + N3− = N2− + N3
     v12 = v7
     ## Second electron transfer
-    v13 = K13_C1 * (SQ_C1 * N2r_C1 * fhm^2 - QH2_C1 * N2_C1 / KEQ13_C1)
+    v13 = kf13_C1 * (SQ_C1 * N2r_C1 * fhm^2 - QH2_C1 * N2_C1 / KEQ13_C1)
     ## QH2 dissociation
-    v14 = K14_C1 * (QH2_C1 - Iq_C1 * QH2_n / KEQ14_C1)
+    v14 = kf14_C1 * (QH2_C1 - Iq_C1 * QH2_n / KEQ14_C1)
     ## Flavin site ROS generation
-    v16 = K16_C1 * (FMNH * O2 - FMNsq * sox_m / KEQ16_C1)
+    v16 = kf16_C1 * (FMNH * O2 - FMNsq * sox_m / KEQ16_C1)
     ## Quinone site ROS generation
-    v17 = K17_C1 * (SQ_C1 * O2 - Q_C1 * sox_m / KEQ17_C1)
+    v17 = kf17_C1 * (SQ_C1 * O2 - Q_C1 * sox_m / KEQ17_C1)
 
     eqs = [
         ET_C1 ~ N2r_C1 + N2_C1,
@@ -180,42 +180,42 @@ function c1_birb(; name=:c1birb,
         ET_C1 = 17μM               ## Activity of complex I
         ## DOX IC50 on complex I
         KI_DOX_C1 = 400μM
-        K1_C1 = 83Hz / μM
+        kf1_C1 = 83Hz / μM
         KEQ1_C1 = 0.01 / μM
-        kr1_C1 = K1_C1 / KEQ1_C1
-        # K2_C1 = 1.44e12Hz # Rapid equlibrium
-        K3_C1 = 1e6Hz
+        kr1_C1 = kf1_C1 / KEQ1_C1
+        # kf2_C1 = 1.44e12Hz # Rapid equlibrium
+        kf3_C1 = 1e6Hz
         KEQ3_C1 = 25μM
-        kr3_C1 = K3_C1 / KEQ3_C1
+        kr3_C1 = kf3_C1 / KEQ3_C1
         KEQ2_C1 = exp(iVT * (Em_FMN_FMNH - Em_NAD)) / KEQ1_C1 / KEQ3_C1
-        K6_C1 = 5e8Hz / μM
+        kf6_C1 = 5e8Hz / μM
         KEQ6_C1 = exp(iVT * (Em_N3 - Em_FMNsq_FMNH))
-        kr6_C1 = K6_C1 / KEQ6_C1
-        K7_C1 = 1E4Hz / μM
+        kr6_C1 = kf6_C1 / KEQ6_C1
+        kf7_C1 = 1E4Hz / μM
         KEQ7_C1 = exp(iVT * (Em_N2 - Em_N3))
-        kr7_C1 = K7_C1 / KEQ7_C1
-        K8_C1 = 10Hz / μM
+        kr7_C1 = kf7_C1 / KEQ7_C1
+        kf8_C1 = 10Hz / μM
         KEQ8_C1 = 0.1 / μM         ## Association constant for Q
-        kr8_C1 = K8_C1 / KEQ8_C1
-        K9_C1 = 4E5Hz / μM
+        kr8_C1 = kf8_C1 / KEQ8_C1
+        kf9_C1 = 4E5Hz / μM
         KEQ9_C1 = exp(iVT * (Em_Q_SQ_C1 - Em_N2))
-        kr9_C1 = K9_C1 / KEQ9_C1
-        K10_C1 = 2e6Hz / μM
+        kr9_C1 = kf9_C1 / KEQ9_C1
+        kf10_C1 = 2e6Hz / μM
         KEQ10_C1 = exp(iVT * (Em_N1a - Em_FMN_FMNsq))
-        kr10_C1 = K10_C1 / KEQ10_C1
-        K11_C1 = 1e9Hz / μM
+        kr10_C1 = kf10_C1 / KEQ10_C1
+        kf11_C1 = 1e9Hz / μM
         KEQ11_C1 = exp(iVT * (Em_N3 - Em_FMN_FMNsq))
-        kr11_C1 = K11_C1 / KEQ11_C1
-        K13_C1 = 2.7e6Hz / μM
-        K14_C1 = 1000Hz
+        kr11_C1 = kf11_C1 / KEQ11_C1
+        kf13_C1 = 2.7e6Hz / μM
+        kf14_C1 = 1000Hz
         KEQ14_C1 = 20μM            ## Dissociation constant for QH2
-        kr14_C1 = K14_C1 / KEQ14_C1
-        K16_C1 = 2Hz / μM          ## SOX production rate from If site
+        kr14_C1 = kf14_C1 / KEQ14_C1
+        kf16_C1 = 2Hz / μM          ## SOX production rate from If site
         KEQ16_C1 = exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
-        kr16_C1 = K16_C1 / KEQ16_C1
-        K17_C1 = 0.04Hz / μM       ## SOX production rate from Iq site
+        kr16_C1 = kf16_C1 / KEQ16_C1
+        kf17_C1 = 0.04Hz / μM       ## SOX production rate from Iq site
         KEQ17_C1 = exp(iVT * (Em_O2_SOX - Em_Q_SQ_C1))
-        kr17_C1 = K17_C1 / KEQ17_C1
+        kr17_C1 = kf17_C1 / KEQ17_C1
         KI_NAD_C1 = 1mM
         KI_NADH_C1 = 50μM
     end
@@ -260,41 +260,41 @@ function c1_birb(; name=:c1birb,
     fFMNH = KI_NADH_C1 / (nadh + KI_NADH_C1)
     fFMN_NADH = 1 / (1 + KEQ2_C1)
     fFMNH_NAD = 1 - fFMN_NADH
-    a12 = K1_C1 * nadh * fFMN
+    a12 = kf1_C1 * nadh * fFMN
     a21 = kr1_C1 * fFMN_NADH
-    a23 = K3_C1 * fFMNH_NAD
+    a23 = kf3_C1 * fFMNH_NAD
     a32 = kr3_C1 * nad * fFMNH
-    a34 = (K6_C1 * N3_C1 + K16_C1 * O2) * fFMNH
-    a43 = K6_C1 / KEQ6_C1 * N3r_C1 + K16_C1 / KEQ16_C1 * sox_m
-    a41 = K10_C1 * N1a_C1 + K11_C1 * N3_C1
-    a14 = (K10_C1 / KEQ10_C1 * N1ar_C1 + K11_C1 / KEQ11_C1 * N3r_C1) * fhm * fFMN
+    a34 = (kf6_C1 * N3_C1 + kf16_C1 * O2) * fFMNH
+    a43 = kf6_C1 / KEQ6_C1 * N3r_C1 + kf16_C1 / KEQ16_C1 * sox_m
+    a41 = kf10_C1 * N1a_C1 + kf11_C1 * N3_C1
+    a14 = (kf10_C1 / KEQ10_C1 * N1ar_C1 + kf11_C1 / KEQ11_C1 * N3r_C1) * fhm * fFMN
 
     ## NADH + FMN = FMN.NADH
-    v1 = K1_C1 * nadh * FMN - kr1_C1 * FMN_NADH
+    v1 = kf1_C1 * nadh * FMN - kr1_C1 * FMN_NADH
     ## FMNH−.NAD+ = FMNH− + NAD+
-    v3 = K3_C1 * FMNH_NAD - kr3_C1 * FMNH * nad
+    v3 = kf3_C1 * FMNH_NAD - kr3_C1 * FMNH * nad
     ## FMNH− + N3 = FMNHsq + N3−
-    v6 = K6_C1 * FMNH * N3_C1 - kr6_C1 * FMNsq * N3r_C1
+    v6 = kf6_C1 * FMNH * N3_C1 - kr6_C1 * FMNsq * N3r_C1
     ## N3− + N2 = N3 + N2−
-    v7 = K7_C1 * N3r_C1 * N2_C1 - kr7_C1 * N3_C1 * N2r_C1
+    v7 = kf7_C1 * N3r_C1 * N2_C1 - kr7_C1 * N3_C1 * N2r_C1
     ## Q association
-    v8 = K8_C1 * Iq_C1 * Q_n - kr8_C1 * Q_C1
+    v8 = kf8_C1 * Iq_C1 * Q_n - kr8_C1 * Q_C1
     ## CI.Q + N2− = CIQsq + N2
-    v9 = K9_C1 * Q_C1 * N2r_C1 - kr9_C1 * SQ_C1 * N2_C1
+    v9 = kf9_C1 * Q_C1 * N2r_C1 - kr9_C1 * SQ_C1 * N2_C1
     ## FMNHsq + N1a = FMN + N1a− + Hi+
-    v10 = K10_C1 * FMNsq * N1a_C1 - kr10_C1 * FMN * N1ar_C1 * fhm
+    v10 = kf10_C1 * FMNsq * N1a_C1 - kr10_C1 * FMN * N1ar_C1 * fhm
     ## FMNHsq + N3 = FMN + N3− + Hi+
-    v11 = K11_C1 * FMNsq * N3_C1 - kr11_C1 * FMN * N3r_C1 * fhm
+    v11 = kf11_C1 * FMNsq * N3_C1 - kr11_C1 * FMN * N3r_C1 * fhm
     ## N2 + N3− = N2− + N3
     v12 = v7
     ## Second electron transfer
-    v13 = K13_C1 * (SQ_C1 * N2r_C1 * fhm^2 - QH2_C1 * N2_C1 / KEQ13_C1)
+    v13 = kf13_C1 * (SQ_C1 * N2r_C1 * fhm^2 - QH2_C1 * N2_C1 / KEQ13_C1)
     ## QH2 dissociation
-    v14 = K14_C1 * QH2_C1 - kr14_C1 * Iq_C1 * QH2_n
+    v14 = kf14_C1 * QH2_C1 - kr14_C1 * Iq_C1 * QH2_n
     ## Flavin site ROS generation
-    v16 = K16_C1 * FMNH * O2 - kr16_C1 * FMNsq * sox_m
+    v16 = kf16_C1 * FMNH * O2 - kr16_C1 * FMNsq * sox_m
     ## Quinone site ROS generation
-    v17 = K17_C1 * SQ_C1 * O2 - kr17_C1 * Q_C1 * sox_m
+    v17 = kf17_C1 * SQ_C1 * O2 - kr17_C1 * Q_C1 * sox_m
 
     kaeqs = [
         wIF1 ~ a21 * a32 * a41 + a21 * a32 * a43 + a21 * a34 * a41 + a23 * a34 * a41,
@@ -303,7 +303,7 @@ function c1_birb(; name=:c1birb,
         wIF4 ~ a12 * a23 * a34 + a14 * a21 * a32 + a14 * a21 * a34 + a14 * a23 * a34,
     ]
 
-    Dem = wIF1 + wIF2 + wIF3 + wIF4
+    DemF = wIF1 + wIF2 + wIF3 + wIF4
 
     eqs = [
         ET_C1 ~ N2r_C1 + N2_C1,
@@ -311,13 +311,13 @@ function c1_birb(; name=:c1birb,
         ET_C1 ~ N1ar_C1 + N1a_C1,
         ET_C1 ~ Iq_C1 + Q_C1 + SQ_C1 + QH2_C1,
         KEQ13_C1 ~ exp(iVT * (Em_SQ_QH2_C1 - Em_N2 - 4dpsi)) * (h_m / h_i)^4,
-        FMN ~ ET_C1 / Dem * wIF1 * fFMN,
-        FMN_NADH ~ ET_C1 / Dem * wIF2 * fFMN_NADH,
-        FMNH_NAD ~ ET_C1 / Dem * wIF2 * fFMNH_NAD,
-        FMN_NAD ~ ET_C1 / Dem * wIF1 * (1 - fFMN),
-        FMNH_NADH ~ ET_C1 / Dem * wIF3 * (1 - fFMNH),
-        FMNH ~ ET_C1 / Dem * wIF3 * fFMNH,
-        FMNsq ~ ET_C1 / Dem * wIF4,
+        FMN ~ ET_C1 / DemF * wIF1 * fFMN,
+        FMN_NAD ~ ET_C1 / DemF * wIF1 * (1 - fFMN),
+        FMN_NADH ~ ET_C1 / DemF * wIF2 * fFMN_NADH,
+        FMNH_NAD ~ ET_C1 / DemF * wIF2 * fFMNH_NAD,
+        FMNH_NADH ~ ET_C1 / DemF * wIF3 * (1 - fFMNH),
+        FMNH ~ ET_C1 / DemF * wIF3 * fFMNH,
+        FMNsq ~ ET_C1 / DemF * wIF4,
         D(N1ar_C1) ~ v10,
         D(N3r_C1) ~ v6 + v11 - v7 - v12,
         D(N2r_C1) ~ v7 + v12 - v9 - v13,
@@ -438,8 +438,8 @@ birb = c1_birb(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
-prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.K16_C1 => 0.001Hz / μM, markevich.K17_C1 => 0.001Hz / μM / 50])
-prob_b = SteadyStateProblem(birb, [birb.ET_C1 => 17μM, birb.K16_C1 => 0.001Hz / μM, birb.K17_C1 => 0.001Hz / μM / 50])
+prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.kf16_C1 => 0.001Hz / μM, markevich.kf17_C1 => 0.001Hz / μM / 50])
+prob_b = SteadyStateProblem(birb, [birb.ET_C1 => 17μM, birb.kf16_C1 => 0.001Hz / μM, birb.kf17_C1 => 0.001Hz / μM / 50])
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(TRBDF2())
 ealg = EnsembleThreads()
