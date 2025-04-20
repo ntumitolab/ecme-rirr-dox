@@ -25,25 +25,25 @@ function c1_markevich_full(; name=:c1markevich_full,
         Em_NAD = -320mV           ## NAD/NADH avg redox potential
         Em_N3 = -250mV
         Em_N2 = -80mV
-        Em_N1a = −370mV
+        Em_N1a = -370mV
         Em_Q_SQ_C1 = -300mV       ## -213mV in Markevich, 2015
         Em_SQ_QH2_C1 = +500mV     ## 800mV (?) in Markevich, 2015
         ET_C1 = 17μM               ## Activity of complex I
         ## DOX IC50 on complex I
         KI_DOX_C1 = 400μM
-        K1_C1 = 83Hz/ μM
+        K1_C1 = 83Hz / μM
         KEQ1_C1 = 0.01 / μM
         K2_C1 = 1.44e12Hz
         K3_C1 = 1e6Hz
         KEQ3_C1 = 25μM
         KEQ2_C1 = exp(iVT * (Em_FMN_FMNH - Em_NAD)) / KEQ1_C1 / KEQ3_C1
-        K4_C1 = 1Hz/ μM
+        K4_C1 = 1Hz / μM
         KEQ4_C1 = 0.001 / μM
-        K5_C1 = 2Hz/ μM
+        K5_C1 = 2Hz / μM
         KEQ5_C1 = 0.02 / μM
-        K6_C1 = 5e8Hz/ μM
+        K6_C1 = 5e8Hz / μM
         KEQ6_C1 = exp(iVT * (Em_N3 - Em_FMNsq_FMNH))
-        K7_C1 = 1E4Hz/ μM
+        K7_C1 = 1E4Hz / μM
         KEQ7_C1 = exp(iVT * (Em_N2 - Em_N3))
         K8_C1 = 10Hz / μM
         KEQ8_C1 = 0.1 / μM         ## Association constant for Q
@@ -140,7 +140,7 @@ function c1_markevich_full(; name=:c1markevich_full,
         D(FMNsq) ~ v6 + v16 - v10 - v11,
         D(N1ar_C1) ~ v10,
         D(N3r_C1) ~ v6 + v11 - v7 - v12,
-        D(N2r_C1) ~ v7 + v12 -v9 - v13,
+        D(N2r_C1) ~ v7 + v12 - v9 - v13,
         D(Q_C1) ~ v8 - v9 + v17,
         D(SQ_C1) ~ v9 - v17 - v13,
         D(QH2_C1) ~ v13 - v14,
@@ -180,7 +180,7 @@ function c1_birb(; name=:c1birb,
         ET_C1 = 17μM               ## Activity of complex I
         ## DOX IC50 on complex I
         KI_DOX_C1 = 400μM
-        K1_C1 = 83Hz/ μM
+        K1_C1 = 83Hz / μM
         KEQ1_C1 = 0.01 / μM
         kr1_C1 = K1_C1 / KEQ1_C1
         # K2_C1 = 1.44e12Hz # Rapid equlibrium
@@ -188,10 +188,10 @@ function c1_birb(; name=:c1birb,
         KEQ3_C1 = 25μM
         kr3_C1 = K3_C1 / KEQ3_C1
         KEQ2_C1 = exp(iVT * (Em_FMN_FMNH - Em_NAD)) / KEQ1_C1 / KEQ3_C1
-        K6_C1 = 5e8Hz/ μM
+        K6_C1 = 5e8Hz / μM
         KEQ6_C1 = exp(iVT * (Em_N3 - Em_FMNsq_FMNH))
         kr6_C1 = K6_C1 / KEQ6_C1
-        K7_C1 = 1E4Hz/ μM
+        K7_C1 = 1E4Hz / μM
         KEQ7_C1 = exp(iVT * (Em_N2 - Em_N3))
         kr7_C1 = K7_C1 / KEQ7_C1
         K8_C1 = 10Hz / μM
@@ -269,7 +269,9 @@ function c1_birb(; name=:c1birb,
     a41 = K10_C1 * N1a_C1 + K11_C1 * N3_C1
     a14 = (K10_C1 / KEQ10_C1 * N1ar_C1 + K11_C1 / KEQ11_C1 * N3r_C1) * fhm * fFMN
 
+    ## NADH + FMN = FMN.NADH
     v1 = K1_C1 * nadh * FMN - kr1_C1 * FMN_NADH
+    ## FMNH−.NAD+ = FMNH− + NAD+
     v3 = K3_C1 * FMNH_NAD - kr3_C1 * FMNH * nad
     ## FMNH− + N3 = FMNHsq + N3−
     v6 = K6_C1 * FMNH * N3_C1 - kr6_C1 * FMNsq * N3r_C1
@@ -295,10 +297,10 @@ function c1_birb(; name=:c1birb,
     v17 = K17_C1 * SQ_C1 * O2 - kr17_C1 * Q_C1 * sox_m
 
     kaeqs = [
-        wIF1 ~ a21*a32*a41 + a21*a32*a43 + a21*a34*a41 + a23*a34*a41,
-        wIF2 ~ a12*a32*a41 + a12*a32*a43 + a12*a34*a41 + a14*a32*a43,
-        wIF3 ~ a12*a23*a41 + a12*a23*a43 + a14*a21*a43 + a14*a23*a43,
-        wIF4 ~ a12*a23*a34 + a14*a21*a32 + a14*a21*a34 + a14*a23*a34,
+        wIF1 ~ a21 * a32 * a41 + a21 * a32 * a43 + a21 * a34 * a41 + a23 * a34 * a41,
+        wIF2 ~ a12 * a32 * a41 + a12 * a32 * a43 + a12 * a34 * a41 + a14 * a32 * a43,
+        wIF3 ~ a12 * a23 * a41 + a12 * a23 * a43 + a14 * a21 * a43 + a14 * a23 * a43,
+        wIF4 ~ a12 * a23 * a34 + a14 * a21 * a32 + a14 * a21 * a34 + a14 * a23 * a34,
     ]
 
     Dem = wIF1 + wIF2 + wIF3 + wIF4
@@ -318,7 +320,7 @@ function c1_birb(; name=:c1birb,
         FMNsq ~ ET_C1 / Dem * wIF4,
         D(N1ar_C1) ~ v10,
         D(N3r_C1) ~ v6 + v11 - v7 - v12,
-        D(N2r_C1) ~ v7 + v12 -v9 - v13,
+        D(N2r_C1) ~ v7 + v12 - v9 - v13,
         D(Q_C1) ~ v8 - v9 + v17,
         D(SQ_C1) ~ v9 - v17 - v13,
         D(QH2_C1) ~ v13 - v14,
@@ -485,7 +487,7 @@ ys = stack(extract.(Ref(sim_b), [birb.N1ar_C1, birb.N3r_C1, birb.N2r_C1]), dims=
 plot(xs, ys, xlabel="MMP (mV)", ylabel="Fraction", label=["N1ar" "N3r" "N2r"], legend=:right)
 
 #---
-@unpack FMN, FMN_NADH, FMNH_NAD, FMN_NAD, FMNH_NADH, FMNH, FMNsq= birb
+@unpack FMN, FMN_NADH, FMNH_NAD, FMN_NAD, FMNH_NADH, FMNH, FMNsq = birb
 ys = stack(extract.(Ref(sim_b), [FMN, FMN_NADH, FMNH_NAD, FMN_NAD, FMNH_NADH, FMNH, FMNsq]), dims=2)
 plot(xs, ys, xlabel="MMP (mV)", ylabel="Conc (μM)", label=["FMN" "FMN_NADH" "FMNH_NAD" "FMN_NAD" "FMNH_NADH" "FMNH" "FMNsq"], legend=:right, lw=1.5)
 
@@ -532,7 +534,7 @@ plot(xs, ys, xlabel="NADH (μM)", ylabel="Fraction", label=["N1ar" "N3r" "N2r"],
 
 #---
 ys = extract(sim_b, birb.FMNsq / birb.FMN)
-plot(xs, ys, xlabel="NADH (μM)",  ylabel="FMNsq / FMN", label=false)
+plot(xs, ys, xlabel="NADH (μM)", ylabel="FMNsq / FMN", label=false)
 
 #---
 @unpack FMN, FMN_NADH, FMNH_NAD, FMN_NAD, FMNH_NADH, FMNH, FMNsq = birb
@@ -585,6 +587,6 @@ ys = stack(extract.(Ref(sim_b), [birb.N1ar_C1, birb.N3r_C1, birb.N2r_C1]), dims=
 plot(xs, ys, xlabel="QH2 (μM)", ylabel="Conc. (μM)", label=["N1ar" "N3r" "N2r"], legend=:right)
 
 #---
-@unpack FMN, FMN_NADH, FMNH_NAD, FMN_NAD, FMNH_NADH, FMNH, FMNsq= birb
+@unpack FMN, FMN_NADH, FMNH_NAD, FMN_NAD, FMNH_NADH, FMNH, FMNsq = birb
 ys = stack(extract.(Ref(sim_b), [FMN, FMN_NADH, FMNH_NAD, FMN_NAD, FMNH_NADH, FMNH, FMNsq]), dims=2)
 plot(xs, ys, xlabel="QH2 (μM)", ylabel="Conc (μM)", label=["FMN" "FMN_NADH" "FMNH_NAD" "FMN_NAD" "FMNH_NADH" "FMNH" "FMNsq"], legend=:right, lw=1.5)
