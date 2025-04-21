@@ -221,10 +221,23 @@ function c1_birb(; name=:c1birb,
     end
 
     @variables begin
-        Iq_C1(t) ## Conserved
-        Q_C1(t) = 0
-        SQ_C1(t) = 0
-        QH2_C1(t) = 0
+        N2_C1(t)
+        N2r_C1(t) = 0
+        N3_C1(t)
+        N3r_C1(t) = 0
+        N1a_C1(t)
+        N1ar_C1(t) = 0
+        vROSIf(t)
+        vROSIq(t)
+        vROS_C1(t)
+        vHres_C1(t)
+    end
+
+    @variables begin
+        wFMN_FMNNAD(t)
+        wFMNNADH_FMNHNAD(t)
+        wFMNH_FMNHNADH(t)
+        wFMNsq(t)
         FMN(t)
         FMN_NADH(t)
         FMNH_NAD(t)
@@ -232,53 +245,98 @@ function c1_birb(; name=:c1birb,
         FMNH_NADH(t)
         FMNH(t)
         FMNsq(t)
-        wIF1(t)  # FMN + FMN_NAD
-        wIF2(t)  # FMN_NADH + FMNH_NAD
-        wIF3(t)  # FMNH + FMNH_NADH
-        wIF4(t)  # FMNsq
-        N2_C1(t)
-        N2r_C1(t) = 0
-        N3_C1(t)
-        N3r_C1(t) = 0
-        N1a_C1(t)
-        N1ar_C1(t) = 0
-        KEQ13_C1(t)
-        vQ_C1(t)
-        vQH2_C1(t)
+        TN_C1f(t) ## NADH turnover number
+        TN_C1(t) ## Flavin site turnover number
         vNADH_C1(t)
         vNAD_C1(t)
-        vROSIf(t)
-        vROSIq(t)
-        vROS_C1(t)
-        TN_C1(t) ## NADH turnover number
     end
 
-    # State transition rates in the flavin site
-    # 1 = FMN + FMN_NAD, 2 = FMN_NADH + FMNH_NAD, 3 = FMNH + FMNH_NADH, 4 = FMNsq
-    fhm = h_m / 1E-7Molar
+    fhm = h_m * inv(1E-7Molar)
     fFMN = KI_NAD_C1 / (nad + KI_NAD_C1)
     fFMNH = KI_NADH_C1 / (nadh + KI_NADH_C1)
     fFMN_NADH = 1 / (1 + KEQ2_C1)
     fFMNH_NAD = 1 - fFMN_NADH
+    fDen = inv(wFMN_FMNNAD + wFMNNADH_FMNHNAD + wFMNH_FMNHNADH + wFMNsq)
+    fC1 = ET_C1 * fDen
+
+    # State transition rates in the flavin site
+    # 1 = FMN + FMN_NAD, 2 = FMN_NADH + FMNH_NAD, 3 = FMNH + FMNH_NADH, 4 = FMNsq
     a12 = kf1_C1 * nadh * fFMN
     a21 = kr1_C1 * fFMN_NADH
     a23 = kf3_C1 * fFMNH_NAD
     a32 = kr3_C1 * nad * fFMNH
     a34 = (kf6_C1 * N3_C1 + kf16_C1 * O2) * fFMNH
-    a43 = kf6_C1 / KEQ6_C1 * N3r_C1 + kf16_C1 / KEQ16_C1 * sox_m
-    a41 = kf10_C1 * N1a_C1 + kf11_C1 * N3_C1
-    a14 = (kf10_C1 / KEQ10_C1 * N1ar_C1 + kf11_C1 / KEQ11_C1 * N3r_C1) * fhm * fFMN
+    a43 = kr6_C1 * N3r_C1 + kr16_C1 * sox_m
+    a41 = kf11_C1 * N3_C1 + kf10_C1 * N1a_C1
+    a14 = (kr11_C1 * N3r_C1 + kr10_C1 * N1ar_C1) * fhm * fFMN
 
-    ## NADH + FMN = FMN.NADH
-    v1 = kf1_C1 * nadh * FMN - kr1_C1 * FMN_NADH
-    ## FMNH−.NAD+ = FMNH− + NAD+
-    v3 = kf3_C1 * FMNH_NAD - kr3_C1 * FMNH * nad
+    eqsf = [
+        wFMN_FMNNAD ~ a21 * a32 * (a41 + a43) + (a21 + a23) * a34 * a41,
+        wFMNNADH_FMNHNAD ~ a12 * (a32 + a34) * a41 + (a12 + a14) * a32 * a43,
+        wFMNH_FMNHNADH ~ a12 * a23 * (a41 + a43) + a14 * (a21 + a23) * a43,
+        wFMNsq ~ (a12 + a14) * a23 * a34 + a14 * a21 * (a32 + a34),
+        FMN ~ fC1 * wFMN_FMNNAD * fFMN,
+        FMN_NAD ~ fC1 * wFMN_FMNNAD * (1 - fFMN),
+        FMN_NADH ~ fC1 * wFMNNADH_FMNHNAD * fFMN_NADH,
+        FMNH_NAD ~ fC1 * wFMNNADH_FMNHNAD * fFMNH_NAD,
+        FMNH_NADH ~ fC1 * wFMNH_FMNHNADH * (1 - fFMNH),
+        FMNH ~ fC1 * wFMNH_FMNHNADH * fFMNH,
+        FMNsq ~ fC1 * wFMNsq,
+        TN_C1f ~ fDen * (a12 * a23 * a34 * a41 - a14 * a43 * a32 * a21),
+        vNADH_C1 ~ -TN_C1f * ET_C1,
+        vNAD_C1 ~ -vNADH_C1,
+        TN_C1 ~ TN_C1f,
+    ]
+
+    # State transition rates in the quinone site
+    # 1 = Iq 2 = IqQ, 3 = IqSQ, 4 = IqQH2
+    @variables begin
+        Iq_C1(t)
+        Q_C1(t)
+        SQ_C1(t)
+        QH2_C1(t)
+        wIq(t)
+        wIqQ(t)
+        wIqSQ(t)
+        wIqQH2(t)
+        TN_C1q(t) ## Quinone site turnover number
+        vQ_C1(t)
+        vQH2_C1(t)
+        KEQ13_C1(t)
+        vHres_C1(t)
+    end
+
+    b12 = kf8_C1 * Q_n
+    b21 = kr8_C1
+    b23 = kf9_C1 * N2r_C1 + kr9_C1 * N2_C1
+    b32 = kr9_C1 * N2_C1 + kf17_C1 * O2
+    b34 = kf13_C1 * N2r_C1 * fhm^2
+    b43 = kf13_C1 / KEQ13_C1 * N2_C1
+    b41 = kf14_C1
+    b14 = kr14_C1 * QH2_n
+    qDen = inv(wIq + wIqQ + wIqSQ + wIqQH2)
+    qC1 = ET_C1 * qDen
+
+    eqsq = [
+        KEQ13_C1 ~ exp(iVT * (Em_SQ_QH2_C1 - Em_N2 - 4dpsi)) * (h_m / h_i)^4,
+        wIq ~ b21 * b32 * (b41 + b43) + (b21 + b23) * b34 * b41,
+        wIqQ ~ b12 * (b32 + b34) * b41 + (b12 + b14) * b32 * b43,
+        wIqSQ ~ b12 * b23 * (b41 + b43) + b14 * (b21 + b23) * b43,
+        wIqQH2 ~ (b12 + b14) * b23 * b34 + b14 * b21 * (b32 + b34),
+        Iq_C1 ~ wIq * qC1,
+        Q_C1 ~ wIqQ * qC1,
+        SQ_C1 ~ wIqSQ * qC1,
+        QH2_C1 ~ wIqQH2 * qC1,
+        TN_C1q ~ qDen * (b12 * b23 * b34 * b41 - b14 * b43 * b32 * b21),
+        vQ_C1 ~ -TN_C1q * ET_C1,
+        vQH2_C1 ~ -vQ_C1,
+        vHres_C1 ~ 4vQH2_C1,
+    ]
+
     ## FMNH− + N3 = FMNHsq + N3−
     v6 = kf6_C1 * FMNH * N3_C1 - kr6_C1 * FMNsq * N3r_C1
     ## N3− + N2 = N3 + N2−
     v7 = kf7_C1 * N3r_C1 * N2_C1 - kr7_C1 * N3_C1 * N2r_C1
-    ## Q association
-    v8 = kf8_C1 * Iq_C1 * Q_n - kr8_C1 * Q_C1
     ## CI.Q + N2− = CIQsq + N2
     v9 = kf9_C1 * Q_C1 * N2r_C1 - kr9_C1 * SQ_C1 * N2_C1
     ## FMNHsq + N1a = FMN + N1a− + Hi+
@@ -289,51 +347,23 @@ function c1_birb(; name=:c1birb,
     v12 = v7
     ## Second electron transfer
     v13 = kf13_C1 * (SQ_C1 * N2r_C1 * fhm^2 - QH2_C1 * N2_C1 / KEQ13_C1)
-    ## QH2 dissociation
-    v14 = kf14_C1 * QH2_C1 - kr14_C1 * Iq_C1 * QH2_n
     ## Flavin site ROS generation
     v16 = kf16_C1 * FMNH * O2 - kr16_C1 * FMNsq * sox_m
     ## Quinone site ROS generation
     v17 = kf17_C1 * SQ_C1 * O2 - kr17_C1 * Q_C1 * sox_m
 
-    kaeqs = [
-        wIF1 ~ a21 * a32 * a41 + a21 * a32 * a43 + a21 * a34 * a41 + a23 * a34 * a41,
-        wIF2 ~ a12 * a32 * a41 + a12 * a32 * a43 + a12 * a34 * a41 + a14 * a32 * a43,
-        wIF3 ~ a12 * a23 * a41 + a12 * a23 * a43 + a14 * a21 * a43 + a14 * a23 * a43,
-        wIF4 ~ a12 * a23 * a34 + a14 * a21 * a32 + a14 * a21 * a34 + a14 * a23 * a34,
-    ]
-
-    DemF = wIF1 + wIF2 + wIF3 + wIF4
-
     eqs = [
         ET_C1 ~ N2r_C1 + N2_C1,
         ET_C1 ~ N3r_C1 + N3_C1,
         ET_C1 ~ N1ar_C1 + N1a_C1,
-        ET_C1 ~ Iq_C1 + Q_C1 + SQ_C1 + QH2_C1,
-        KEQ13_C1 ~ exp(iVT * (Em_SQ_QH2_C1 - Em_N2 - 4dpsi)) * (h_m / h_i)^4,
-        FMN ~ ET_C1 / DemF * wIF1 * fFMN,
-        FMN_NAD ~ ET_C1 / DemF * wIF1 * (1 - fFMN),
-        FMN_NADH ~ ET_C1 / DemF * wIF2 * fFMN_NADH,
-        FMNH_NAD ~ ET_C1 / DemF * wIF2 * fFMNH_NAD,
-        FMNH_NADH ~ ET_C1 / DemF * wIF3 * (1 - fFMNH),
-        FMNH ~ ET_C1 / DemF * wIF3 * fFMNH,
-        FMNsq ~ ET_C1 / DemF * wIF4,
         D(N1ar_C1) ~ v10,
         D(N3r_C1) ~ v6 + v11 - v7 - v12,
         D(N2r_C1) ~ v7 + v12 - v9 - v13,
-        D(Q_C1) ~ v8 - v9 + v17,
-        D(SQ_C1) ~ v9 - v17 - v13,
-        D(QH2_C1) ~ v13 - v14,
-        vNADH_C1 ~ -v1,
-        vNAD_C1 ~ v3,
-        vQ_C1 ~ -v8,
-        vQH2_C1 ~ v14,
         vROSIf ~ v16,
         vROSIq ~ v17,
         vROS_C1 ~ vROSIf + vROSIq,
-        TN_C1 ~ -vNADH_C1 / ET_C1,
     ]
-    return ODESystem([kaeqs; eqs], t; name)
+    return ODESystem([eqsf; eqsq; eqs], t; name)
 end
 
 # From Gauthier 2012
@@ -438,6 +468,7 @@ birb = c1_birb(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
+
 prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.kf16_C1 => 0.001Hz / μM, markevich.kf17_C1 => 0.001Hz / μM / 50])
 prob_b = SteadyStateProblem(birb, [birb.ET_C1 => 17μM, birb.kf16_C1 => 0.001Hz / μM, birb.kf17_C1 => 0.001Hz / μM / 50])
 prob_g = SteadyStateProblem(gauthier, [])
@@ -480,11 +511,11 @@ plot(xs, [ys_if ys_iq], title="Birb model", xlabel="MMP (mV)", ylabel="ROS produ
 
 # Inside the ODE system
 ys = stack(extract.(Ref(sim_b), [birb.Q_C1, birb.SQ_C1, birb.QH2_C1, birb.Iq_C1]), dims=2)
-plot(xs, ys, xlabel="MMP (mV)", ylabel="Fraction", label=["Q_C1" "SQ_C1" "QH2_C1" "Iq_C1"], legend=:right)
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "Iq_C1"], legend=:right)
 
 #---
 ys = stack(extract.(Ref(sim_b), [birb.N1ar_C1, birb.N3r_C1, birb.N2r_C1]), dims=2)
-plot(xs, ys, xlabel="MMP (mV)", ylabel="Fraction", label=["N1ar" "N3r" "N2r"], legend=:right)
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["N1ar" "N3r" "N2r"], legend=:right)
 
 #---
 @unpack FMN, FMN_NADH, FMNH_NAD, FMN_NAD, FMNH_NADH, FMNH, FMNsq = birb
