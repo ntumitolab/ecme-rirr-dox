@@ -14,8 +14,15 @@ bcl = 1.0second
 u0 = build_u0(sys)
 sts = unknowns(sys)
 alg = KenCarp47()
-prob = ODEProblem(sys, u0, tend)
+prob = ODEProblem(sys, u0, tend, [sys.KCAT_IDH => 15Hz])
 @time sol = solve(prob, alg; reltol=1e-6, abstol=1e-6, progress=true)
+
+sol[sys.nadh_m]
+plot(sol, idxs=sys.nadh_m)
+
+plot(sol, idxs=sys.dpsi)
+
+plot(sol, idxs=[sys.vNADHC1, sys.vIDH, sys.vKGDH, sys.vMDH], tspan=(1E5, 2E5))
 
 #---
 for i in sts
@@ -25,15 +32,14 @@ end
 
 # Citric acid cycle metabolites
 @unpack cit, isoc, oaa, akg, scoa, suc, fum, mal = sys
-plot(sol, idxs=[oaa, akg, scoa, suc, fum, mal], legend=:right, title="CAC metabolites") |> PNG
+plot(sol, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal], legend=:right, title="CAC metabolites") |> PNG
 
 # Q cycle
 @unpack Q_n, SQn, QH2_n, QH2_p, SQp, Q_p, fes_ox, fes_rd, cytc_ox, cytc_rd = sys
 pl_q = plot(sol, idxs=[Q_n + Q_p, SQn, QH2_n + QH2_p, SQp], title="Q cycle", legend=:left, xlabel="Time (ms)", ylabel="Conc. (μM)") |> PNG
 
-# Complex i
-@unpack C1_1, C1_2, C1_3, C1_4, C1_5, C1_6, C1_7 = sys
-plot(sol, idxs=[C1_1, C1_2, C1_3, C1_4, C1_5, C1_6, C1_7], title="Complex I", legend=:left, xlabel="Time (ms)", ylabel="Fraction") |> PNG
+# Complex I
+plot(sol, idxs=sys.vNADHC1, title="Complex I turnover", legend=:left, xlabel="Time (ms)", ylabel="Hz") |> PNG
 
-#---
-plot(sol, idxs=sys.vNADHC1 / sys.ρC1 * 1000, title="Complex I turnover", legend=:left, xlabel="Time (ms)", ylabel="Hz") |> PNG
+# Complexes
+plot(sol, idxs=[sys.vHresC1, sys.vHresC3, sys.vHresC4], title="Complex proton pumping", legend=:left, xlabel="Time (ms)", ylabel="μM/ms") |> PNG

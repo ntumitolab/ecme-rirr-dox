@@ -4,136 +4,248 @@ With ROS generation
 Default parameter values from Kembro et al. and Gauthier et al.
 Some are adjusted by An-Chi Wei to prevent negative concentrations
 =#
+
 "Electron transport chain (ETC)"
 function get_etc_sys(;
-    DOX=0,                      # Doxorubcin
-    MT_PROT=1,                  # OXPHOS protein content scale
-    O2=6μM,                     # Oxygen
-    h_i=exp10(-7) * Molar,      # IMS proton conc
-    h_m=exp10(-7.6) * Molar,    # Matrix proton conc
+    DOX=0μM,                    # Doxorubicin concentration
+    MT_PROT=1,                  # OXPHOS protein content scale factor
+    O2=6μM,                     # Oxygen concentration
+    h_i=exp10(-7) * Molar,      # IMS proton concentration
+    h_m=exp10(-7.6) * Molar,    # Matrix proton concentration
     name=:etcsys,
     ROTENONE_BLOCK = 0,
     ANTIMYCIN_BLOCK = 0,
     MYXOTHIAZOLE_BLOCK = 0,
-    CYANIDE_BLOCK = 0
-)
+    CYANIDE_BLOCK = 0,
+    nad_m = nothing,
+    nadh_m = nothing,
+    dpsi = nothing,
+    sox_m = nothing,
+    suc = nothing,
+    fum = nothing,
+    oaa = nothing)
+
+    # Define missing variables
+    isnothing(nad_m) && @variables nad_m(t)
+    isnothing(nadh_m) && @variables nadh_m(t)
+    isnothing(dpsi) && @variables dpsi(t)
+    isnothing(sox_m) && @variables sox_m(t)
+    isnothing(suc) && @variables suc(t)
+    isnothing(fum) && @variables fum(t)
+    isnothing(oaa) && @variables oaa(t)
+
+    # Q cycle variables
     @variables begin
-        nad_m(t)  # Conserved
-        nadh_m(t)
-        dpsi(t)
-        sox_m(t)
-        suc(t)
-        fum(t)
-        oaa(t)
         Q_n(t)
         QH2_n(t)
         QH2_p(t)
-        Q_p(t) # Conserved
+        Q_p(t) ## Conserved
         SQp(t)
         SQn(t)
     end
 
-    @parameters begin
-        Em_O2_SOX = -160mV         # O2/Superoxide redox potential
-        Em_FMNH2_FMNH = -375mV     # FMNH/FMNH2 redox potential
-    end
-
-    # Complex I
+    # Complex I used a simplified Markevich model
+    # QSSA for the catalytic cycle in the flavin (FMN) site
     @parameters begin
         KI_DOX_C1 = 400μM  # DOX inhibition concentration (IC50) on complex I
         K_RC_DOX = 1000 / 15mM  # DOX redox cycling constant
-        ρC1 = 8.85mM       # Activity of complex I, from Gauthier et al. (2013)
-        dpsi_B_C1 = 50mV   # Phase boundary potential
-        # Transition rates
-        K12_C1 = 6400Hz # pH = 7
-        K21_C1 = 5Hz
-        K56_C1 = 100Hz
-        K65_C1 = 251190Hz # pH = 7
-        K61_C1 = 1e7Hz
-        K16_C1 = 130Hz
-        K23_C1 = 3886.7Hz / sqrt(mM)
-        K32_C1 = 9.1295e6Hz
-        K34_C1 = 639.1364Hz
-        K43_C1 = 3.2882Hz / sqrt(mM)
-        K47_C1 = 1.5962E7Hz/mM
-        K74_C1 = 65.2227Hz
-        K75_C1 = 24.615E3Hz
-        K57_C1 = 1.1667E3Hz / sqrt(mM)
-        K42_C1 = 6.0318Hz / mM
+        Em_O2_SOX = -160mV        ## O2/Superoxide redox potential
+        Em_FMN_FMNsq = -387mV     ## FMN/FMNH- avg redox potential
+        Em_FMNsq_FMNH = -293mV    ## FMN semiquinone/FMNH- redox potential
+        Em_FMN_FMNH = -340mV      ## FMN/FMNH- avg redox potential
+        Em_NAD = -320mV           ## NAD/NADH avg redox potential
+        Em_N3 = -250mV
+        Em_N2 = -80mV
+        Em_N1a = -370mV
+        Em_Q_SQ_C1 = -300mV       ## -213mV in Markevich, 2015
+        Em_SQ_QH2_C1 = +500mV     ## 800mV (?) in Markevich, 2015
+        ET_C1 = 17μM              ## Activity of complex I
+        ## DOX IC50 on complex I
+        KI_DOX_C1 = 400μM
+        kf1_C1 = 83Hz / μM
+        KEQ1_C1 = 0.01 / μM
+        kr1_C1 = kf1_C1 / KEQ1_C1
+        ## kf2_C1 = 1.44e12Hz # Rapid equlibrium
+        kf3_C1 = 1e6Hz
+        KEQ3_C1 = 25μM
+        kr3_C1 = kf3_C1 / KEQ3_C1
+        KEQ2_C1 = exp(iVT * (Em_FMN_FMNH - Em_NAD)) / KEQ1_C1 / KEQ3_C1
+        kf6_C1 = 5e8Hz / μM
+        KEQ6_C1 = exp(iVT * (Em_N3 - Em_FMNsq_FMNH))
+        kr6_C1 = kf6_C1 / KEQ6_C1
+        kf7_C1 = 1E4Hz / μM
+        KEQ7_C1 = exp(iVT * (Em_N2 - Em_N3))
+        kr7_C1 = kf7_C1 / KEQ7_C1
+        kf8_C1 = 10Hz / μM
+        KEQ8_C1 = 0.1 / μM         ## Association constant for Q
+        kr8_C1 = kf8_C1 / KEQ8_C1
+        kf9_C1 = 4E5Hz / μM
+        KEQ9_C1 = exp(iVT * (Em_Q_SQ_C1 - Em_N2))
+        kr9_C1 = kf9_C1 / KEQ9_C1
+        kf10_C1 = 2e6Hz / μM
+        KEQ10_C1 = exp(iVT * (Em_N1a - Em_FMN_FMNsq))
+        kr10_C1 = kf10_C1 / KEQ10_C1
+        kf11_C1 = 1e9Hz / μM
+        KEQ11_C1 = exp(iVT * (Em_N3 - Em_FMN_FMNsq))
+        kr11_C1 = kf11_C1 / KEQ11_C1
+        kf13_C1 = 2.7e6Hz / μM
+        kf14_C1 = 1000Hz
+        KEQ14_C1 = 20μM             ## Dissociation constant for QH2
+        kr14_C1 = kf14_C1 / KEQ14_C1
+        kf16_C1 = 0.001Hz / μM      ## SOX production rate from If site; 2Hz / μM
+        KEQ16_C1 = exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
+        kr16_C1 = kf16_C1 / KEQ16_C1
+        kf17_C1 = 5e-5Hz / μM       ## SOX production rate from Iq site; 0.04Hz / μM
+        KEQ17_C1 = exp(iVT * (Em_O2_SOX - Em_Q_SQ_C1))
+        kr17_C1 = kf17_C1 / KEQ17_C1
+        KI_NAD_C1 = 1mM
+        KI_NADH_C1 = 50μM
     end
 
     @variables begin
+        N2_C1(t)
+        N2r_C1(t) = 0
+        N3_C1(t)
+        N3r_C1(t) = 0
+        N1a_C1(t)
+        N1ar_C1(t) = 0
+        wFMN_FMNNAD(t)
+        wFMNNADH_FMNHNAD(t)
+        wFMNH_FMNHNADH(t)
+        wFMNsq(t)
+        FMN(t)
+        FMN_NADH(t)
+        FMNH_NAD(t)
+        FMN_NAD(t)
+        FMNH_NADH(t)
+        FMNH(t)
+        FMNsq(t)
+        Iq_C1(t)
+        Q_C1(t)
+        SQ_C1(t)
+        QH2_C1(t)
+        wIq(t)
+        wIqQ(t)
+        wIqSQ(t)
+        wIqQH2(t)
+        TNC1q(t) ## Quinone site turnover number
+        TNC1f(t) ## NADH turnover number
+        TNC1(t)  ## Flavin site turnover number
         vQC1(t)
-        vHresC1(t)
-        vROSC1(t)
+        vQH2C1(t)
+        KEQ13_C1(t)
         vNADHC1(t)
-        C1_1(t)
-        C1_2(t)
-        C1_3(t)
-        C1_4(t)
-        C1_5(t)
-        C1_6(t)
-        C1_7(t)
-        C1_e1(t)
-        C1_e2(t)
-        C1_e3(t)
-        C1_e4(t)
-        C1_e5(t)
-        C1_e6(t)
-        C1_e7(t)
+        vNADC1(t)
+        vROSIf(t)
+        vROSIq(t)
+        vROSC1(t)
+        vHresC1(t)
     end
 
     c1eqs = let
-        C1_CONC = ρC1 * MT_PROT
+        C1_CONC = ET_C1 * MT_PROT
         # complex I inhibition by DOX and rotenone
         C1_INHIB = hil(KI_DOX_C1, DOX, 3) * (1 - ROTENONE_BLOCK)
         # Electron leak scaling factor from complex I
         E_LEAK_C1 = 1 + K_RC_DOX * DOX
-        fv = exp(iVT * (dpsi - dpsi_B_C1))
-        fhi = h_i / 1E-7Molar
-        fhm = h_m / 1E-7Molar
+        fhm = h_m * inv(1E-7Molar)
+        fFMN = KI_NAD_C1 / (nad_m + KI_NAD_C1)
+        fFMNH = KI_NADH_C1 / (nadh_m + KI_NADH_C1)
+        fFMN_NADH = 1 / (1 + KEQ2_C1)
+        fFMNH_NAD = 1 - fFMN_NADH
+        fDen = inv(wFMN_FMNNAD + wFMNNADH_FMNHNAD + wFMNH_FMNHNADH + wFMNsq)
+        fC1 = C1_CONC * fDen
 
-        # State transition rates
-        a12 = K12_C1 * fhm^2
-        a21 = K21_C1
-        a65 = K65_C1 * fhi^2
-        a56 = K56_C1
-        a61 = K61_C1 / fv
-        a16 = K16_C1 * fv
-        a23 = K23_C1 * NaNMath.sqrt(nadh_m)
-        a32 = K32_C1
-        a34 = K34_C1
-        a43 = K43_C1 * NaNMath.sqrt(nad_m)
-        a47 = C1_INHIB * K47_C1 * NaNMath.sqrt(Q_n * h_m)
-        a74 = K74_C1
-        a57 = C1_INHIB * K57_C1 * NaNMath.sqrt(QH2_n)
-        a75 = K75_C1
-        a42 = K42_C1 * E_LEAK_C1 * O2
-        a24 = K42_C1 * exp(iVT * (Em_FMNH2_FMNH - Em_O2_SOX)) * sox_m
+        ## State transition rates in the flavin site
+        ## 1 = FMN + FMN_NAD, 2 = FMN_NADH + FMNH_NAD, 3 = FMNH + FMNH_NADH, 4 = FMNsq
+        a12 = kf1_C1 * nadh_m * fFMN
+        a21 = kr1_C1 * fFMN_NADH
+        a23 = kf3_C1 * fFMNH_NAD
+        a32 = kr3_C1 * nad_m * fFMNH
+        a34 = (kf6_C1 * N3_C1 + E_LEAK_C1 * kf16_C1 * O2) * fFMNH
+        a43 = kr6_C1 * N3r_C1 + E_LEAK_C1 * kr16_C1 * sox_m
+        a41 = kf11_C1 * N3_C1 + kf10_C1 * N1a_C1
+        a14 = (kr11_C1 * N3r_C1 + kr10_C1 * N1ar_C1) * fhm * fFMN
 
-        # Fraction of each state in Complex I derived from KA pattern
-        denom = C1_e1 + C1_e2 + C1_e3 + C1_e4 + C1_e5 + C1_e6 + C1_e7
-
-        c1eqs = [
-            C1_e1 ~ a21 * a32 * a42 * a56 * a61 * a74 + a21 * a32 * a42 * a56 * a61 * a75 + a21 * a32 * a42 * a57 * a61 * a74 + a21 * a32 * a42 * a57 * a65 * a74 + a21 * a32 * a43 * a56 * a61 * a74 + a21 * a32 * a43 * a56 * a61 * a75 + a21 * a32 * a43 * a57 * a61 * a74 + a21 * a32 * a43 * a57 * a65 * a74 + a21 * a32 * a47 * a56 * a61 * a75 + a21 * a34 * a42 * a56 * a61 * a74 + a21 * a34 * a42 * a56 * a61 * a75 + a21 * a34 * a42 * a57 * a61 * a74 + a21 * a34 * a42 * a57 * a65 * a74 + a21 * a34 * a47 * a56 * a61 * a75 + a23 * a34 * a47 * a56 * a61 * a75 + a24 * a32 * a47 * a56 * a61 * a75 + a24 * a34 * a47 * a56 * a61 * a75,
-            C1_e2 ~ a12 * a32 * a42 * a56 * a61 * a74 + a12 * a32 * a42 * a56 * a61 * a75 + a12 * a32 * a42 * a57 * a61 * a74 + a12 * a32 * a42 * a57 * a65 * a74 + a12 * a32 * a43 * a56 * a61 * a74 + a12 * a32 * a43 * a56 * a61 * a75 + a12 * a32 * a43 * a57 * a61 * a74 + a12 * a32 * a43 * a57 * a65 * a74 + a12 * a32 * a47 * a56 * a61 * a75 + a12 * a34 * a42 * a56 * a61 * a74 + a12 * a34 * a42 * a56 * a61 * a75 + a12 * a34 * a42 * a57 * a61 * a74 + a12 * a34 * a42 * a57 * a65 * a74 + a12 * a34 * a47 * a56 * a61 * a75 + a16 * a32 * a42 * a57 * a65 * a74 + a16 * a32 * a43 * a57 * a65 * a74 + a16 * a34 * a42 * a57 * a65 * a74,
-            C1_e3 ~ a12 * a23 * a42 * a56 * a61 * a74 + a12 * a23 * a42 * a56 * a61 * a75 + a12 * a23 * a42 * a57 * a61 * a74 + a12 * a23 * a42 * a57 * a65 * a74 + a12 * a23 * a43 * a56 * a61 * a74 + a12 * a23 * a43 * a56 * a61 * a75 + a12 * a23 * a43 * a57 * a61 * a74 + a12 * a23 * a43 * a57 * a65 * a74 + a12 * a23 * a47 * a56 * a61 * a75 + a12 * a24 * a43 * a56 * a61 * a74 + a12 * a24 * a43 * a56 * a61 * a75 + a12 * a24 * a43 * a57 * a61 * a74 + a12 * a24 * a43 * a57 * a65 * a74 + a16 * a21 * a43 * a57 * a65 * a74 + a16 * a23 * a42 * a57 * a65 * a74 + a16 * a23 * a43 * a57 * a65 * a74 + a16 * a24 * a43 * a57 * a65 * a74,
-            C1_e4 ~ a12 * a23 * a34 * a56 * a61 * a74 + a12 * a23 * a34 * a56 * a61 * a75 + a12 * a23 * a34 * a57 * a61 * a74 + a12 * a23 * a34 * a57 * a65 * a74 + a12 * a24 * a32 * a56 * a61 * a74 + a12 * a24 * a32 * a56 * a61 * a75 + a12 * a24 * a32 * a57 * a61 * a74 + a12 * a24 * a32 * a57 * a65 * a74 + a12 * a24 * a34 * a56 * a61 * a74 + a12 * a24 * a34 * a56 * a61 * a75 + a12 * a24 * a34 * a57 * a61 * a74 + a12 * a24 * a34 * a57 * a65 * a74 + a16 * a21 * a32 * a57 * a65 * a74 + a16 * a21 * a34 * a57 * a65 * a74 + a16 * a23 * a34 * a57 * a65 * a74 + a16 * a24 * a32 * a57 * a65 * a74 + a16 * a24 * a34 * a57 * a65 * a74,
-            C1_e5 ~ a12 * a23 * a34 * a47 * a61 * a75 + a12 * a23 * a34 * a47 * a65 * a75 + a12 * a24 * a32 * a47 * a61 * a75 + a12 * a24 * a32 * a47 * a65 * a75 + a12 * a24 * a34 * a47 * a61 * a75 + a12 * a24 * a34 * a47 * a65 * a75 + a16 * a21 * a32 * a42 * a65 * a74 + a16 * a21 * a32 * a42 * a65 * a75 + a16 * a21 * a32 * a43 * a65 * a74 + a16 * a21 * a32 * a43 * a65 * a75 + a16 * a21 * a32 * a47 * a65 * a75 + a16 * a21 * a34 * a42 * a65 * a74 + a16 * a21 * a34 * a42 * a65 * a75 + a16 * a21 * a34 * a47 * a65 * a75 + a16 * a23 * a34 * a47 * a65 * a75 + a16 * a24 * a32 * a47 * a65 * a75 + a16 * a24 * a34 * a47 * a65 * a75,
-            C1_e6 ~ a12 * a23 * a34 * a47 * a56 * a75 + a12 * a24 * a32 * a47 * a56 * a75 + a12 * a24 * a34 * a47 * a56 * a75 + a16 * a21 * a32 * a42 * a56 * a74 + a16 * a21 * a32 * a42 * a56 * a75 + a16 * a21 * a32 * a42 * a57 * a74 + a16 * a21 * a32 * a43 * a56 * a74 + a16 * a21 * a32 * a43 * a56 * a75 + a16 * a21 * a32 * a43 * a57 * a74 + a16 * a21 * a32 * a47 * a56 * a75 + a16 * a21 * a34 * a42 * a56 * a74 + a16 * a21 * a34 * a42 * a56 * a75 + a16 * a21 * a34 * a42 * a57 * a74 + a16 * a21 * a34 * a47 * a56 * a75 + a16 * a23 * a34 * a47 * a56 * a75 + a16 * a24 * a32 * a47 * a56 * a75 + a16 * a24 * a34 * a47 * a56 * a75,
-            C1_e7 ~ a12 * a23 * a34 * a47 * a56 * a61 + a12 * a23 * a34 * a47 * a57 * a61 + a12 * a23 * a34 * a47 * a57 * a65 + a12 * a24 * a32 * a47 * a56 * a61 + a12 * a24 * a32 * a47 * a57 * a61 + a12 * a24 * a32 * a47 * a57 * a65 + a12 * a24 * a34 * a47 * a56 * a61 + a12 * a24 * a34 * a47 * a57 * a61 + a12 * a24 * a34 * a47 * a57 * a65 + a16 * a21 * a32 * a42 * a57 * a65 + a16 * a21 * a32 * a43 * a57 * a65 + a16 * a21 * a32 * a47 * a57 * a65 + a16 * a21 * a34 * a42 * a57 * a65 + a16 * a21 * a34 * a47 * a57 * a65 + a16 * a23 * a34 * a47 * a57 * a65 + a16 * a24 * a32 * a47 * a57 * a65 + a16 * a24 * a34 * a47 * a57 * a65,
-            vQC1 ~ 0.5 * C1_CONC * (C1_4 * a47 - C1_7 * a74),
-            vHresC1 ~ 4 * vQC1,
-            vROSC1 ~ C1_CONC * (C1_4 * a42 - C1_2 * a24),
-            vNADHC1 ~ 0.5 * C1_CONC * (C1_2 * a23 - C1_3 * a32),
-            C1_1 ~ C1_e1 / denom,
-            C1_2 ~ C1_e2 / denom,
-            C1_3 ~ C1_e3 / denom,
-            C1_4 ~ C1_e4 / denom,
-            C1_5 ~ C1_e5 / denom,
-            C1_6 ~ C1_e6 / denom,
-            C1_7 ~ C1_e7 / denom,
+        eqsf = [
+            wFMN_FMNNAD ~ a21 * a32 * (a41 + a43) + (a21 + a23) * a34 * a41,
+            wFMNNADH_FMNHNAD ~ a12 * (a32 + a34) * a41 + (a12 + a14) * a32 * a43,
+            wFMNH_FMNHNADH ~ a12 * a23 * (a41 + a43) + a14 * (a21 + a23) * a43,
+            wFMNsq ~ (a12 + a14) * a23 * a34 + a14 * a21 * (a32 + a34),
+            FMN ~ fC1 * wFMN_FMNNAD * fFMN,
+            FMN_NAD ~ fC1 * wFMN_FMNNAD * (1 - fFMN),
+            FMN_NADH ~ fC1 * wFMNNADH_FMNHNAD * fFMN_NADH,
+            FMNH_NAD ~ fC1 * wFMNNADH_FMNHNAD * fFMNH_NAD,
+            FMNH_NADH ~ fC1 * wFMNH_FMNHNADH * (1 - fFMNH),
+            FMNH ~ fC1 * wFMNH_FMNHNADH * fFMNH,
+            FMNsq ~ fC1 * wFMNsq,
+            TNC1f ~ fDen * (a12 * a23 * a34 * a41 - a14 * a43 * a32 * a21),
+            vNADHC1 ~ -TNC1f * C1_CONC,
+            vNADC1 ~ -vNADHC1,
+            TNC1 ~ TNC1f,
         ]
+
+        ## State transition rates in the quinone site
+        ## 1 = Iq 2 = IqQ, 3 = IqSQ, 4 = IqQH2
+        b12 = kf8_C1 * Q_n * C1_INHIB
+        b21 = kr8_C1
+        b23 = kf9_C1 * N2r_C1 + kr9_C1 * N2_C1
+        b32 = kr9_C1 * N2_C1 + kf17_C1 * O2
+        b34 = kf13_C1 * N2r_C1 * fhm^2
+        b43 = kf13_C1 / KEQ13_C1 * N2_C1
+        b41 = kf14_C1
+        b14 = kr14_C1 * QH2_n * C1_INHIB
+        qDen = inv(wIq + wIqQ + wIqSQ + wIqQH2)
+        qC1 = C1_CONC * qDen
+
+        eqsq = [
+            KEQ13_C1 ~ exp(iVT * (Em_SQ_QH2_C1 - Em_N2 - 4dpsi)) * (h_m / h_i)^4,
+            wIq ~ b21 * b32 * (b41 + b43) + (b21 + b23) * b34 * b41,
+            wIqQ ~ b12 * (b32 + b34) * b41 + (b12 + b14) * b32 * b43,
+            wIqSQ ~ b12 * b23 * (b41 + b43) + b14 * (b21 + b23) * b43,
+            wIqQH2 ~ (b12 + b14) * b23 * b34 + b14 * b21 * (b32 + b34),
+            Iq_C1 ~ wIq * qC1,
+            Q_C1 ~ wIqQ * qC1,
+            SQ_C1 ~ wIqSQ * qC1,
+            QH2_C1 ~ wIqQH2 * qC1,
+            TNC1q ~ qDen * (b12 * b23 * b34 * b41 - b14 * b43 * b32 * b21),
+            vQC1 ~ -TNC1q * C1_CONC,
+            vQH2C1 ~ -vQC1,
+            vHresC1 ~ 4vQH2C1,
+        ]
+
+        ## FMNH− + N3 = FMNHsq + N3−
+        v6 = kf6_C1 * FMNH * N3_C1 - kr6_C1 * FMNsq * N3r_C1
+        ## N3− + N2 = N3 + N2−
+        v7 = kf7_C1 * N3r_C1 * N2_C1 - kr7_C1 * N3_C1 * N2r_C1
+        ## CI.Q + N2− = CIQsq + N2
+        v9 = kf9_C1 * Q_C1 * N2r_C1 - kr9_C1 * SQ_C1 * N2_C1
+        ## FMNHsq + N1a = FMN + N1a− + Hi+
+        v10 = kf10_C1 * FMNsq * N1a_C1 - kr10_C1 * FMN * N1ar_C1 * fhm
+        ## FMNHsq + N3 = FMN + N3− + Hi+
+        v11 = kf11_C1 * FMNsq * N3_C1 - kr11_C1 * FMN * N3r_C1 * fhm
+        ## N2 + N3− = N2− + N3
+        v12 = v7
+        ## Second electron transfer
+        v13 = kf13_C1 * (SQ_C1 * N2r_C1 * fhm^2 - QH2_C1 * N2_C1 / KEQ13_C1)
+        ## Flavin site ROS generation
+        v16 = (kf16_C1 * FMNH * O2 - kr16_C1 * FMNsq * sox_m)
+        ## Quinone site ROS generation
+        v17 = kf17_C1 * SQ_C1 * O2 - kr17_C1 * Q_C1 * sox_m
+
+        eqs = [
+            C1_CONC ~ N2r_C1 + N2_C1,
+            C1_CONC ~ N3r_C1 + N3_C1,
+            C1_CONC ~ N1ar_C1 + N1a_C1,
+            D(N1ar_C1) ~ v10,
+            D(N3r_C1) ~ v6 + v11 - v7 - v12,
+            D(N2r_C1) ~ v7 + v12 - v9 - v13,
+            vROSIf ~ v16,
+            vROSIq ~ v17,
+            vROSC1 ~ vROSIf + vROSIq,
+        ]
+
+        [eqsf; eqsq; eqs]
     end
 
     # Reversible complex II (SDH)
@@ -141,9 +253,9 @@ function get_etc_sys(;
         KI_DOX_C2 = 2000μM # DOX inhibition concentration (IC50) on complex II
         K_C2 = 250 / (minute * mM)   # Reaction rate constant of SDH (complex II)
         KI_OAA_C2 = 150μM       # Inhibition constant for OAA
-        EmFUM = 40mV            # midpoint potential of FUM -> SUC
-        EmQ = 100mV             # midpoint potential of Q -> QH2
-        KEQ_C2 = exp(-2iVT * (EmQ - EmFUM)) # (Reverse) equlibrium constant of SDH
+        Em_FUM_SUC = 40mV            # midpoint potential of FUM -> SUC
+        Em_Q_QH2 = 100mV             # midpoint potential of Q -> QH2
+        KEQ_C2 = exp(-2iVT * (Em_Q_QH2 - Em_FUM_SUC)) # (Reverse) equlibrium constant of SDH
     end
 
     @variables vSDH(t)
@@ -151,15 +263,15 @@ function get_etc_sys(;
 
     # complex IV (CCO)
     @parameters begin
-        ρC4 = 325μM
+        rhoC4 = 325μM
         δ₅ = 0.5
-        K34_C4 = 2.9445e10Hz / mM^3 # pH7
+        K34_C4 = 2.9445e10Hz / mM^3 # @pH7
         K43_C4 = 2.9E-6Hz / mM^3
         K35_C4 = 750Hz / mM
         K36_C4 = 4.826e11Hz / mM
         K63_C4 = 4.826Hz / mM
         K37_C4 = 2.92367e6Hz
-        K73_C4 = 0.029236Hz  # pH7
+        K73_C4 = 0.029236Hz  # @pH7
         KI_DOX_C4 = 165μM  # DOX inhibition concentration (IC50) on complex IV
     end
 
@@ -173,43 +285,40 @@ function get_etc_sys(;
         C4_Yr(t)
         C4_YO(t)
         C4_YOH(t)
-        C4_e1(t)
-        C4_e2(t)
-        C4_e3(t)
-        C4_e4(t)
     end
 
     c4eqs = let
         C4_INHIB = hil(KI_DOX_C4, DOX, 3) * (1 - CYANIDE_BLOCK)  # complex IV inhibition by DOX
-        C4_CONC = ρC4 * MT_PROT
+        C4_CONC = rhoC4 * MT_PROT
         aδ = exp(-iVT * δ₅ * dpsi)
         a1mδ = exp(iVT * (1 - δ₅) * dpsi)
-        f_hm = h_m / (1E-7Molar) * aδ
-        f_hi = h_i / (1E-7Molar) * a1mδ
+        f_hm = h_m * inv(1E-7Molar) * aδ
+        f_hi = h_i * inv(1E-7Molar) * a1mδ
         f_cr = cytc_rd
         f_co = cytc_ox * a1mδ
         a12 = K34_C4 * f_cr^3 * f_hm^4  # a12 = K34 * exp(-δ₅ * 4 * vfrt) * cytc_rd^3 * h_m^4
-        a21 = K43_C4 * f_co^3 * f_hi # K43 * exp((1 - δ₅) * 4 * vfrt) * cytc_ox^3 * h_i
+        a21 = K43_C4 * f_co^3 * f_hi    # K43 * exp((1 - δ₅) * 4 * vfrt) * cytc_ox^3 * h_i
         a23 = C4_INHIB * K35_C4 * O2
         a32 = 0
-        a34 = K36_C4 * f_cr * f_hm^3 # K36 * exp(-δ₅ * 3 * vfrt) * cytc_rd * h_m^3
-        a43 = K63_C4 * f_co * f_hi^2  # K63 * exp((1 - δ₅) * 3 * vfrt) * cytc_ox * h_i^2
+        a34 = K36_C4 * f_cr * f_hm^3    # K36 * exp(-δ₅ * 3 * vfrt) * cytc_rd * h_m^3
+        a43 = K63_C4 * f_co * f_hi^2    # K63 * exp((1 - δ₅) * 3 * vfrt) * cytc_ox * h_i^2
         a41 = K37_C4 * f_hm  # K37 * exp(-δ₅ * vfrt) * h_m
         a14 = K73_C4 * f_hi  # K73 * exp((1 - δ₅) * F_RT * dpsi) * h_i
 
         # Weight of each state (from KA pattern)
+        C4_e1 = a41 * a34 * (a21 + a23)
+        C4_e2 = a12 * a41 * a34
+        C4_e3 = a23 * a12 * (a41 + a43) + a43 * a14 * (a21 + a23)
+        C4_e4 = a34 * (a14 * (a21 + a23) + a23 * a12)
         den = C4_e1 + C4_e2 + C4_e3 + C4_e4
         # Reaction rates
-        v34 = C4_CONC * (C4_Y * a12 - C4_Yr * a21)
+        # v34 = C4_CONC * (C4_Y * a12 - C4_Yr * a21)
         v35 = C4_CONC * C4_Yr * a23
-        v36 = C4_CONC * (a34 * C4_YO - a43 * C4_YOH)
-        v37 = C4_CONC * (a41 * C4_YOH - a14 * C4_Y)
+        # v36 = C4_CONC * (a34 * C4_YO - a43 * C4_YOH)
+        # v37 = C4_CONC * (a41 * C4_YOH - a14 * C4_Y)
 
         c4eqs = [
-            C4_e1 ~ a41 * a34 * (a21 + a23),
-            C4_e2 ~ a12 * a41 * a34,
-            C4_e3 ~ a23 * a12 * (a41 + a43) + a43 * a14 * (a21 + a23),
-            C4_e4 ~ a34 * (a14 * (a21 + a23) + a23 * a12),
+            C4_CONC ~ cytc_rd + cytc_ox,
             C4_Y ~ C4_e1 / den,
             C4_Yr ~ C4_e2 / den,
             C4_YO ~ C4_e3 / den,
@@ -217,16 +326,15 @@ function get_etc_sys(;
             vO2 ~ v35,
             vCytcOx ~ 4vO2,
             vHresC4 ~ vCytcOx,
-            C4_CONC ~ cytc_rd + cytc_ox
         ]
     end
 
     # complex III and the Q cycle
     @parameters begin
-        ρC3 = 325μM
-        ρQo = ρC3    # Qo seat
-        ρQi = ρC3    # Qi seat
-        Q_T = 4mM    # Total CoQ pool
+        rhoC3 = 325μM
+        rhoQo = rhoC3    # Qo seat
+        rhoQi = rhoC3    # Qi seat
+        Q_T = 4mM        # Total CoQ pool
         KI_DOX_C3 = 185μM  # DOX inhibition concentration (IC50) on complex III
         EmSQp_QH2p = +290mV
         EmQp_SQp = -160mV
@@ -242,12 +350,14 @@ function get_etc_sys(;
         K04_C3 = 50.67Hz / mM
         KEQ4_OX_C3 = 129.9853 # +130mV
         KEQ4_RD_C3 = 13.7484  # +70mV
+        # Split of electrical potentials
         δ₁_C3 = 0.5
         δ₂_C3 = 0.5
         δ₃_C3 = 0.5
-        β_C3 = 0.5006
-        α_C3 = 0.5 * (1 - β_C3)
-        γ_C3 = 1 - α_C3 - β_C3
+        # Split of the electrical distance across the IMM
+        α_C3 = 0.25
+        β_C3 = 0.5
+        γ_C3 = 0.25
         KD_Q = 22000Hz
         K06_C3 = 166.67Hz
         KEQ6_C3 = 9.4546 # +60mV
@@ -283,16 +393,17 @@ function get_etc_sys(;
     end
 
     c3eqs = let
-        fHi = h_i / 1E-7Molar
-        fHm = h_m / 1E-7Molar
-        C3_INHIB = hil(KI_DOX_C3, DOX, 3) * (1 - ANTIMYCIN_BLOCK)  # complex III inhibition by DOX and antimycin
-        C3_CONC = ρC3 * MT_PROT
+        fHi = h_i * inv(1E-7Molar)
+        fHm = h_m * inv(1E-7Molar)
+        # complex III inhibition by DOX and antimycin
+        C3_INHIB = hil(KI_DOX_C3, DOX, 3) * (1 - ANTIMYCIN_BLOCK)
+        C3_CONC = rhoC3 * MT_PROT
         # Q reduction
-        v1 = vQC1 + vSDH
+        v1 = vQH2C1 + vSDH
         # QH2 diffusion
         v2 = KD_Q * (QH2_n - QH2_p)
         # v3 = QH2 to FeS
-        Qo_avail = (ρQo - SQp) / ρQo
+        Qo_avail = (rhoQo - SQp) / rhoQo
         k03 = K03_C3 * (1 - MYXOTHIAZOLE_BLOCK)
         v3 = k03 * (KEQ3_C3 * Qo_avail * fes_ox * QH2_p - fes_rd * SQp * fHi^2)
         # v4 = SQp and bH
@@ -305,7 +416,7 @@ function get_etc_sys(;
         # v6 = bL to bH
         v6 = K06_C3 * (KEQ6_C3 * cytb_2 * exp(-iVT * β_C3 * δ₂_C3 * dpsi) - cytb_3 * exp(iVT * β_C3 * (1 - δ₂_C3) * dpsi))
         # v7 = bH to Qn; v8: bH to SQn
-        Qi_avail = (ρQi - SQn) / ρQi
+        Qi_avail = (rhoQi - SQn) / rhoQi
         el7 = exp(-iVT * γ_C3 * δ₃_C3 * dpsi)
         er7 = exp(iVT * γ_C3 * (1 - δ₃_C3) * dpsi)
         v7_ox = K07_OX_C3 * C3_INHIB * (KEQ7_OX_C3 * cytb_3 * Q_n * Qi_avail * el7 - cytb_1 * SQn * er7)
@@ -358,7 +469,7 @@ function get_c5_sys(; dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=
         PC2_C5 = 4.585E-19Hz        # Magnus model
         # Equilibrium constant of ATP synthase (ΔG=-30kJ/mol)
         # 1.71E6mM in Magnus model was inconsistent to Caplan's model (1.71E6 Molar)
-        KEQ_C5 = 2.2E5Molar
+        KEQ_C5 = 2E5Molar
         G_H_MITO = 2E-6mM / ms / mV # Proton leak rate constant
         VMAX_ANT = 5E-3mM / ms      # Max rate of ANT, (Wei, 2011)
         H_ANT = 0.5  # Voltage steepness
