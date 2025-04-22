@@ -89,6 +89,7 @@ function c1_markevich_full(; name=:c1markevich_full,
         vROSIq(t)
         vROS_C1(t)
         TN_C1(t) ## NADH turnover number
+        vHres_C1(t)
     end
 
     fhm = h_m / 1E-7Molar
@@ -255,9 +256,9 @@ function c1_birb(; name=:c1birb,
     fFMN = KI_NAD_C1 / (nad + KI_NAD_C1)
     fFMNH = KI_NADH_C1 / (nadh + KI_NADH_C1)
     fFMN_NADH = 1 / (1 + KEQ2_C1)
-    fFMNH_NAD = 1 - fFMN_NADH
-    fDen = inv(wFMN_FMNNAD + wFMNNADH_FMNHNAD + wFMNH_FMNHNADH + wFMNsq)
-    fC1 = ET_C1 * fDen
+    fFMNH_NAD = KEQ2_C1 / (1 + KEQ2_C1)
+    fDen = wFMN_FMNNAD + wFMNNADH_FMNHNAD + wFMNH_FMNHNADH + wFMNsq
+    fC1 = ET_C1 / fDen
 
     ## State transition rates in the flavin site
     ## 1 = FMN + FMN_NAD, 2 = FMN_NADH + FMNH_NAD, 3 = FMNH + FMNH_NADH, 4 = FMNsq
@@ -271,10 +272,10 @@ function c1_birb(; name=:c1birb,
     a14 = (kr11_C1 * N3r_C1 + kr10_C1 * N1ar_C1) * fhm * fFMN
 
     eqsf = [
-        wFMN_FMNNAD ~ a21 * a32 * (a41 + a43) + (a21 + a23) * a34 * a41,
-        wFMNNADH_FMNHNAD ~ a12 * (a32 + a34) * a41 + (a12 + a14) * a32 * a43,
-        wFMNH_FMNHNADH ~ a12 * a23 * (a41 + a43) + a14 * (a21 + a23) * a43,
-        wFMNsq ~ (a12 + a14) * a23 * a34 + a14 * a21 * (a32 + a34),
+        wFMN_FMNNAD ~ a21*a32*a41 + a21*a32*a43 + a21*a34*a41 + a23*a34*a41,
+        wFMNNADH_FMNHNAD ~ a12*a32*a41 + a12*a32*a43 + a12*a34*a41 + a14*a32*a43,
+        wFMNH_FMNHNADH ~ a12*a23*a41 + a12*a23*a43 + a14*a21*a43 + a14*a23*a43,
+        wFMNsq ~ a12*a23*a34 + a14*a21*a32 + a14*a21*a34 + a14*a23*a34,
         FMN ~ fC1 * wFMN_FMNNAD * fFMN,
         FMN_NAD ~ fC1 * wFMN_FMNNAD * (1 - fFMN),
         FMN_NADH ~ fC1 * wFMNNADH_FMNHNAD * fFMN_NADH,
@@ -282,10 +283,7 @@ function c1_birb(; name=:c1birb,
         FMNH_NADH ~ fC1 * wFMNH_FMNHNADH * (1 - fFMNH),
         FMNH ~ fC1 * wFMNH_FMNHNADH * fFMNH,
         FMNsq ~ fC1 * wFMNsq,
-        TN_C1f ~ fDen * (a12 * a23 * a34 * a41 - a14 * a43 * a32 * a21),
-        vNADH_C1 ~ -TN_C1f * ET_C1,
-        vNAD_C1 ~ -vNADH_C1,
-        TN_C1 ~ TN_C1f,
+        TN_C1 ~ (a12 * a23 * a34 * a41 - a14 * a43 * a32 * a21) / fDen,
     ]
 
     ## State transition rates in the quinone site
@@ -299,7 +297,6 @@ function c1_birb(; name=:c1birb,
         wIqQ(t)
         wIqSQ(t)
         wIqQH2(t)
-        TN_C1q(t) ## Quinone site turnover number
         vQ_C1(t)
         vQH2_C1(t)
         KEQ13_C1(t)
@@ -308,36 +305,38 @@ function c1_birb(; name=:c1birb,
 
     b12 = kf8_C1 * Q_n
     b21 = kr8_C1
-    b23 = kf9_C1 * N2r_C1 + kr9_C1 * N2_C1
+    b23 = kf9_C1 * N2r_C1 + kr17_C1 * sox_m
     b32 = kr9_C1 * N2_C1 + kf17_C1 * O2
     b34 = kf13_C1 * N2r_C1 * fhm^2
     b43 = kf13_C1 / KEQ13_C1 * N2_C1
     b41 = kf14_C1
     b14 = kr14_C1 * QH2_n
-    qDen = inv(wIq + wIqQ + wIqSQ + wIqQH2)
-    qC1 = ET_C1 * qDen
+    qDen = wIq + wIqQ + wIqSQ + wIqQH2
+    qC1 = ET_C1 / qDen
 
     eqsq = [
         KEQ13_C1 ~ exp(iVT * (Em_SQ_QH2_C1 - Em_N2 - 4dpsi)) * (h_m / h_i)^4,
-        wIq ~ b21 * b32 * (b41 + b43) + (b21 + b23) * b34 * b41,
-        wIqQ ~ b12 * (b32 + b34) * b41 + (b12 + b14) * b32 * b43,
-        wIqSQ ~ b12 * b23 * (b41 + b43) + b14 * (b21 + b23) * b43,
-        wIqQH2 ~ (b12 + b14) * b23 * b34 + b14 * b21 * (b32 + b34),
+        wIq ~ b21*b32*b41 + b21*b32*b43 + b21*b34*b41 + b23*b34*b41,
+        wIqQ ~ b12*b32*b41 + b12*b32*b43 + b12*b34*b41 + b14*b32*b43,
+        wIqSQ ~ b12*b23*b41 + b12*b23*b43 + b14*b21*b43 + b14*b23*b43,
+        wIqQH2 ~ b12*b23*b34 + b14*b21*b32 + b14*b21*b34 + b14*b23*b34,
         Iq_C1 ~ wIq * qC1,
         Q_C1 ~ wIqQ * qC1,
         SQ_C1 ~ wIqSQ * qC1,
         QH2_C1 ~ wIqQH2 * qC1,
-        TN_C1q ~ qDen * (b12 * b23 * b34 * b41 - b14 * b43 * b32 * b21),
-        vQ_C1 ~ -TN_C1q * ET_C1,
-        vQH2_C1 ~ -vQ_C1,
-        vHres_C1 ~ 4vQH2_C1,
+        vQ_C1 ~ kr8_C1 * Q_C1 - kf8_C1 * Q_n * Iq_C1,
+        vQH2_C1 ~ kf14_C1 * QH2_C1 - kr14_C1 * QH2_n * Iq_C1,
     ]
 
+    ## NADH + FMN = FMN.NADH
+    v1 = kf1_C1 * nadh * FMN - kr1_C1 * FMN_NADH
+    ## FMNH−.NAD+ = FMNH− + NAD+
+    v3 = kf3_C1 * FMNH_NAD - kr3_C1 * FMNH * nad
     ## FMNH− + N3 = FMNHsq + N3−
     v6 = kf6_C1 * FMNH * N3_C1 - kr6_C1 * FMNsq * N3r_C1
     ## N3− + N2 = N3 + N2−
     v7 = kf7_C1 * N3r_C1 * N2_C1 - kr7_C1 * N3_C1 * N2r_C1
-    ## CI.Q + N2− = CIQsq + N2
+    ## First electron transfer CI.Q + N2− = CIQsq + N2
     v9 = kf9_C1 * Q_C1 * N2r_C1 - kr9_C1 * SQ_C1 * N2_C1
     ## FMNHsq + N1a = FMN + N1a− + Hi+
     v10 = kf10_C1 * FMNsq * N1a_C1 - kr10_C1 * FMN * N1ar_C1 * fhm
@@ -362,6 +361,9 @@ function c1_birb(; name=:c1birb,
         vROSIf ~ v16,
         vROSIq ~ v17,
         vROS_C1 ~ vROSIf + vROSIq,
+        vHres_C1 ~ 4v13,
+        vNADH_C1 ~ -v1,
+        vNAD_C1 ~ v3,
     ]
     return ODESystem([eqsf; eqsq; eqs], t; name)
 end
