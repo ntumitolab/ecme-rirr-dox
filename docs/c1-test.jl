@@ -55,7 +55,7 @@ function c1_markevich_full(; name=:c1markevich_full,
         KEQ11_C1 = exp(iVT * (Em_N3 - Em_FMN_FMNsq))
         kf13_C1 = 2.7e6Hz / μM
         kf14_C1 = 1000Hz
-        KEQ14_C1 = 20μM            ## Dissociation constant for QH2
+        KEQ14_C1 = 20μM             ## Dissociation constant for QH2
         kf16_C1 = 2Hz / μM          ## SOX production rate from If site
         KEQ16_C1 = exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
         kf17_C1 = 0.04Hz / μM       ## SOX production rate from Iq site
@@ -177,13 +177,13 @@ function c1_birb(; name=:c1birb,
         Em_N1a = -370mV
         Em_Q_SQ_C1 = -300mV       ## -213mV in Markevich, 2015
         Em_SQ_QH2_C1 = +500mV     ## 800mV (?) in Markevich, 2015
-        ET_C1 = 17μM               ## Activity of complex I
+        ET_C1 = 17μM              ## Activity of complex I
         ## DOX IC50 on complex I
         KI_DOX_C1 = 400μM
         kf1_C1 = 83Hz / μM
         KEQ1_C1 = 0.01 / μM
         kr1_C1 = kf1_C1 / KEQ1_C1
-        # kf2_C1 = 1.44e12Hz # Rapid equlibrium
+        ## kf2_C1 = 1.44e12Hz # Rapid equlibrium
         kf3_C1 = 1e6Hz
         KEQ3_C1 = 25μM
         kr3_C1 = kf3_C1 / KEQ3_C1
@@ -208,7 +208,7 @@ function c1_birb(; name=:c1birb,
         kr11_C1 = kf11_C1 / KEQ11_C1
         kf13_C1 = 2.7e6Hz / μM
         kf14_C1 = 1000Hz
-        KEQ14_C1 = 20μM            ## Dissociation constant for QH2
+        KEQ14_C1 = 20μM             ## Dissociation constant for QH2
         kr14_C1 = kf14_C1 / KEQ14_C1
         kf16_C1 = 2Hz / μM          ## SOX production rate from If site
         KEQ16_C1 = exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
@@ -246,7 +246,7 @@ function c1_birb(; name=:c1birb,
         FMNH(t)
         FMNsq(t)
         TN_C1f(t) ## NADH turnover number
-        TN_C1(t) ## Flavin site turnover number
+        TN_C1(t)  ## Flavin site turnover number
         vNADH_C1(t)
         vNAD_C1(t)
     end
@@ -259,8 +259,8 @@ function c1_birb(; name=:c1birb,
     fDen = inv(wFMN_FMNNAD + wFMNNADH_FMNHNAD + wFMNH_FMNHNADH + wFMNsq)
     fC1 = ET_C1 * fDen
 
-    # State transition rates in the flavin site
-    # 1 = FMN + FMN_NAD, 2 = FMN_NADH + FMNH_NAD, 3 = FMNH + FMNH_NADH, 4 = FMNsq
+    ## State transition rates in the flavin site
+    ## 1 = FMN + FMN_NAD, 2 = FMN_NADH + FMNH_NAD, 3 = FMNH + FMNH_NADH, 4 = FMNsq
     a12 = kf1_C1 * nadh * fFMN
     a21 = kr1_C1 * fFMN_NADH
     a23 = kf3_C1 * fFMNH_NAD
@@ -288,8 +288,8 @@ function c1_birb(; name=:c1birb,
         TN_C1 ~ TN_C1f,
     ]
 
-    # State transition rates in the quinone site
-    # 1 = Iq 2 = IqQ, 3 = IqSQ, 4 = IqQH2
+    ## State transition rates in the quinone site
+    ## 1 = Iq 2 = IqQ, 3 = IqSQ, 4 = IqQH2
     @variables begin
         Iq_C1(t)
         Q_C1(t)
@@ -467,7 +467,6 @@ end
 birb = c1_birb(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
-
 
 prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.kf16_C1 => 0.001Hz / μM, markevich.kf17_C1 => 0.001Hz / μM / 50])
 prob_b = SteadyStateProblem(birb, [birb.ET_C1 => 17μM, birb.kf16_C1 => 0.001Hz / μM, birb.kf17_C1 => 0.001Hz / μM / 50])
