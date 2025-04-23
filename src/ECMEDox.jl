@@ -72,11 +72,11 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
         vm(t) = -87.28mV        # Sarcolemmal membrane potential
         dpsi(t) = 175.318mV     # Mitochondrial membrane potential
         atp_i(t) # Conserved
-        adp_i(t) = 0.13mM
+        adp_i(t) = 130μM
         atp_m(t) # Conserved
         adp_m(t) = 0.0058mM
         nad_m(t) # Conserved
-        nadh_m(t) = 9.26mM
+        nadh_m(t) = 100μM
         na_i(t) = 8.2143mM      # Cytoplasmic Na
         k_i(t) = 150.8mM        # Cytoplasmic K
         ca_i(t) = 5.8653e-5mM   # Cytoplasmic Ca
@@ -98,7 +98,7 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
     inaksys = get_inak_sys(; atp_i, adp_i, vm, na_i, na_o, k_o)
     tcassys = get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m, mg_m, use_mg)
     @unpack suc, fum, oaa, vSL, vIDH, vKGDH, vMDH = tcassys
-    etcsys = get_etc_sys(; h_i, h_m, DOX, MT_PROT, O2)
+    etcsys = get_etc_sys(; h_i, h_m, DOX, MT_PROT, O2, nad_m, nadh_m, suc, fum, oaa)
     c5sys = get_c5_sys(; dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT, mg_i, mg_m, use_mg)
     @unpack vROS, vNADHC1, vHres = etcsys
     rossys = get_ros_sys(; dpsi, sox_m, nadph_i, V_MITO_V_MYO)
@@ -127,7 +127,7 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
         D(ca_m) ~ δCA * (vUni - vNaCa),
         D(adp_i) ~ -V_MITO_V_MYO * vANT + vCK_mito + vAm + 0.5Jup + A_CAP_V_MYO_F * (IPMCA + INaK),
         D(adp_m) ~ vANT - vSL - vC5,
-        D(nadh_m) ~ -vNADHC1 + vIDH + vKGDH + vMDH,
+        D(nadh_m) ~ vNADHC1 + vIDH + vKGDH + vMDH,
         D(dpsi) ~ iCMito * (vHres - vHu - vANT - vHleak - vNaCa - 2vUni - vIMAC),
         D(sox_m) ~ vROS - vTrROS,
         ΣA_i ~ atp_i + adp_i,
