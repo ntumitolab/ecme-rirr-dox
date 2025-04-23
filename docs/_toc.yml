@@ -5,8 +5,8 @@ format: jb-book
 root: index
 chapters:
   - file: model-desc
-  - file: dox
   - file: u0
-  - file: irdamage
+  - file: dox
+  - file: hypoxia-reperfusion
   - file: enzflux
   - file: c1-test

@@ -1,4 +1,4 @@
-# # Ischemic reperfusion damage
+# # Hypoxia reperfusion simulation
 using ProgressLogging
 using OrdinaryDiffEq
 using ModelingToolkit
@@ -49,3 +49,9 @@ plot(pl_mmp, pl_vm, pl_atp, pl_cac, pl_q, pl_ros, size=(1200, 800)) |> PNG
 
 #---
 plot(sol, idxs=sys.nadh_m, title="NADH (mito)")
+
+#---
+plot(sol, idxs=[sys.vROSC1, sys.vROSC3])
+
+#---
+plot(sol, idxs=[sys.fes_ox, sys.fes_rd, sys.cytc_ox, sys.cytc_rd])
