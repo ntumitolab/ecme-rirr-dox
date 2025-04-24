@@ -61,8 +61,8 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m=8mM, mg_m=0.
         ### AAT (alanine aminotransferase)
         KF_AAT = 0.644Hz / mM
         KEQ_AAT = 6.6
+        K_ASP = 1.5e-3Hz
         GLU = 10mM        # Glutamate
-        ASP = GLU         # Aspartate
     end
 
     @variables begin
@@ -96,7 +96,7 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m=8mM, mg_m=0.
 
     v_idh = let
         vmax = KCAT_IDH * ET_IDH
-        a = NaNMath.pow(isoc / KM_ISOC_IDH, NI_ISOC_IDH) * (1 + adp_m / KM_ADP_IDH) * (1 + ca_m / KM_CA_IDH)
+        a = (isoc / KM_ISOC_IDH)^2 * (1 + adp_m / KM_ADP_IDH) * (1 + ca_m / KM_CA_IDH)
         b = nad_m / KM_NAD_IDH * hil(KI_NADH_IDH, nadh_m)
         h = 1 + h_m / KH1_IDH + KH2_IDH / h_m
         vmax * a * b / (h * a * b + a + b + 1)
@@ -105,7 +105,7 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m=8mM, mg_m=0.
     v_mdh = let
         vmax = KCAT_MDH * ET_MDH
         f_ha = K_OFFSET_MDH + hil(KH1_MDH * hil(KH2_MDH, h_m), h_m)
-        f_hi = hil(h_m * hil(h_m, KH4_MDH), KH3_MDH)^2
+        f_hi = (h_m^2 / (h_m^2 + KH3_MDH * (h_m + KH4_MDH)))^2
         f_oaa = hil(KI_OAA_MDH, oaa)
         f_mal = hil(mal * f_oaa, KM_MAL_MDH)
         f_nad = hil(nad_m, KM_NAD_MDH)
@@ -136,7 +136,7 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m=8mM, mg_m=0.
         vSL ~ v_sl,
         vFH ~ KF_FH * (fum - mal / KEQ_FH),
         vMDH ~ v_mdh,
-        vAAT ~ KF_AAT * (oaa * GLU - akg * ASP / KEQ_AAT),
+        vAAT ~ KF_AAT * oaa * GLU * hil(K_ASP * KEQ_AAT, akg * KF_AAT),
         D(isoc) ~ vACO - vIDH,
         D(akg) ~ vIDH - vKGDH + vAAT,
         D(scoa) ~ vKGDH - vSL,
