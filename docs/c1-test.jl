@@ -519,9 +519,14 @@ ys = stack(extract.(Ref(sim_b), [birb.N1ar_C1, birb.N3r_C1, birb.N2r_C1]), dims=
 plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["N1ar" "N3r" "N2r"], legend=:right)
 
 #---
+_em(em7, xr, xo) = em7 - 26.7 * log(xr / xo)
+ys = stack(extract.(Ref(sim_b), [ _em(-370, birb.N1ar_C1, birb.N1a_C1), _em(-250, birb.N3r_C1, birb.N3_C1), _em(-80, birb.N2r_C1, birb.N2_C1)]), dims=2)
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Redox potential (mV)", label=["N1ar" "N3r" "N2r"], legend=:right)
+
+#---
 @unpack FMN, FMN_NADH, FMNH_NAD, FMN_NAD, FMNH_NADH, FMNH, FMNsq = birb
-ys = stack(extract.(Ref(sim_b), [FMN, FMN_NADH, FMNH_NAD, FMN_NAD, FMNH_NADH, FMNH, FMNsq]), dims=2)
-plot(xs, ys, xlabel="MMP (mV)", ylabel="Conc (μM)", label=["FMN" "FMN_NADH" "FMNH_NAD" "FMN_NAD" "FMNH_NADH" "FMNH" "FMNsq"], legend=:right, lw=1.5)
+ys = stack(extract.(Ref(sim_b), [FMNH, FMNsq]), dims=2)
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Conc (μM)", label=["FMNH" "FMNsq"], legend=:right, lw=1.5)
 
 # ## Varying NADH
 nadhrange = 10μM:10μM:990μM
