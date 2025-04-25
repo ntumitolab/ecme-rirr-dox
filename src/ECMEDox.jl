@@ -31,7 +31,7 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
         MT_PROT = 1                 # OXPHOS protein content
         ΣA_m = 1.01mM               # Mitochondrial ATP + ADP pool (Gauthier-2013)
         ΣA_i = 8mM                  # Cytosolic ATP + ADP pool (Li-2015)
-        ΣNAD_m = 1mM                # Mitochondrial NAD + NADH pool # 1.0mM (Gauthier-2013)
+        ΣNAD_m = 3mM                # Mitochondrial NAD + NADH pool # 1.0mM (Gauthier-2013)
         ΣNADP_m = 0.1mM             # Mitochondrial NADP + NADPH pool (Gauthier-2013)
         iCM = inv(1μFcm⁻²)          # inverse of Plasma membrane capacitance
         iCMito = inv(1.812μM / mV)  # inverse of inner mitochondrial membrane capacitance

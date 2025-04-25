@@ -4,7 +4,7 @@ using ProgressLogging
 using OrdinaryDiffEq
 using ModelingToolkit
 using ECMEDox
-using ECMEDox: second, mM, Hz, μM, cm, μAcm⁻²
+using ECMEDox: second, mM, Hz, μM
 using Plots
 using DisplayAs: PNG
 
@@ -14,7 +14,7 @@ bcl = 1.0second
 u0 = build_u0(sys)
 sts = unknowns(sys)
 alg = TRBDF2()
-prob = ODEProblem(sys, u0, tend, [sys.KCAT_IDH => 40Hz])
+prob = ODEProblem(sys, u0, tend, [])
 @time sol = solve(prob, alg; reltol=1e-6, abstol=1e-6, progress=true)
 
 for i in sts

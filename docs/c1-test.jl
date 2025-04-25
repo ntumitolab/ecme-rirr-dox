@@ -470,11 +470,11 @@ birb = c1_birb(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
-prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.kf16_C1 => 0.001Hz / μM, markevich.kf17_C1 => 0.001Hz / μM / 50])
-prob_b = SteadyStateProblem(birb, [birb.ET_C1 => 17μM, birb.kf16_C1 => 0.001Hz / μM, birb.kf17_C1 => 0.001Hz / μM / 50])
+prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.kf16_C1 => 0.001Hz / μM, markevich.kf17_C1 => 0.001Hz / μM / 20])
+prob_b = SteadyStateProblem(birb, [birb.ET_C1 => 17μM, birb.kf16_C1 => 0.001Hz / μM, birb.kf17_C1 => 0.001Hz / μM / 20])
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(TRBDF2())
-ealg = EnsembleThreads()
+ealg = EnsembleSerial()
 
 # ## Varying MMP
 dpsirange = 100mV:5mV:200mV
@@ -589,6 +589,7 @@ eprob_b = EnsembleProblem(prob_b; prob_func=alter_qh2, safetycopy=false)
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(qh2range))
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(qh2range))
 @time sim_b = solve(eprob_b, alg, ealg; trajectories=length(qh2range))
+
 # QH2 vs NADH turnover
 xs = qh2range
 ys_g = extract(sim_g, gauthier.vNADH_C1)
