@@ -396,9 +396,9 @@ version = "1.9.1"
 
 [[deps.DiffEqBase]]
 deps = ["ArrayInterface", "ConcreteStructs", "DataStructures", "DocStringExtensions", "EnumX", "EnzymeCore", "FastBroadcast", "FastClosures", "FastPower", "FunctionWrappers", "FunctionWrappersWrappers", "LinearAlgebra", "Logging", "Markdown", "MuladdMacro", "Parameters", "PrecompileTools", "Printf", "RecursiveArrayTools", "Reexport", "SciMLBase", "SciMLOperators", "SciMLStructures", "Setfield", "Static", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface", "TruncatedStacktraces"]
-git-tree-sha1 = "c885dd6dd7d233860e2df010b416f63f14da81dd"
+git-tree-sha1 = "ae6f0576b4a99e1aab7fde7532efe7e47539b588"
 uuid = "2b5f629d-d688-5b77-993f-72d75c75574e"
-version = "6.170.0"
+version = "6.170.1"
 
     [deps.DiffEqBase.extensions]
     DiffEqBaseCUDAExt = "CUDA"
@@ -1948,9 +1948,9 @@ version = "0.6.12"
 
 [[deps.RecursiveArrayTools]]
 deps = ["Adapt", "ArrayInterface", "DocStringExtensions", "GPUArraysCore", "IteratorInterfaceExtensions", "LinearAlgebra", "RecipesBase", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface", "Tables"]
-git-tree-sha1 = "ccc40aee102e101031102cfe92e66201720ed124"
+git-tree-sha1 = "2e154f7d7e38db1af0a14ec751aba33360c3bef9"
 uuid = "731186ca-8d62-57ce-b412-fbd966d074cd"
-version = "3.32.1"
+version = "3.33.0"
 
     [deps.RecursiveArrayTools.extensions]
     RecursiveArrayToolsFastBroadcastExt = "FastBroadcast"
