@@ -4,7 +4,7 @@ using OrdinaryDiffEq
 using ModelingToolkit
 using DiffEqCallbacks
 using ECMEDox
-using ECMEDox: second, Hz, μM
+using ECMEDox: second, Hz, μM, nM
 using Plots
 using DisplayAs: PNG
 Plots.default(lw=1.5)

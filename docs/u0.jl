@@ -4,7 +4,7 @@ using ProgressLogging
 using OrdinaryDiffEq
 using ModelingToolkit
 using ECMEDox
-using ECMEDox: second, mM, Hz, μM, cm, μAcm⁻²
+using ECMEDox: second, mM, Hz, μM
 using Plots
 using DisplayAs: PNG
 
