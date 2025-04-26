@@ -9,8 +9,10 @@ using Plots
 using ECMEDox
 using ECMEDox: mM, μM, iVT, mV, Molar, Hz, ms
 
-# From Markevich, 2015
-# https://pmc.ncbi.nlm.nih.gov/articles/PMC4426091/
+# Boltzmann factor
+_bf(x) = exp(iVT * x)
+
+# Markevich 2015 model https://pmc.ncbi.nlm.nih.gov/articles/PMC4426091/
 function c1_markevich_full(; name=:c1markevich_full,
     Q_n=1.8mM, QH2_n=0.2mM,
     nad=500μM, nadh=500μM,
@@ -160,7 +162,7 @@ function c1_markevich_full(; name=:c1markevich_full,
 end
 
 # Simplified Markevich model
-# QSSA for the catalytic cycle in the flavin (FMN) site
+# QSSA for the catalytic cycles in the flavin and the quinone sites
 function c1_birb(; name=:c1birb,
     Q_n=1.8mM, QH2_n=0.2mM,
     nad=500μM, nadh=500μM,
@@ -367,6 +369,64 @@ function c1_birb(; name=:c1birb,
     ]
     return ODESystem([eqsf; eqsq; eqs], t; name)
 end
+
+# 5-state complex I model
+# Somewhat similar to Bazil's model
+function c1_5states(; name=:c15state,
+    Q_n=1.8mM, QH2_n=0.2mM,
+    nad=500μM, nadh=500μM,
+    dpsi=150mV, O2=6μM, sox_m=0.001μM,
+    h_i=exp10(-7) * Molar, h_m=exp10(-7.6) * Molar,
+    DOX=0μM, ROTENONE_BLOCK=0)
+
+    @parameters begin
+        ET_C1 = 17μM                ## Activity of complex I
+        Em_O2_SOX = -160mV          ## O2/Superoxide redox potential
+        Em_FMN_FMNsq = -387mV       ## FMN/FMNH- avg redox potential
+        Em_FMNsq_FMNH = -293mV      ## FMN semiquinone/FMNH- redox potential
+        Em_FMN_FMNH = -340mV        ## FMN/FMNH- avg redox potential
+        Em_NAD = -320mV             ## NAD/NADH avg redox potential
+        Em_N3 = -250mV              ## FeS N3 redox potential
+        Em_N2 = -80mV               ## FeS N2 redox potential
+        Em_N1a = -370mV             ## FeS N1a redox potential
+        Em_Q = +100mV               ## Q/QH2 avg redox potential
+        kf_NADH_C1 = 1Hz / μM
+        kf_Q_C1 = 10Hz / μM
+        kf_O2_C1 = 1e-3Hz / μM
+        ## Equlibrium constants
+        KrEQ_FMN_NAD_C1 = _bf(-2 * (Em_FMN_FMNH - Em_NAD))
+        KrEQ_SOX_C1 = _bf(Em_FMNsq_FMNH - Em_O2_SOX)
+        KEQ_F1N0_F0N1 = _bf(Em_N2 - Em_FMN_FMNsq)
+    end
+
+    @variables begin
+        C1_0(t) ## Conserved
+        C1_1(t) = 0
+        C1_2(t) = 0
+        C1_3(t) = 0
+        C1_4(t) = 0
+        F0N0(t) ## FMN_N1a_N2
+        F1N0(t) ## FMNsq_N1a_N2
+        F0N1(t) ## FMN_N1a_N2r
+        F0N2(t) ## FMN_N1ar_N2r
+        F1N1(t) ## FMNsq_N1a_N2r
+        F2N0(t) ## FMNH2_N1a_N2
+        F1N2(t) ## FMNsq_N1ar_N2r
+        F2N1(t) ## FMNH2_N1a_N2r
+        F2N2(t) ## FMNH2_N1ar_N2r
+        KrEQ_N_Q_C1(t)
+    end
+
+    eqs = [
+        ET_C1 ~ C1_0 + C1_1 + C1_2 + C1_3 + C1_4,
+        F0N0 ~ C1_0,
+        F2N2 ~ C1_4,
+        KrEQ_N_Q_C1 ~ _bf(-2Em_Q + Em_N2 + Em_N1a + 4dpsi) * (h_i / h_m)^4,
+    ]
+
+    return ODESystem(eqs, t; name)
+end
+
 
 # From Gauthier 2012
 function c1_gauthier(; name=:c1gauthier,
