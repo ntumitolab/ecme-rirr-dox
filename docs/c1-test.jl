@@ -367,9 +367,8 @@ function c1_birb(; name=:c1birb,
     return ODESystem([eqsf; eqsq; eqs], t; name)
 end
 
-# 5-state complex I model
-# Somewhat similar to Bazil's model
-function c1_5states(; name=:c15state,
+# 6-state complex I model
+function c1_6states(; name=:c1_6state,
     Q_n=1.8mM, QH2_n=0.2mM,
     nad=500μM, nadh=500μM,
     dpsi=150mV, O2=6μM, sox_m=0.001μM,
@@ -387,111 +386,41 @@ function c1_5states(; name=:c15state,
         Em_N2 = -80mV               ## FeS N2 redox potential
         Em_N1a = -370mV             ## FeS N1a redox potential
         Em_Q = +100mV               ## Q/QH2 avg redox potential
-        kf_NADH_C1 = 10Hz / μM       ## NADH oxidation rate constant
-        kf_Q_C1 = 1Hz / μM         ## Q reduction rate constant
+        Em_Q_SQ_C1 = -300mV         ## -213mV in Markevich, 2015
+        Em_SQ_QH2_C1 = +500mV       ## 800mV (?) in Markevich, 2015
+        kf_NADH_C1 = 10Hz / μM      ## NADH oxidation rate constant
+        kf_Q_C1 = 10Hz / μM         ## Q binding and reduction rate constant
+        kf_QH2_C1 = 1000Hz          ## QH2 rate constant
         kf_O2_C1 = 1e-3Hz / μM      ## O2 reduction rate constant
+        KA_Q_C1 = 0.1 / μM
+        KD_QH2_C1 = 20μM
         ## NAD + FMNH2 = NADH + FMN
-        KrEQ_NADH_C1 = exp(-2iVT * (Em_FMN_FMNH - Em_NAD))
+        KEQ_F0F2 = exp(2iVT * (Em_FMN_FMNH - Em_NAD))
         ## SOX + FMNsq = O2 + FMNH2
-        KrEQ_SOX_C1 = exp(iVT * (Em_FMNsq_FMNH - Em_O2_SOX))
-        ## FMNsq + N2 = FMN + N2r
-        KEQ_F1_N2 = exp(iVT * (Em_N2 - Em_FMN_FMNsq))
-        ## FMNsq + N3 = FMN + N3r
-        KEQ_F1_N3 = exp(iVT * (Em_N3 - Em_FMN_FMNsq))
-        ## FMNH2 + N2 = FMNsq + N2r
-        KEQ_F2_N2 = exp(iVT * (Em_N2 - Em_FMNsq_FMNH))
-        ## FMNH2 + N3 = FMNsq + N3r
-        KEQ_F2_N3 = exp(iVT * (Em_N3 - Em_FMNsq_FMNH))
-        ## FMNH2 + N3N2 = FMN + N3rN2r
-        KEQ_F2_N2N3 = exp(iVT * (Em_N2 + Em_N3 - 2Em_FMN_FMNH))
-        ## N3r + N2 = N3 + N2r
-        KEQ_N3r_N2 = exp(iVT * (Em_N2 - Em_N3))
+        KEQ_O2_C1 = exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
+        KEQ_F2Q0_F1Q1 = exp(iVT * (Em_Q_SQ_C1 - Em_FMNsq_FMNH)) / KA_Q_C1
+        KEQ_F1Q0_F0Q1 = exp(iVT * (Em_Q_SQ_C1 - Em_FMN_FMNsq)) / KA_Q_C1
     end
 
     @variables begin
         KrEQ_Q_C1(t)
         ## Electron(s) in complex I
-        C1_0(t) ## Conserved
-        C1_1(t) = 0
-        C1_2(t) = 0
-        C1_3(t) = 0
-        C1_4(t) = 0
-        ## Electron(s) on FMN/N3/N2
-        I000(t)
-        I100(t)
-        I010(t)
-        I001(t)
-        I200(t)
-        I110(t)
-        I101(t)
-        I011(t)
-        I210(t)
-        I201(t)
-        I111(t)
-        I211(t)
-        TN_C1(t)
-        vNADH_C1(t)
-        vQ_C1(t)
-        vROS_C1(t)
-        I_FMN(t)
-        I_FMNsq(t)
-        I_FMNH2(t)
-        I_N3(t)
-        I_N3r(t)
-        I_N2(t)
-        I_N2r(t)
+        F0Q0(t) ## Conserved
+        F1Q0(t) = 0
+        F2Q0(t) = 0
+        F0Q1(t) = 0
+        F1Q1(t) = 0
+        F2Q1(t) = 0
     end
 
-    w000 = 1
-    den1 = 1 / (1 + KEQ_F1_N2 + KEQ_F1_N3)
-    w100 = den1 ## 1e-5
-    w010 = KEQ_F1_N3 * den1 ## 1.7e-3
-    w001 = KEQ_F1_N2 * den1  ## 0.9983
-    den2 = 1 / (1 + KEQ_F2_N2 + KEQ_F2_N3 + KEQ_F2_N2N3)
-    w200 = den2 ## 2e-6
-    w110 = KEQ_F2_N3 * den2 ## 1e-5
-    w101 = KEQ_F2_N2 * den2 ## 6e-3
-    w011 = KEQ_F2_N2N3 * den2 ## 0.994
-    den3 = 1 /(1 + KEQ_N3r_N2 + KEQ_F2_N2)
-    w210 = den3 ## 3e-4
-    w201 = KEQ_N3r_N2 * den3 ## 0.166
-    w111 = KEQ_F2_N2 * den3 ## 0.833
-    w211 = 1
-
-    ## NADH oxidation: I0xy + NADH = I2xy + NAD
-    kfN = kf_NADH_C1 * nadh
-    krN = kf_NADH_C1 * nad * KrEQ_NADH_C1
-    v000_200 = kfN * I000 - krN * I200
-    v010_210 = kfN * I010 - krN * I210
-    v001_201 = kfN * I001 - krN * I201
-    v011_211 = kfN * I011 - krN * I211
-
-    ## Q reduction: Ix11 + Q = Ix00 + QH2
-    fhm = h_m * inv(1E-7Molar)
-    kfQ = kf_Q_C1 * Q_n * fhm^2
-    krQ = kf_Q_C1 * QH2_n * KrEQ_Q_C1
-    v011_000 = kfQ * I011 - krQ * I000
-    v111_100 = kfQ * I111 - krQ * I100
-    v211_200 = kfQ * I211 - krQ * I200
-
-    ## Superoxide production: I2xy + O2 = I1xy + O2-
-    kfO = kf_O2_C1 * O2
-    krO = kf_O2_C1 * sox_m * KrEQ_SOX_C1
-    v200_100 = kfO * I200 - krO * I100
-    v210_110 = kfO * I210 - krO * I110
-    v201_101 = kfO * I201 - krO * I101
-    v211_111 = kfO * I211 - krO * I111
-
-    ## State transition rates
-    v02 = v000_200
-    v20 = v011_000
-    v13 = v010_210 + v001_201
-    v31 = v111_100
-    v24 = v011_211
-    v42 = v211_200
-    v21 = v200_100
-    v32 = v210_110 + v201_101
-    v43 = v211_111
+    ## NADH oxidation
+    v00_20 = kf_NADH_C1 * (F0Q0 * nadh - F2Q0 * nad / KEQ_F0F2)
+    v01_21 = kf_NADH_C1 * (F0Q1 * nadh - F2Q1 * nad / KEQ_F0F2)
+    ## Q binding and first electron transfer
+    v20_11 = kf_Q_C1 * (F2Q0 * Q_n - F1Q1 / KEQ_F2Q0_F1Q1)
+    v10_01 = kf_Q_C1 * (F1Q0 * Q_n - F0Q1 / KEQ_F1Q0_F0Q1)
+    ## Second electron transfer
+    v11_00 = kf_QH2_C1 * (F1Q1 - F0Q0 / KD_QH2_C1)
 
     eqs = [
         ET_C1 ~ C1_0 + C1_1 + C1_2 + C1_3 + C1_4,
