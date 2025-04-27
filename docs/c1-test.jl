@@ -9,9 +9,6 @@ using Plots
 using ECMEDox
 using ECMEDox: mM, μM, iVT, mV, Molar, Hz, ms
 
-# Boltzmann factor
-_bf(x) = exp(iVT * x)
-
 # Markevich 2015 model https://pmc.ncbi.nlm.nih.gov/articles/PMC4426091/
 function c1_markevich_full(; name=:c1markevich_full,
     Q_n=1.8mM, QH2_n=0.2mM,
@@ -394,9 +391,10 @@ function c1_5states(; name=:c15state,
         kf_Q_C1 = 10Hz / μM
         kf_O2_C1 = 1e-3Hz / μM
         ## Equlibrium constants
-        KrEQ_FMN_NAD_C1 = _bf(-2 * (Em_FMN_FMNH - Em_NAD))
-        KrEQ_SOX_C1 = _bf(Em_FMNsq_FMNH - Em_O2_SOX)
-        KEQ_F1N0_F0N1 = _bf(Em_N2 - Em_FMN_FMNsq)
+        KrEQ_NADH_C1 = exp(-2iVT * (Em_FMN_FMNH - Em_NAD))
+        KrEQ_SOX_C1 = exp(iVT * (Em_FMNsq_FMNH - Em_O2_SOX))
+        KEQ_FMNsq_N2 = exp(iVT * (Em_N2 - Em_FMN_FMNsq))
+        KEQ_FMNsq_N3 = exp(iVT * (Em_N3 - Em_FMN_FMNsq))
     end
 
     @variables begin
@@ -414,14 +412,14 @@ function c1_5states(; name=:c15state,
         F1N2(t) ## FMNsq_N1ar_N2r
         F2N1(t) ## FMNH2_N1a_N2r
         F2N2(t) ## FMNH2_N1ar_N2r
-        KrEQ_N_Q_C1(t)
+        KrEQ_Q_C1(t)
     end
 
     eqs = [
         ET_C1 ~ C1_0 + C1_1 + C1_2 + C1_3 + C1_4,
         F0N0 ~ C1_0,
         F2N2 ~ C1_4,
-        KrEQ_N_Q_C1 ~ _bf(-2Em_Q + Em_N2 + Em_N1a + 4dpsi) * (h_i / h_m)^4,
+        KrEQ_Q_C1 ~ exp(-iVT * (2Em_Q - Em_N2 - Em_N3 - 4dpsi)) * (h_i / h_m)^4,
     ]
 
     return ODESystem(eqs, t; name)
