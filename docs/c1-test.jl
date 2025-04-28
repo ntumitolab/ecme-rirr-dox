@@ -140,6 +140,7 @@ function c1_markevich_full(; name=:c1markevich_full,
         KEQ9_C1 = exp(iVT * (Em_Q_SQ_C1 - Em_N2))
         kf10_C1 = 2e6Hz / μM
         KEQ10_C1 = exp(iVT * (Em_N1a - Em_FMN_FMNsq))
+        KEQ10B_C1 = exp(iVT * (Em_FMNsq_FMNH - Em_N1a))
         kf11_C1 = 1e9Hz / μM
         KEQ11_C1 = exp(iVT * (Em_N3 - Em_FMN_FMNsq))
         kf13_C1 = 2.7e6Hz / μM
@@ -202,6 +203,8 @@ function c1_markevich_full(; name=:c1markevich_full,
     v9 = kf9_C1 * (Q_C1 * N2r_C1 - SQ_C1 * N2_C1 / KEQ9_C1)
     ## FMNHsq + N1a = FMN + N1a− + Hi+
     v10 = kf10_C1 * (FMNsq * N1a_C1 - FMN * N1ar_C1 * fhm / KEQ10_C1)
+    ## FMNsq + N1a− = FMNH- + N1a
+    v10b = kf10_C1 * (FMNsq * N1ar_C1 - FMNH * N1a_C1 / KEQ10B_C1)
     ## FMNHsq + N3 = FMN + N3− + Hi+
     v11 = kf11_C1 * (FMNsq * N3_C1 - FMN * N3r_C1 * fhm / KEQ11_C1)
     ## N2 + N3− = N2− + N3
@@ -226,9 +229,9 @@ function c1_markevich_full(; name=:c1markevich_full,
         D(FMNH_NAD) ~ v2 - v3,
         D(FMN_NAD) ~ v4,
         D(FMNH_NADH) ~ v5,
-        D(FMNH) ~ v3 - v5 - v16 - v6,
-        D(FMNsq) ~ v6 + v16 - v10 - v11,
-        D(N1ar_C1) ~ v10,
+        D(FMNH) ~ v3 - v5 - v16 - v6 + v10b,
+        D(FMNsq) ~ v6 + v16 - v10 - v11 - v10b,
+        D(N1ar_C1) ~ v10 - v10b,
         D(N3r_C1) ~ v6 + v11 - v7 - v12,
         D(N2r_C1) ~ v7 + v12 - v9 - v13,
         D(Q_C1) ~ v8 - v9 + v17,
@@ -236,8 +239,8 @@ function c1_markevich_full(; name=:c1markevich_full,
         D(QH2_C1) ~ v13 - v14,
 
         ## Positive: production; negative: consumption
-        vNADH_C1 ~ -v1,
-        vNAD_C1 ~ v3,
+        vNADH_C1 ~ -(v1 + v5),
+        vNAD_C1 ~ v3 - v4,
         vQ_C1 ~ -v8,
         vQH2_C1 ~ v14,
         vROSIf ~ v16,
@@ -270,7 +273,7 @@ function c1_6states(; name=:c1_6state,
         Em_SQ_QH2_C1 = +500mV       ## 800mV (?) in Markevich, 2015
         kf_NADH_C1 = 83Hz / μM      ## NADH oxidation rate constant
         kf_Q_C1 = 10Hz / μM         ## Q binding and reduction rate constant
-        kf_QH2_C1 = 1000Hz          ## QH2 rate constant
+        kf_QH2_C1 = 2000Hz          ## QH2 rate constant
         kf_O2_C1 = 1e-3Hz / μM      ## O2 reduction rate constant
         KA_Q_C1 = 0.1 / μM
         KD_QH2_C1 = 20μM
@@ -278,7 +281,9 @@ function c1_6states(; name=:c1_6state,
         KEQ_F0F2 = exp(2iVT * (Em_FMN_FMNH - Em_NAD))
         ## SOX + FMNsq = O2 + FMNH2
         KEQ_O2_C1 = exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
+        ## FMNH2 + Q = FMNsq + SQ
         KEQ_F2Q0_F1Q1 = exp(iVT * (Em_Q_SQ_C1 - Em_FMNsq_FMNH))
+        ## FMNsq + Q = FMN + SQ
         KEQ_F1Q0_F0Q1 = exp(iVT * (Em_Q_SQ_C1 - Em_FMN_FMNsq))
     end
 
@@ -293,6 +298,7 @@ function c1_6states(; name=:c1_6state,
         KEQ_F1Q1_F0Q0(t)
         KEQ_F2Q1_F1Q0(t)
         vQ_C1(t)
+        vQH2_C1(t)
         vROS_C1(t)
         vNADH_C1(t)
         TN_C1(t)
@@ -341,24 +347,24 @@ end
 end
 
 #---
-five = c1_5states(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
+six = c1_6states(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
-prob_5 = SteadyStateProblem(five, [five.ET_C1 => 17μM, five.kf_NADH_C1 => 10Hz / μM, five.kf_Q_C1 => 10Hz / μM])
+prob_6 = SteadyStateProblem(six, [six.ET_C1 => 17μM, six.kf_NADH_C1 => 83Hz / μM, ])
 prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.kf16_C1 => 0.001Hz / μM, markevich.kf17_C1 => 0.001Hz / μM / 20])
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(Rodas5P())
-ealg = EnsembleSerial()
+ealg = EnsembleThreads()
 
 # ## Varying MMP
 dpsirange = 100mV:5mV:200mV
 alter_dpsi = (prob, i, repeat) -> remake(prob, p=[dpsi => dpsirange[i]])
 
-eprob_5 = EnsembleProblem(prob_5; prob_func=alter_dpsi, safetycopy=false)
+eprob_6 = EnsembleProblem(prob_6; prob_func=alter_dpsi, safetycopy=false)
 eprob_m = EnsembleProblem(prob_m; prob_func=alter_dpsi, safetycopy=false)
 eprob_g = EnsembleProblem(prob_g; prob_func=alter_dpsi, safetycopy=false)
-@time sim_5 = solve(eprob_5, alg, ealg; trajectories=length(dpsirange), abstol=1e-6, reltol=1e-6)
+@time sim_6 = solve(eprob_6, alg, ealg; trajectories=length(dpsirange), abstol=1e-6, reltol=1e-6)
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(dpsirange))
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(dpsirange))
 
@@ -367,26 +373,19 @@ extract(sim, k) = map(s -> s[k], sim)
 # MMP vs NADH turnover
 # markevich model has a steeper dependence
 xs = dpsirange
-ys_5 = extract(sim_5, five.vNADH_C1)
-ys_g = extract(sim_g, gauthier.vNADH_C1)
-ys_m = extract(sim_m, markevich.vNADH_C1)
+ys = hcat(extract(sim_g, gauthier.vNADH_C1), extract(sim_m, markevich.vNADH_C1), extract(sim_6, six.vNADH_C1))
 
-plot(xs, [ys_g ys_m ys_5], xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", label=["Gauthier" "Markevich" "Birb" "Five"])
+plot(xs, ys, xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", label=["Gauthier" "Markevich" "Six"])
 
 #---
-ys = stack(extract.(Ref(sim_5), [five.C1_0, five.C1_1, five.C1_2, five.C1_3, five.C1_4]), dims=2)
-plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["C1_0" "C1_1" "C1_2" "C1_3" "C1_4"], legend=:right)
-
-#---
-ys = stack(extract.(Ref(sim_5), [five.I_FMN, five.I_FMNsq, five.I_FMNH2, five.I_N3r, five.I_N2r]), dims=2)
-plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH2" "N3r" "N2r"], legend=:right)
-
+ys = stack(extract.(Ref(sim_6), [six.F0Q0, six.F1Q0, six.F2Q0, six.F0Q1, six.F1Q1, six.F2Q1]), dims=2)
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["F0Q0" "F1Q0" "F2Q0" "F0Q1" "F1Q1" "F2Q1"], legend=:right)
 
 # MMP vs ROS production
 xs = dpsirange
 ys_g = extract(sim_g, gauthier.vROS_C1) .* 1000
 ys_m = extract(sim_m, markevich.vROS_C1) .* 1000
-plot(xs, [ys_g ys_m ys_b], xlabel="MMP (mV)", ylabel="ROS production (μM/s)", label=["Gauthier" "Markevich" "Birb"])
+plot(xs, [ys_g ys_m], xlabel="MMP (mV)", ylabel="ROS production (μM/s)", label=["Gauthier" "Markevich"])
 
 # ## Varying NADH
 nadhrange = 10μM:10μM:990μM
@@ -406,6 +405,7 @@ ys_m = extract(sim_m, markevich.vNADH_C1)
 plot(xs, [ys_g ys_m], xlabel="NADH (μM)", ylabel="NADH consumption (μM/ms)", label=["Gauthier" "Markevich" ])
 
 # NADH vs ROS production
+# Markevich's model is more sensitive
 xs = nadhrange
 ys = [extract(sim_g, gauthier.vROS_C1) extract(sim_m, markevich.vROS_C1)]
 
