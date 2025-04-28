@@ -266,10 +266,9 @@ function c1_6states(; name=:c1_6state,
         Em_N3 = -250mV              ## FeS N3 redox potential
         Em_N2 = -80mV               ## FeS N2 redox potential
         Em_N1a = -370mV             ## FeS N1a redox potential
-        Em_Q = +100mV               ## Q/QH2 avg redox potential
         Em_Q_SQ_C1 = -300mV         ## -213mV in Markevich, 2015
         Em_SQ_QH2_C1 = +500mV       ## 800mV (?) in Markevich, 2015
-        kf_NADH_C1 = 10Hz / μM      ## NADH oxidation rate constant
+        kf_NADH_C1 = 83Hz / μM      ## NADH oxidation rate constant
         kf_Q_C1 = 10Hz / μM         ## Q binding and reduction rate constant
         kf_QH2_C1 = 1000Hz          ## QH2 rate constant
         kf_O2_C1 = 1e-3Hz / μM      ## O2 reduction rate constant
@@ -279,12 +278,11 @@ function c1_6states(; name=:c1_6state,
         KEQ_F0F2 = exp(2iVT * (Em_FMN_FMNH - Em_NAD))
         ## SOX + FMNsq = O2 + FMNH2
         KEQ_O2_C1 = exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
-        KEQ_F2Q0_F1Q1 = exp(iVT * (Em_Q_SQ_C1 - Em_FMNsq_FMNH)) / KA_Q_C1
-        KEQ_F1Q0_F0Q1 = exp(iVT * (Em_Q_SQ_C1 - Em_FMN_FMNsq)) / KA_Q_C1
+        KEQ_F2Q0_F1Q1 = exp(iVT * (Em_Q_SQ_C1 - Em_FMNsq_FMNH))
+        KEQ_F1Q0_F0Q1 = exp(iVT * (Em_Q_SQ_C1 - Em_FMN_FMNsq))
     end
 
     @variables begin
-        KrEQ_Q_C1(t)
         ## Electron(s) in complex I
         F0Q0(t) ## Conserved
         F1Q0(t) = 0
@@ -292,47 +290,43 @@ function c1_6states(; name=:c1_6state,
         F0Q1(t) = 0
         F1Q1(t) = 0
         F2Q1(t) = 0
+        KEQ_F1Q1_F0Q0(t)
+        KEQ_F2Q1_F1Q0(t)
+        vQ_C1(t)
+        vROS_C1(t)
+        vNADH_C1(t)
+        TN_C1(t)
     end
+
+    fhm = h_m * inv(1E-7Molar)
 
     ## NADH oxidation
     v00_20 = kf_NADH_C1 * (F0Q0 * nadh - F2Q0 * nad / KEQ_F0F2)
     v01_21 = kf_NADH_C1 * (F0Q1 * nadh - F2Q1 * nad / KEQ_F0F2)
     ## Q binding and first electron transfer
-    v20_11 = kf_Q_C1 * (F2Q0 * Q_n - F1Q1 / KEQ_F2Q0_F1Q1)
-    v10_01 = kf_Q_C1 * (F1Q0 * Q_n - F0Q1 / KEQ_F1Q0_F0Q1)
+    v20_11 = kf_Q_C1 * (F2Q0 * Q_n - F1Q1 / KEQ_F2Q0_F1Q1 / KA_Q_C1)
+    v10_01 = kf_Q_C1 * (F1Q0 * Q_n - F0Q1 / KEQ_F1Q0_F0Q1 / KA_Q_C1)
     ## Second electron transfer
-    v11_00 = kf_QH2_C1 * (F1Q1 - F0Q0 / KD_QH2_C1)
+    qh2 = QH2_n / KD_QH2_C1
+    v11_00 = kf_QH2_C1 * (F1Q1 * fhm^2 - F0Q0 * qh2 / KEQ_F1Q1_F0Q0)
+    v21_10 = kf_QH2_C1 * (F2Q1 * fhm^2 - F1Q0 * qh2 / KEQ_F2Q1_F1Q0)
+    ## ROS generation
+    v20_10 = kf_O2_C1 * (F2Q0 * O2 - F1Q0 * sox_m / KEQ_O2_C1)
+    v21_11 = kf_O2_C1 * (F2Q1 * O2 - F1Q1 * sox_m / KEQ_O2_C1)
 
     eqs = [
-        ET_C1 ~ C1_0 + C1_1 + C1_2 + C1_3 + C1_4,
-        I000 ~ C1_0 * w000,
-        I100 ~ C1_1 * w100,
-        I010 ~ C1_1 * w010,
-        I001 ~ C1_1 * w001,
-        I200 ~ C1_2 * w200,
-        I110 ~ C1_2 * w110,
-        I101 ~ C1_2 * w101,
-        I011 ~ C1_2 * w011,
-        I210 ~ C1_3 * w210,
-        I201 ~ C1_3 * w201,
-        I111 ~ C1_3 * w111,
-        I211 ~ C1_4 * w211,
-        KrEQ_Q_C1 ~ exp(-iVT * (2Em_Q - Em_N2 - Em_N3 - 4dpsi)) * (h_i / h_m)^4,
-        D(C1_1) ~ -v13 + v31 + v21,
-        D(C1_2) ~ v02 - v20 - v24 + v42 - v21 + v32,
-        D(C1_3) ~ v13 - v31 - v32 + v43,
-        D(C1_4) ~ v24 - v42 - v43,
-        vNADH_C1 ~ -(v02 + v13 + v24),
-        vQ_C1 ~ -(v20 + v31 + v42),
-        vROS_C1 ~ v21 + v32 + v43,
-        TN_C1 ~ vNADH_C1 / ET_C1,
-        I_FMN ~ I000 + I010 + I001 + I011,
-        I_FMNsq ~ I100 + I110 + I101 + I111,
-        I_FMNH2 ~ I200 + I210 + I201 + I211,
-        I_N2 ~ ET_C1 - I_N2r,
-        I_N2r ~ I001 + I101 + I011 + I201 + I111 + I211,
-        I_N3 ~ ET_C1 - I_N3r,
-        I_N3r ~ I010 + I110 + I011 + I210 + I111 + I211,
+        KEQ_F1Q1_F0Q0 ~ exp(iVT * (Em_SQ_QH2_C1 - Em_FMN_FMNsq - 4dpsi)) * (h_m / h_i)^4,
+        KEQ_F2Q1_F1Q0 ~ exp(iVT * (Em_SQ_QH2_C1 - Em_FMNsq_FMNH - 4dpsi)) * (h_m / h_i)^4,
+        ET_C1 ~ F0Q0 + F1Q0 + F2Q0 + F0Q1 + F1Q1 + F2Q1,
+        D(F1Q0) ~ v20_10 + v21_10 - v10_01,
+        D(F2Q0) ~ v00_20 - v20_10 - v20_11,
+        D(F0Q1) ~ v10_01 - v01_21,
+        D(F1Q1) ~ v20_11 + v21_11 - v11_00,
+        D(F2Q1) ~ v01_21 - v21_10 - v21_11,
+        vQ_C1 ~ -(v10_01 + v20_11),
+        vQH2_C1 ~ v11_00 + v21_10,
+        vNADH_C1 ~ -(v00_20 + v01_21),
+        vROS_C1 ~ v20_10 + v21_11,
     ]
     return ODESystem(eqs, t; name)
 end
