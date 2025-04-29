@@ -328,70 +328,70 @@ function c1_5state(; name=:c1_5state,
         TN_C1(t)
     end
 
-    fhm = h_m * inv(1E-7Molar)
-
     ## NADH oxidation: F0 + NADH = F2 + NAD
-    v00_20 = kf_NADH_C1 * (F0N0 * nadh - F2N0 * nad / KEQ_F0F2)
-    v000_200 = kf_NADH_C1 * (F0N0Q0 * nadh - F2N0Q0 * nad / KEQ_F0F2)
-    v01_21 = kf_NADH_C1 * (F0N1 * nadh - F2N1 * nad / KEQ_F0F2)
-    v010_210 = kf_NADH_C1 * (F0N1Q0 * nadh - F2N1Q0 * nad / KEQ_F0F2)
-    v001_201 = kf_NADH_C1 * (F0N0Q1 * nadh - F2N0Q1 * nad / KEQ_F0F2)
-    v011_211 = kf_NADH_C1 * (F0N1Q1 * nadh - F2N1Q1 * nad / KEQ_F0F2)
+    fnad = nad / KEQ_F0F2
+    v00_20 = kf_NADH_C1 * (F0N0 * nadh - F2N0 * fnad)
+    v000_200 = kf_NADH_C1 * (F0N0Q0 * nadh - F2N0Q0 * fnad)
+    v01_21 = kf_NADH_C1 * (F0N1 * nadh - F2N1 * fnad)
+    v010_210 = kf_NADH_C1 * (F0N1Q0 * nadh - F2N1Q0 * fnad)
+    v001_201 = kf_NADH_C1 * (F0N0Q1 * nadh - F2N0Q1 * fnad)
+    v011_211 = kf_NADH_C1 * (F0N1Q1 * nadh - F2N1Q1 * fnad)
 
     ## Second electron transfer: N1Q1 + 6Hi = N0Q0 + QH2 + 4Ho
-    qh2 = QH2_n / KD_QH2_C1
-    v011_000 = kf_QH2_C1 * (F0N1Q1 * fhm^2 - F0N0Q0 * qh2 / KEQ_N1Q1_N0Q0)
-    v111_100 = kf_QH2_C1 * (F1N1Q1 * fhm^2 - F1N0Q0 * qh2 / KEQ_N1Q1_N0Q0)
-    v211_200 = kf_QH2_C1 * (F2N1Q1 * fhm^2 - F2N0Q0 * qh2 / KEQ_N1Q1_N0Q0)
+    fhm = h_m * inv(1E-7Molar)
+    qh2 = QH2_n / KD_QH2_C1 / KEQ_N1Q1_N0Q0
+    v011_000 = kf_QH2_C1 * (F0N1Q1 * fhm^2 - F0N0Q0 * qh2)
+    v111_100 = kf_QH2_C1 * (F1N1Q1 * fhm^2 - F1N0Q0 * qh2)
+    v211_200 = kf_QH2_C1 * (F2N1Q1 * fhm^2 - F2N0Q0 * qh2)
 
     v02 = v00_20 + v000_200
-    v20 = v011_000
     v13 = v01_21 + v010_210 + v001_201
-    v31 = v111_100
     v24 = v011_211
+    v20 = v011_000
+    v31 = v111_100
     v42 = v211_200
 
     ## State weights
     q = Q_n / KD_Q_C1
     wF0N0 = 1
-    wF0N0Q0 = q
+    wF0N0Q0 = q * wF0N0
     den0 = wF0N0 + wF0N0Q0
     wF1N0 = 1
-    wF0N1 = KEQ_F1N0_F0N1
-    wF1N0Q0 = q
+    wF0N1 = wF1N0 * KEQ_F1N0_F0N1
+    wF1N0Q0 = q * wF1N0
     wF0N1Q0 = q * wF0N1
     wF0N0Q1 = wF0N1Q0 * KEQ_N1Q0_N0Q1
     den1 = wF1N0 + wF0N1 + wF1N0Q0 + wF0N1Q0 + wF0N0Q1
     wF2N0 = 1
-    wF1N1 = KEQ_F2N0_F1N1
-    wF2N0Q0 = q
+    wF1N1 = wF2N0 * KEQ_F2N0_F1N1
+    wF2N0Q0 = q * wF2N0
     wF1N1Q0 = q * wF1N1
-    wF0N1Q1 = q * KEQ_N1Q0_N0Q1 * KEQ_F1N0_F0N1
+    wF0N1Q1 = wF1N1Q0 * KEQ_N1Q0_N0Q1 * KEQ_F1N0_F0N1
     den2 = wF2N0 + wF1N1 + wF2N0Q0 + wF1N1Q0 + wF0N1Q1
     wF2N1 = 1
-    wF2N1Q0 = q
-    wF2N0Q1 = q * KEQ_N1Q0_N0Q1
+    wF2N1Q0 = q * wF2N1
+    wF2N0Q1 = wF2N1Q0 * KEQ_N1Q0_N0Q1
     wF1N1Q1 = wF2N0Q1 * KEQ_F2N0_F1N1
     den3 = wF2N1 + wF2N1Q0 + wF2N0Q1 + wF1N1Q1
 
     eqs = [
         KEQ_N1Q1_N0Q0 ~ exp(iVT * (Em_SQ_QH2_C1 - Em_N2 - 4dpsi)) * (h_m / h_i)^4,
-        F0N0 ~ wF0N0 / den0,
-        F0N0Q0 ~ wF0N0Q0 / den0,
-        F1N0 ~ wF1N0 / den1,
-        F0N1 ~ wF0N1 / den1,
-        F1N0Q0 ~ wF1N0Q0 / den1,
-        F0N1Q0 ~ wF0N1Q0 / den1,
-        F0N0Q1 ~ wF0N0Q1 / den1,
-        F2N0 ~ wF2N0 / den2,
-        F1N1 ~ wF1N1 / den2,
-        F2N0Q0 ~ wF2N0Q0 / den2,
-        F1N1Q0 ~ wF1N1Q0 / den2,
-        F0N1Q1 ~ wF0N1Q1 / den2,
-        F2N1 ~ wF2N1 / den3,
-        F2N1Q0 ~ wF2N1Q0 / den3,
-        F2N0Q1 ~ wF2N0Q1 / den3,
-        F1N1Q1 ~ wF1N1Q1 / den3,
+        F0N0 ~ C1_0 * wF0N0 / den0,
+        F0N0Q0 ~ C1_0 * wF0N0Q0 / den0,
+        F1N0 ~ C1_1 * wF1N0 / den1,
+        F0N1 ~ C1_1 * wF0N1 / den1,
+        F1N0Q0 ~ C1_1 * wF1N0Q0 / den1,
+        F0N1Q0 ~ C1_1 * wF0N1Q0 / den1,
+        F0N0Q1 ~ C1_1 * wF0N0Q1 / den1,
+        F2N0 ~ C1_2 * wF2N0 / den2,
+        F1N1 ~ C1_2 * wF1N1 / den2,
+        F2N0Q0 ~ C1_2 * wF2N0Q0 / den2,
+        F1N1Q0 ~ C1_2 * wF1N1Q0 / den2,
+        F0N1Q1 ~ C1_2 * wF0N1Q1 / den2,
+        F2N1 ~ C1_3 * wF2N1 / den3,
+        F2N1Q0 ~ C1_3 * wF2N1Q0 / den3,
+        F2N0Q1 ~ C1_3 * wF2N0Q1 / den3,
+        F1N1Q1 ~ C1_3 * wF1N1Q1 / den3,
         F2N1Q1 ~ C1_4,
         ET_C1 ~ C1_0 + C1_1 + C1_2 + C1_3 + C1_4,
         D(C1_1) ~ v31 - v13,
@@ -419,19 +419,19 @@ five = c1_5state(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
-prob_5 = SteadyStateProblem(five, [five.ET_C1 => 17μM,])
+prob_5 = SteadyStateProblem(five, [five.ET_C1 => 17μM, five.kf_NADH_C1 => 1Hz / μM, five.kf_QH2_C1 => 2000Hz])
 prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.kf16_C1 => 0.001Hz / μM, markevich.kf17_C1 => 0.001Hz / μM / 20])
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(Rodas5P())
-ealg = EnsembleSerial()
+ealg = EnsembleThreads()
 
 # ## Varying MMP
 dpsirange = 100mV:5mV:200mV
 alter_dpsi = (prob, i, repeat) -> remake(prob, p=[dpsi => dpsirange[i]])
 
-eprob_5 = EnsembleProblem(prob_5; prob_func=alter_dpsi, safetycopy=false)
-eprob_m = EnsembleProblem(prob_m; prob_func=alter_dpsi, safetycopy=false)
-eprob_g = EnsembleProblem(prob_g; prob_func=alter_dpsi, safetycopy=false)
+eprob_5 = EnsembleProblem(prob_5; prob_func=alter_dpsi)
+eprob_m = EnsembleProblem(prob_m; prob_func=alter_dpsi)
+eprob_g = EnsembleProblem(prob_g; prob_func=alter_dpsi)
 @time sim_5 = solve(eprob_5, alg, ealg; trajectories=length(dpsirange), abstol=1e-6, reltol=1e-6)
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(dpsirange))
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(dpsirange))
