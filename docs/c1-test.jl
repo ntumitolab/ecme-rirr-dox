@@ -9,7 +9,7 @@ using Plots
 using ECMEDox
 using ECMEDox: mM, μM, iVT, mV, Molar, Hz, ms
 
-# Gauthier 2012 7-state model
+# Gauthier 2012 7-state QSSA model
 function c1_gauthier(; name=:c1gauthier,
     Q_n=3.0mM, QH2_n=0.3mM, nad=500μM, nadh=500μM,
     dpsi=150mV, O2=6μM, sox_m=0.001μM,
@@ -92,7 +92,7 @@ function c1_gauthier(; name=:c1gauthier,
         D(C1_6) ~ v56 - v61,
         vQ_C1 ~ -0.5v47,
         vROS_C1 ~ v42,
-        vNADH_C1 ~ -v23,
+        vNADH_C1 ~ -0.5v23,
         TN_C1 ~ -vNADH_C1 / ET_C1,
     ]
     return ODESystem(eqs, t; name)
@@ -255,6 +255,8 @@ function c1_markevich_full(; name=:c1markevich_full,
 end
 
 # 5-state complex I model
+# Flavin and FeS can hold two electrons, respectively
+# One-step (and reversible) NADH oxidation and Q reduction
 function c1_5state(; name=:c1_5state,
     Q_n=1.8mM, QH2_n=0.2mM,
     nad=500μM, nadh=500μM,
@@ -275,9 +277,9 @@ function c1_5state(; name=:c1_5state,
         Em_Q_SQ_C1 = -300mV         ## -213mV in Markevich, 2015
         Em_SQ_QH2_C1 = +500mV       ## 800mV (?) in Markevich, 2015
         Em_Q = +100mV
-        kf_NADH_C1 = 10Hz / μM      ## NADH oxidation rate constant (kcat ~ 30000Hz for NAD pool = 3mM)
-        kf_Q_C1 = 0.1Hz / μM        ## Q binding and reduction rate constant (kcat ~ 400Hz for Q pool = 4mM)
-        kf_O2_C1 = 1e-3Hz / μM      ## O2 reduction rate constant
+        kf_NADH_C1 = 20Hz / μM      ## NADH oxidation rate
+        kf_Q_C1 = 0.1Hz / μM        ## Q binding and reduction rate
+        kf_O2_C1 = 1e-3Hz / μM      ## O2 reduction rate
         ## NADH + FMN = NAD + FMNH2
         KEQ_F2F0 = exp(2iVT * (Em_NAD - Em_FMN_FMNH))
         ## FMNH2 + N2 = FMNsq + N2r
@@ -321,6 +323,8 @@ function c1_5state(; name=:c1_5state,
         TN_C1(t)
     end
 
+    fhm = h_m / 1E-7Molar
+
     ## NADH oxidation: F0 + NADH = F2 + NAD
     fnad = nad * KEQ_F2F0
     v00_20 = kf_NADH_C1 * (F0N0 * nadh - F2N0 * fnad)
@@ -328,7 +332,7 @@ function c1_5state(; name=:c1_5state,
     v02_22 = kf_NADH_C1 * (F0N2 * nadh - F2N2 * fnad)
 
     ## Q reduction: FxN2 + Q + 6Hi = FxN0 + QH2 + 4Ho
-    q = Q_n
+    q = Q_n * fhm^2
     qh2 = QH2_n / KEQ_N2Q_N0QH2
     v02_00 = kf_Q_C1 * (F0N2 * q - F0N0 * qh2)
     v12_10 = kf_Q_C1 * (F1N2 * q - F1N0 * qh2)
@@ -342,11 +346,11 @@ function c1_5state(; name=:c1_5state,
 
     ## Weight of each sub-state
     wF1N0 = 1
-    wF0N1 = wF1N0 * KEQ_F1N0_F0N1
+    wF0N1 = wF1N0 * KEQ_F1N0_F0N1 / fhm
     den1 = wF1N0 + wF0N1
     wF2N0 = 1
     wF1N1 = wF2N0 * KEQ_F2N0_F1N1
-    wF0N2 = wF1N1 * KEQ_F1N1_F0N2
+    wF0N2 = wF1N1 * KEQ_F1N1_F0N2 / fhm
     den2 = wF2N0 + wF1N1 + wF0N2
     wF2N1 = 1
     wF1N2 = wF2N1 * KEQ_F2N1_F1N2
@@ -389,7 +393,7 @@ five = c1_5state(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
-prob_5 = SteadyStateProblem(five, [five.ET_C1 => 20μM, five.kf_NADH_C1 => 10Hz / μM, five.kf_Q_C1 => 0.1Hz / μM, five.kf_O2_C1 => 2e-4Hz / μM])
+prob_5 = SteadyStateProblem(five, [five.ET_C1 => 20μM, five.kf_NADH_C1 => 10Hz / μM, five.kf_Q_C1 => 0.1Hz / μM, five.kf_O2_C1 => 5e-4Hz / μM])
 prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.kf16_C1 => 0.001Hz / μM, markevich.kf17_C1 => 0.001Hz / μM / 20])
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(TRBDF2())
@@ -402,9 +406,9 @@ alter_dpsi = (prob, i, repeat) -> remake(prob, p=[dpsi => dpsirange[i]])
 eprob_5 = EnsembleProblem(prob_5; prob_func=alter_dpsi, safetycopy=false)
 eprob_m = EnsembleProblem(prob_m; prob_func=alter_dpsi, safetycopy=false)
 eprob_g = EnsembleProblem(prob_g; prob_func=alter_dpsi, safetycopy=false)
-@time sim_5 = solve(eprob_5, alg, ealg; trajectories=length(dpsirange), abstol = 1e-8, reltol = 1e-8)
-@time sim_m = solve(eprob_m, alg, ealg; trajectories=length(dpsirange), abstol = 1e-8, reltol = 1e-8)
-@time sim_g = solve(eprob_g, alg, ealg; trajectories=length(dpsirange), abstol = 1e-8, reltol = 1e-8)
+@time sim_5 = solve(eprob_5, alg, ealg; trajectories=length(dpsirange))
+@time sim_m = solve(eprob_m, alg, ealg; trajectories=length(dpsirange))
+@time sim_g = solve(eprob_g, alg, ealg; trajectories=length(dpsirange))
 
 # Helper function
 extract(sim, k) = map(s -> s[k], sim)
@@ -415,6 +419,12 @@ ys = hcat(extract(sim_g, gauthier.vNADH_C1), extract(sim_m, markevich.vNADH_C1),
 
 plot(xs, ys, xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", label=["Gauthier" "Markevich" "Five"])
 
+# MMP vs Q turnover
+xs = dpsirange
+ys = hcat(extract(sim_g, gauthier.vQ_C1), extract(sim_m, markevich.vQ_C1), extract(sim_5, five.vQ_C1))
+
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Q rate (μM/ms)", label=["Gauthier" "Markevich" "Five"])
+
 #---
 ys = stack(extract.(Ref(sim_5), [five.C1_0, five.C1_1, five.C1_2, five.C1_3, five.C1_4]), dims=2)
 plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["C1_0" "C1_1" "C1_2" "C1_3" "C1_4"], legend=:right)
@@ -424,7 +434,7 @@ xs = dpsirange
 ys_g = extract(sim_g, gauthier.vROS_C1) .* 1000
 ys_m = extract(sim_m, markevich.vROS_C1) .* 1000
 ys_5 = extract(sim_5, five.vROS_C1) .* 1000
-plot(xs, [ys_g ys_m ys_5], xlabel="MMP (mV)", ylabel="ROS production (μM/s)", label=["Gauthier" "Markevich" ""])
+plot(xs, [ys_g ys_m ys_5], xlabel="MMP (mV)", ylabel="ROS production (μM/s)", label=["Gauthier" "Markevich" "Five"])
 
 # ## Varying NADH
 nadhrange = 10μM:10μM:990μM
