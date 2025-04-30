@@ -422,7 +422,7 @@ gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 prob_5 = SteadyStateProblem(five, [five.ET_C1 => 17μM, five.kf_NADH_C1 => 1Hz / μM, five.kf_QH2_C1 => 2000Hz])
 prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.kf16_C1 => 0.001Hz / μM, markevich.kf17_C1 => 0.001Hz / μM / 20])
 prob_g = SteadyStateProblem(gauthier, [])
-alg = DynamicSS(Rodas5P())
+alg = DynamicSS(TRBDF2())
 ealg = EnsembleThreads()
 
 # ## Varying MMP
@@ -432,7 +432,7 @@ alter_dpsi = (prob, i, repeat) -> remake(prob, p=[dpsi => dpsirange[i]])
 eprob_5 = EnsembleProblem(prob_5; prob_func=alter_dpsi)
 eprob_m = EnsembleProblem(prob_m; prob_func=alter_dpsi)
 eprob_g = EnsembleProblem(prob_g; prob_func=alter_dpsi)
-@time sim_5 = solve(eprob_5, alg, ealg; trajectories=length(dpsirange), abstol=1e-6, reltol=1e-6)
+@time sim_5 = solve(eprob_5, alg, ealg; trajectories=length(dpsirange), abstol = 1e-8, reltol = 1e-8)
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(dpsirange))
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(dpsirange))
 
