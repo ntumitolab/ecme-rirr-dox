@@ -115,6 +115,7 @@ function c1_markevich_full(; name=:c1markevich_full,
         Em_N3 = -250mV
         Em_N2 = -80mV
         Em_N1a = -370mV
+
         Em_Q_SQ_C1 = -300mV       ## -213mV in Markevich, 2015
         Em_SQ_QH2_C1 = +500mV     ## ~800mV (?) in Markevich, 2015
         ET_C1 = 17μM              ## Activity of complex I
@@ -273,26 +274,26 @@ function c1_5state(; name=:c1_5state,
         Em_N1a = -370mV             ## FeS N1a redox potential
         Em_Q_SQ_C1 = -300mV         ## -213mV in Markevich, 2015
         Em_SQ_QH2_C1 = +500mV       ## 800mV (?) in Markevich, 2015
-        kf_NADH_C1 = 83Hz / μM      ## NADH oxidation rate constant
-        kf_Q_C1 = 10Hz / μM         ## Q binding and reduction rate constant
-        kf_QH2_C1 = 2000Hz          ## QH2 rate constant (from 1000Hz)
+        Em_Q = +100mV
+        kf_NADH_C1 = 10Hz / μM      ## NADH oxidation rate constant (kcat ~ 30000Hz for NAD pool = 3mM)
+        kf_Q_C1 = 0.1Hz / μM        ## Q binding and reduction rate constant (kcat ~ 400Hz for Q pool = 4mM)
         kf_O2_C1 = 1e-3Hz / μM      ## O2 reduction rate constant
-        KD_Q_C1 = 10μM
-        KD_QH2_C1 = 20μM
-        ## NAD + FMNH2 = NADH + FMN
-        KEQ_F0F2 = exp(2iVT * (Em_FMN_FMNH - Em_NAD))
+        ## NADH + FMN = NAD + FMNH2
+        KEQ_F2F0 = exp(2iVT * (Em_NAD - Em_FMN_FMNH))
         ## FMNH2 + N2 = FMNsq + N2r
         KEQ_F2N0_F1N1 = exp(iVT * (Em_N2 - Em_FMNsq_FMNH))
+        ## FMNH2 + N3 = FMNsq + N3r
+        KEQ_F2N1_F1N2 = exp(iVT * (Em_N3 - Em_FMNsq_FMNH))
+        ## FMNsq + N3 = FMN + N3r
+        KEQ_F1N1_F0N2 = exp(iVT * (Em_N3 - Em_FMN_FMNsq))
         ## FMNsq + N2 = FMN + N2r
         KEQ_F1N0_F0N1 = exp(iVT * (Em_N2 - Em_FMN_FMNsq))
-        ## N2r + Q = N2 + SQ
-        KEQ_N1Q0_N0Q1 = exp(iVT * (Em_Q_SQ_C1 - Em_N2))
         ## O2 + FMNH2 = SOX + FMNsq
         KEQ_O2_C1 = exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
     end
 
     @variables begin
-        KEQ_N1Q1_N0Q0(t)
+        KEQ_N2Q_N0QH2(t)
         ## Electron(s) in complex I
         C1_0(t) ## Conserved
         C1_1(t) = 0
@@ -301,26 +302,18 @@ function c1_5state(; name=:c1_5state,
         C1_4(t) = 0
         ## Zero electron
         F0N0(t)
-        F0N0Q0(t)
         ## One electron
         F1N0(t)
         F0N1(t)
-        F1N0Q0(t)
-        F0N1Q0(t)
-        F0N0Q1(t)
         ## Two electrons
         F2N0(t)
         F1N1(t)
-        F2N0Q0(t)
-        F1N1Q0(t)
-        F0N1Q1(t)
+        F0N2(t)
         ## Three electrons
         F2N1(t)
-        F2N1Q0(t)
-        F2N0Q1(t)
-        F1N1Q1(t)
+        F1N2(t)
         ## Four electrons
-        F2N1Q1(t)
+        F2N2(t)
         ## Rates
         vQ_C1(t)
         vROS_C1(t)
@@ -329,78 +322,55 @@ function c1_5state(; name=:c1_5state,
     end
 
     ## NADH oxidation: F0 + NADH = F2 + NAD
-    fnad = nad / KEQ_F0F2
+    fnad = nad * KEQ_F2F0
     v00_20 = kf_NADH_C1 * (F0N0 * nadh - F2N0 * fnad)
-    v000_200 = kf_NADH_C1 * (F0N0Q0 * nadh - F2N0Q0 * fnad)
     v01_21 = kf_NADH_C1 * (F0N1 * nadh - F2N1 * fnad)
-    v010_210 = kf_NADH_C1 * (F0N1Q0 * nadh - F2N1Q0 * fnad)
-    v001_201 = kf_NADH_C1 * (F0N0Q1 * nadh - F2N0Q1 * fnad)
-    v011_211 = kf_NADH_C1 * (F0N1Q1 * nadh - F2N1Q1 * fnad)
+    v02_22 = kf_NADH_C1 * (F0N2 * nadh - F2N2 * fnad)
 
-    ## Second electron transfer: N1Q1 + 6Hi = N0Q0 + QH2 + 4Ho
-    fhm = h_m * inv(1E-7Molar)
-    qh2 = QH2_n / KD_QH2_C1 / KEQ_N1Q1_N0Q0
-    v011_000 = kf_QH2_C1 * (F0N1Q1 * fhm^2 - F0N0Q0 * qh2)
-    v111_100 = kf_QH2_C1 * (F1N1Q1 * fhm^2 - F1N0Q0 * qh2)
-    v211_200 = kf_QH2_C1 * (F2N1Q1 * fhm^2 - F2N0Q0 * qh2)
+    ## Q reduction: FxN2 + Q + 6Hi = FxN0 + QH2 + 4Ho
+    q = Q_n
+    qh2 = QH2_n / KEQ_N2Q_N0QH2
+    v02_00 = kf_Q_C1 * (F0N2 * q - F0N0 * qh2)
+    v12_10 = kf_Q_C1 * (F1N2 * q - F1N0 * qh2)
+    v22_20 = kf_Q_C1 * (F2N2 * q - F2N0 * qh2)
 
-    v02 = v00_20 + v000_200
-    v13 = v01_21 + v010_210 + v001_201
-    v24 = v011_211
-    v20 = v011_000
-    v31 = v111_100
-    v42 = v211_200
+    ## TODO: Superoxide rates
+    sox = sox_m / KEQ_O2_C1
+    v20_10 = kf_O2_C1 * (F2N0 * O2 - F1N0 * sox)
+    v21_11 = kf_O2_C1 * (F2N1 * O2 - F1N1 * sox)
+    v22_12 = kf_O2_C1 * (F2N2 * O2 - F1N2 * sox)
 
-    ## State weights
-    q = Q_n / KD_Q_C1
-    wF0N0 = 1
-    wF0N0Q0 = q * wF0N0
-    den0 = wF0N0 + wF0N0Q0
+    ## Weight of each sub-state
     wF1N0 = 1
     wF0N1 = wF1N0 * KEQ_F1N0_F0N1
-    wF1N0Q0 = q * wF1N0
-    wF0N1Q0 = q * wF0N1
-    wF0N0Q1 = wF0N1Q0 * KEQ_N1Q0_N0Q1
-    den1 = wF1N0 + wF0N1 + wF1N0Q0 + wF0N1Q0 + wF0N0Q1
+    den1 = wF1N0 + wF0N1
     wF2N0 = 1
     wF1N1 = wF2N0 * KEQ_F2N0_F1N1
-    wF2N0Q0 = q * wF2N0
-    wF1N1Q0 = q * wF1N1
-    wF0N1Q1 = wF1N1Q0 * KEQ_N1Q0_N0Q1 * KEQ_F1N0_F0N1
-    den2 = wF2N0 + wF1N1 + wF2N0Q0 + wF1N1Q0 + wF0N1Q1
+    wF0N2 = wF1N1 * KEQ_F1N1_F0N2
+    den2 = wF2N0 + wF1N1 + wF0N2
     wF2N1 = 1
-    wF2N1Q0 = q * wF2N1
-    wF2N0Q1 = wF2N1Q0 * KEQ_N1Q0_N0Q1
-    wF1N1Q1 = wF2N0Q1 * KEQ_F2N0_F1N1
-    den3 = wF2N1 + wF2N1Q0 + wF2N0Q1 + wF1N1Q1
+    wF1N2 = wF2N1 * KEQ_F2N1_F1N2
+    den3 = wF2N1 + wF1N2
 
     eqs = [
-        KEQ_N1Q1_N0Q0 ~ exp(iVT * (Em_SQ_QH2_C1 - Em_N2 - 4dpsi)) * (h_m / h_i)^4,
-        F0N0 ~ C1_0 * wF0N0 / den0,
-        F0N0Q0 ~ C1_0 * wF0N0Q0 / den0,
+        KEQ_N2Q_N0QH2 ~ exp(iVT * (2Em_Q - Em_N2 - Em_N3 - 4dpsi)) * (h_m / h_i)^4,
+        F0N0 ~ C1_0,
         F1N0 ~ C1_1 * wF1N0 / den1,
         F0N1 ~ C1_1 * wF0N1 / den1,
-        F1N0Q0 ~ C1_1 * wF1N0Q0 / den1,
-        F0N1Q0 ~ C1_1 * wF0N1Q0 / den1,
-        F0N0Q1 ~ C1_1 * wF0N0Q1 / den1,
         F2N0 ~ C1_2 * wF2N0 / den2,
         F1N1 ~ C1_2 * wF1N1 / den2,
-        F2N0Q0 ~ C1_2 * wF2N0Q0 / den2,
-        F1N1Q0 ~ C1_2 * wF1N1Q0 / den2,
-        F0N1Q1 ~ C1_2 * wF0N1Q1 / den2,
+        F0N2 ~ C1_2 * wF0N2 / den2,
         F2N1 ~ C1_3 * wF2N1 / den3,
-        F2N1Q0 ~ C1_3 * wF2N1Q0 / den3,
-        F2N0Q1 ~ C1_3 * wF2N0Q1 / den3,
-        F1N1Q1 ~ C1_3 * wF1N1Q1 / den3,
-        F2N1Q1 ~ C1_4,
+        F1N2 ~ C1_3 * wF1N2 / den3,
+        F2N2 ~ C1_4,
         ET_C1 ~ C1_0 + C1_1 + C1_2 + C1_3 + C1_4,
-        D(C1_1) ~ v31 - v13,
-        D(C1_2) ~ v02 - v20 - v24 + v42,
-        D(C1_3) ~ v13 - v31,
-        D(C1_4) ~ v24 - v42,
-        vQ_C1 ~ -(v42 + v31 + v20),
-        vNADH_C1 ~ -(v02 + v13 + v24),
-        vROS_C1 ~ 0,
+        D(C1_1) ~ v12_10 - v01_21 + v20_10,
+        D(C1_2) ~ v00_20 - v02_00 - v02_22 + v22_20 - v20_10 + v21_11,
+        D(C1_3) ~ v01_21 - v12_10 - v21_11 + v22_12,
+        D(C1_4) ~ v02_22 - v22_20 - v22_12,
+        vQ_C1 ~ -(v02_00 + v12_10 + v22_20),
+        vNADH_C1 ~ -(v00_20 + v01_21 + v02_22),
+        vROS_C1 ~ v20_10 + v21_11 + v22_12,
     ]
     return ODESystem(eqs, t; name)
 end
@@ -419,22 +389,22 @@ five = c1_5state(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
-prob_5 = SteadyStateProblem(five, [five.ET_C1 => 17μM, five.kf_NADH_C1 => 1Hz / μM, five.kf_QH2_C1 => 2000Hz])
+prob_5 = SteadyStateProblem(five, [five.ET_C1 => 20μM, five.kf_NADH_C1 => 10Hz / μM, five.kf_Q_C1 => 0.1Hz / μM, five.kf_O2_C1 => 2e-4Hz / μM])
 prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.kf16_C1 => 0.001Hz / μM, markevich.kf17_C1 => 0.001Hz / μM / 20])
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(TRBDF2())
-ealg = EnsembleThreads()
+ealg = EnsembleSerial()
 
 # ## Varying MMP
 dpsirange = 100mV:5mV:200mV
 alter_dpsi = (prob, i, repeat) -> remake(prob, p=[dpsi => dpsirange[i]])
 
-eprob_5 = EnsembleProblem(prob_5; prob_func=alter_dpsi)
-eprob_m = EnsembleProblem(prob_m; prob_func=alter_dpsi)
-eprob_g = EnsembleProblem(prob_g; prob_func=alter_dpsi)
+eprob_5 = EnsembleProblem(prob_5; prob_func=alter_dpsi, safetycopy=false)
+eprob_m = EnsembleProblem(prob_m; prob_func=alter_dpsi, safetycopy=false)
+eprob_g = EnsembleProblem(prob_g; prob_func=alter_dpsi, safetycopy=false)
 @time sim_5 = solve(eprob_5, alg, ealg; trajectories=length(dpsirange), abstol = 1e-8, reltol = 1e-8)
-@time sim_m = solve(eprob_m, alg, ealg; trajectories=length(dpsirange))
-@time sim_g = solve(eprob_g, alg, ealg; trajectories=length(dpsirange))
+@time sim_m = solve(eprob_m, alg, ealg; trajectories=length(dpsirange), abstol = 1e-8, reltol = 1e-8)
+@time sim_g = solve(eprob_g, alg, ealg; trajectories=length(dpsirange), abstol = 1e-8, reltol = 1e-8)
 
 # Helper function
 extract(sim, k) = map(s -> s[k], sim)
@@ -453,15 +423,18 @@ plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["C1_0" "C1_1" "C1
 xs = dpsirange
 ys_g = extract(sim_g, gauthier.vROS_C1) .* 1000
 ys_m = extract(sim_m, markevich.vROS_C1) .* 1000
-plot(xs, [ys_g ys_m], xlabel="MMP (mV)", ylabel="ROS production (μM/s)", label=["Gauthier" "Markevich"])
+ys_5 = extract(sim_5, five.vROS_C1) .* 1000
+plot(xs, [ys_g ys_m ys_5], xlabel="MMP (mV)", ylabel="ROS production (μM/s)", label=["Gauthier" "Markevich" ""])
 
 # ## Varying NADH
 nadhrange = 10μM:10μM:990μM
 nadrange = 1000μM .- nadhrange
 alter_nadh = (prob, i, repeat) -> remake(prob, p=[nadh => nadhrange[i], nad => nadrange[i]])
 
+eprob_5 = EnsembleProblem(prob_5; prob_func=alter_nadh, safetycopy=false)
 eprob_g = EnsembleProblem(prob_g; prob_func=alter_nadh, safetycopy=false)
 eprob_m = EnsembleProblem(prob_m; prob_func=alter_nadh, safetycopy=false)
+@time sim_5 = solve(eprob_5, alg, ealg; trajectories=length(nadhrange))
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(nadhrange))
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(nadhrange))
 
@@ -469,37 +442,46 @@ eprob_m = EnsembleProblem(prob_m; prob_func=alter_nadh, safetycopy=false)
 xs = nadhrange
 ys_g = extract(sim_g, gauthier.vNADH_C1)
 ys_m = extract(sim_m, markevich.vNADH_C1)
+ys_5 = extract(sim_5, five.vNADH_C1)
 
-plot(xs, [ys_g ys_m], xlabel="NADH (μM)", ylabel="NADH consumption (μM/ms)", label=["Gauthier" "Markevich" ])
+plot(xs, [ys_g ys_m ys_5], xlabel="NADH (μM)", ylabel="NADH consumption (μM/ms)", label=["Gauthier" "Markevich" "Five"])
 
 # NADH vs ROS production
 # Markevich's model is more sensitive
 xs = nadhrange
-ys = [extract(sim_g, gauthier.vROS_C1) extract(sim_m, markevich.vROS_C1)]
+ys = [extract(sim_g, gauthier.vROS_C1) extract(sim_m, markevich.vROS_C1) extract(sim_5, five.vROS_C1)]
 
-plot(xs, ys, xlabel="NADH (μM)", ylabel="ROS production", label=["Gauthier" "Markevich"])
+plot(xs, ys, xlabel="NADH (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "Five"])
 
 # ## Varying Q
 qh2range = 10μM:10μM:1990μM
 qrange = 2000μM .- qh2range
 alter_qh2 = (prob, i, repeat) -> remake(prob, p=[QH2_n => qh2range[i], Q_n => qrange[i]])
 
+eprob_5 = EnsembleProblem(prob_5; prob_func=alter_qh2, safetycopy=false)
 eprob_g = EnsembleProblem(prob_g; prob_func=alter_qh2, safetycopy=false)
 eprob_m = EnsembleProblem(prob_m; prob_func=alter_qh2, safetycopy=false)
+@time sim_5 = solve(eprob_5, alg, ealg; trajectories=length(qh2range))
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(qh2range))
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(qh2range))
 
 # QH2 vs NADH turnover
 xs = qh2range
-ys = [extract(sim_g, gauthier.vNADH_C1) extract(sim_m, markevich.vNADH_C1)]
+ys = [extract(sim_g, gauthier.vNADH_C1) extract(sim_m, markevich.vNADH_C1) extract(sim_5, five.vNADH_C1)]
 
-plot(xs, ys, xlabel="QH2 (μM)", ylabel="NADH consumption (μM/ms)", label=["Gauthier" "Markevich"])
+plot(xs, ys, xlabel="QH2 (μM)", ylabel="NADH rate (μM/ms)", label=["Gauthier" "Markevich" "Five"])
+
+# QH2 vs Q turnover
+xs = qh2range
+ys = [extract(sim_g, gauthier.vQ_C1) extract(sim_m, markevich.vQ_C1) extract(sim_5, five.vQ_C1)]
+
+plot(xs, ys, xlabel="QH2 (μM)", ylabel="Q rate (μM/ms)", label=["Gauthier" "Markevich" "Five"])
 
 # QH2 vs ROS production
 # Gauthier model produces a lot of SOX on high QH2
 xs = qh2range
-ys = [extract(sim_g, gauthier.vROS_C1) extract(sim_m, markevich.vROS_C1)]
-plot(xs, ys, xlabel="QH2 (μM)", ylabel="ROS production", label=["Gauthier" "Markevich"])
+ys = [extract(sim_g, gauthier.vROS_C1) extract(sim_m, markevich.vROS_C1) extract(sim_5, five.vROS_C1)]
+plot(xs, ys, xlabel="QH2 (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "Five"])
 
 #---
 @unpack C1_1, C1_2, C1_3, C1_4, C1_5, C1_6, C1_7 = gauthier
