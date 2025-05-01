@@ -393,7 +393,7 @@ five = c1_5state(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
-prob_5 = SteadyStateProblem(five, [five.ET_C1 => 20μM, five.kf_NADH_C1 => 10Hz / μM, five.kf_Q_C1 => 0.1Hz / μM, five.kf_O2_C1 => 5e-4Hz / μM])
+prob_5 = SteadyStateProblem(five, [five.ET_C1 => 20μM, five.kf_NADH_C1 => 20Hz / μM, five.kf_Q_C1 => 1Hz / μM, five.kf_O2_C1 => 5e-4Hz / μM])
 prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.kf16_C1 => 0.001Hz / μM, markevich.kf17_C1 => 0.001Hz / μM / 20])
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(TRBDF2())
