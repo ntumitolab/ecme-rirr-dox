@@ -278,12 +278,8 @@ function c1_5state(; name=:c1_5state,
         Em_SQ_QH2_C1 = +500mV       ## 800mV (?) in Markevich, 2015
         Em_Q = +100mV
         kf_NADH_C1 = 20Hz / μM      ## NADH oxidation rate
-        kf_Q_C1 = 0.1Hz / μM        ## Q reduction rate
+        kf_Q_C1 = 0.1Hz / μM        ## Q binding and reduction rate
         kf_O2_C1 = 1e-3Hz / μM      ## O2 reduction rate
-        KI_NADH_C1 = 50μM
-        KI_NAD_C1 = 1mM
-        KA_Q_C1 = 0.1 / μM
-        KA_QH2_C1 = inv(20μM)
         ## NADH + FMN = NAD + FMNH2
         KEQ_F2F0 = exp(2iVT * (Em_NAD - Em_FMN_FMNH))
         ## FMNH2 + N2 = FMNsq + N2r
@@ -294,14 +290,12 @@ function c1_5state(; name=:c1_5state,
         KEQ_F1N1_F0N2 = exp(iVT * (Em_N3 - Em_FMN_FMNsq))
         ## FMNsq + N2 = FMN + N2r
         KEQ_F1N0_F0N1 = exp(iVT * (Em_N2 - Em_FMN_FMNsq))
-        ## N2r + Q = N2 + SQ
-        KEQ_N1Q0_N0Q1 = exp(iVT * (Em_Q_SQ_C1 - Em_N2))
         ## O2 + FMNH2 = SOX + FMNsq
         KEQ_O2_C1 = exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
     end
 
     @variables begin
-        KEQ_N1Q1_QH2(t)
+        KEQ_N2Q_N0QH2(t)
         ## Electron(s) in complex I
         C1_0(t) ## Conserved
         C1_1(t) = 0
@@ -310,34 +304,18 @@ function c1_5state(; name=:c1_5state,
         C1_4(t) = 0
         ## Zero electron
         F0N0(t)
-        F0N0Q0(t)
         ## One electron
         F1N0(t)
         F0N1(t)
-        F1N0Q0(t)
-        F0N1Q0(t)
-        F0N0Q1(t)
         ## Two electrons
         F2N0(t)
         F1N1(t)
-        F2N0Q0(t)
-        F1N1Q0(t)
-        F0N1Q1(t)
+        F0N2(t)
         ## Three electrons
         F2N1(t)
-        F2N1Q0(t)
-        F2N0Q1(t)
-        F1N1Q1(t)
+        F1N2(t)
         ## Four electrons
-        F2N1Q1(t)
-        ## Macro states
-        FMN(t)
-        FMNH(t)
-        FMNsq(t)
-        FMN_NAD(t)
-        FMNH_NADH(t)
-        Q_C1(t)
-        SQ_C1(t)
+        F2N2(t)
         ## Rates
         vQ_C1(t)
         vROS_C1(t)
@@ -345,113 +323,58 @@ function c1_5state(; name=:c1_5state,
         TN_C1(t)
     end
 
-    fhm = h_m * inv(1E-7Molar)           ## Matrix pH factor
-    ffmn = KI_NAD_C1 / (nad + KI_NAD_C1) ## FMN not bound to NAD+
-    ffmnh2 = KI_NADH_C1 / (nadh + KI_NADH_C1) ## FMNH- not bound to NADH
-
-    f0n0 = F0N0 * ffmn
-    f0n0q0 = F0N0Q0 * ffmn
-    f0n1 = F0N1 * ffmn
-    f0n1q0 = F0N1Q0 * ffmn
-    f0n0q1 = F0N0Q1 * ffmn
-    f2n0 = F2N0 * ffmnh2
-    f2n0q0 = F2N0Q0 * ffmnh2
-    f0n1q1 = F0N1Q1 * ffmn
-    f2n1 = F2N1 * ffmnh2
-    f2n1q0 = F2N1Q0 * ffmnh2
-    f2n0q1 = F2N0Q1 * ffmnh2
-    f2n1q1 = F2N1Q1 * ffmnh2
+    fhm = h_m / 1E-7Molar
 
     ## NADH oxidation: F0 + NADH = F2 + NAD
     fnad = nad * KEQ_F2F0
-    v00_20 = kf_NADH_C1 * (f0n0 * nadh - f2n0 * fnad)
-    v000_200 = kf_NADH_C1 * (f0n0q0 * nadh - f2n0q0 * fnad)
-    v01_21 = kf_NADH_C1 * (f0n1 * nadh - f2n1 * fnad)
-    v010_210 = kf_NADH_C1 * (f0n1q0 * nadh - f2n1q0 * fnad)
-    v001_201 = kf_NADH_C1 * (f0n0q1 * nadh - f2n0q1 * fnad)
-    v011_211 = kf_NADH_C1 * (f0n1q1 * nadh - f2n1q1 * fnad)
+    v00_20 = kf_NADH_C1 * (F0N0 * nadh - F2N0 * fnad)
+    v01_21 = kf_NADH_C1 * (F0N1 * nadh - F2N1 * fnad)
+    v02_22 = kf_NADH_C1 * (F0N2 * nadh - F2N2 * fnad)
 
-    ## Q second reduction: N1Q1 + 6Hi = N0Q0 + QH2 + 4Ho
-    qh2 = QH2_n * KA_QH2_C1 / KEQ_N1Q1_QH2
-    v011_000 = kf_Q_C1 * (F0N1Q1 * fhm^2 - F0N0Q0 * qh2)
-    v111_100 = kf_Q_C1 * (F1N1Q1 * fhm^2 - F1N0Q0 * qh2)
-    v211_200 = kf_Q_C1 * (F2N1Q1 * fhm^2 - F2N0Q0 * qh2)
+    ## Q reduction: FxN2 + Q + 6Hi = FxN0 + QH2 + 4Ho
+    q = Q_n * fhm^2
+    qh2 = QH2_n / KEQ_N2Q_N0QH2
+    v02_00 = kf_Q_C1 * (F0N2 * q - F0N0 * qh2)
+    v12_10 = kf_Q_C1 * (F1N2 * q - F1N0 * qh2)
+    v22_20 = kf_Q_C1 * (F2N2 * q - F2N0 * qh2)
 
-    ## Superoxide rates: F2 + O2 = F1 + SOX
-    v20_10 = kf_O2_C1 * (f2n0 * O2 - F1N0 * sox_m / KEQ_O2_C1)
-    v200_100 = kf_O2_C1 * (f2n0q0 * O2 - F1N0Q0 * sox_m / KEQ_O2_C1)
-    v21_11 = kf_O2_C1 * (f2n1 * O2 - F1N1 * sox_m / KEQ_O2_C1)
-    v210_110 = kf_O2_C1 * (f2n1q0 * O2 - F1N1Q0 * sox_m / KEQ_O2_C1)
-    v211_111 = kf_O2_C1 * (f2n1q1 * O2 - F1N1Q1 * sox_m / KEQ_O2_C1)
+    ## TODO: Superoxide rates
+    sox = sox_m / KEQ_O2_C1
+    v20_10 = kf_O2_C1 * (F2N0 * O2 - F1N0 * sox)
+    v21_11 = kf_O2_C1 * (F2N1 * O2 - F1N1 * sox)
+    v22_12 = kf_O2_C1 * (F2N2 * O2 - F1N2 * sox)
 
     ## Weight of each sub-state
-    q = Q_n * KA_Q_C1
-    wF0N0 = 1
-    wF0N0Q0 = q * wF0N0
-    den0 = wF0N0 + wF0N0Q0
     wF1N0 = 1
     wF0N1 = wF1N0 * KEQ_F1N0_F0N1 / fhm
-    wF1N0Q0 = q * wF1N0
-    wF0N1Q0 = q * wF0N1
-    wF0N0Q1 = wF0N1Q0 * KEQ_N1Q0_N0Q1
-    den1 = wF1N0 + wF0N1 + wF1N0Q0 + wF0N1Q0 + wF0N0Q1
+    den1 = wF1N0 + wF0N1
     wF2N0 = 1
     wF1N1 = wF2N0 * KEQ_F2N0_F1N1
-    wF2N0Q0 = q * wF2N0
-    wF1N1Q0 = q * wF1N1
-    wF0N1Q1 = wF1N1Q0 * KEQ_N1Q0_N0Q1 * KEQ_F1N0_F0N1 / fhm
-    den2 = wF2N0 + wF1N1 + wF2N0Q0 + wF1N1Q0 + wF0N1Q1
+    wF0N2 = wF1N1 * KEQ_F1N1_F0N2 / fhm
+    den2 = wF2N0 + wF1N1 + wF0N2
     wF2N1 = 1
-    wF2N1Q0 = q * wF2N1
-    wF2N0Q1 = wF2N1Q0 * KEQ_N1Q0_N0Q1
-    wF1N1Q1 = wF2N0Q1 * KEQ_F2N0_F1N1
-    den3 = wF2N1 + wF2N1Q0 + wF2N0Q1 + wF1N1Q1
-
-    ## State transition rates
-    v02 = v00_20 + v000_200
-    v20 = v011_000
-    v13 = v01_21 + v010_210 + v001_201
-    v31 = v111_100
-    v24 = v011_211
-    v42 = v211_200
-    v21 = v20_10 + v200_100
-    v32 = v21_11 + v210_110
-    v43 = v211_111
+    wF1N2 = wF2N1 * KEQ_F2N1_F1N2
+    den3 = wF2N1 + wF1N2
 
     eqs = [
-        KEQ_N1Q1_QH2 ~ exp(iVT * (Em_SQ_QH2_C1 - Em_N2 - 4dpsi)) * (h_m / h_i)^4,
-        F0N0 ~ C1_0 * wF0N0 / den0,
-        F0N0Q0 ~ C1_0 * wF0N0Q0 / den0,
+        KEQ_N2Q_N0QH2 ~ exp(iVT * (2Em_Q - Em_N2 - Em_N3 - 4dpsi)) * (h_m / h_i)^4,
+        F0N0 ~ C1_0,
         F1N0 ~ C1_1 * wF1N0 / den1,
         F0N1 ~ C1_1 * wF0N1 / den1,
-        F1N0Q0 ~ C1_1 * wF1N0Q0 / den1,
-        F0N1Q0 ~ C1_1 * wF0N1Q0 / den1,
-        F0N0Q1 ~ C1_1 * wF0N0Q1 / den1,
         F2N0 ~ C1_2 * wF2N0 / den2,
         F1N1 ~ C1_2 * wF1N1 / den2,
-        F2N0Q0 ~ C1_2 * wF2N0Q0 / den2,
-        F1N1Q0 ~ C1_2 * wF1N1Q0 / den2,
-        F0N1Q1 ~ C1_2 * wF0N1Q1 / den2,
+        F0N2 ~ C1_2 * wF0N2 / den2,
         F2N1 ~ C1_3 * wF2N1 / den3,
-        F2N1Q0 ~ C1_3 * wF2N1Q0 / den3,
-        F2N0Q1 ~ C1_3 * wF2N0Q1 / den3,
-        F1N1Q1 ~ C1_3 * wF1N1Q1 / den3,
-        F2N1Q1 ~ C1_4,
+        F1N2 ~ C1_3 * wF1N2 / den3,
+        F2N2 ~ C1_4,
         ET_C1 ~ C1_0 + C1_1 + C1_2 + C1_3 + C1_4,
-        D(C1_1) ~ v21 - v13 + v31,
-        D(C1_2) ~ v02 - v20 - v24 + v42 - v21 + v32,
-        D(C1_3) ~ v13 - v31 - v32 + v43,
-        D(C1_4) ~ v24 - v42 - v43,
-        vQ_C1 ~ -(v20 + v31 + v42),
-        vNADH_C1 ~ -(v02 + v13 + v24),
-        vROS_C1 ~ v21 + v32 + v43,
-        FMN ~ ffmn * (F0N0 + F0N0Q0 + F0N1 + F0N1Q0 + F0N0Q1 + F0N1Q1),
-        FMNH ~ ffmnh2 * (F2N0 + F2N0Q0 + F2N1 + F2N1Q0 + F2N0Q1 + F2N1Q1),
-        FMNsq ~ F1N0 + F1N0Q0 + F1N1 + F1N1Q0 + F1N1Q1,
-        FMN_NAD ~ (1 - ffmn) * (F0N0 + F0N0Q0 + F0N1 + F0N1Q0 + F0N0Q1 + F0N1Q1),
-        FMNH_NADH ~ (1 - ffmnh2) * (F2N0 + F2N0Q0 + F2N1 + F2N1Q0 + F2N0Q1 + F2N1Q1),
-        Q_C1 ~ F0N0Q0 + F1N0Q0 + F0N1Q0 + F2N0Q0 + F1N1Q0 + F2N1Q0,
-        SQ_C1 ~ F0N0Q1 + F0N1Q1 + F2N0Q1 + F1N1Q1 + F2N1Q1,
+        D(C1_1) ~ v12_10 - v01_21 + v20_10,
+        D(C1_2) ~ v00_20 - v02_00 - v02_22 + v22_20 - v20_10 + v21_11,
+        D(C1_3) ~ v01_21 - v12_10 - v21_11 + v22_12,
+        D(C1_4) ~ v02_22 - v22_20 - v22_12,
+        vQ_C1 ~ -(v02_00 + v12_10 + v22_20),
+        vNADH_C1 ~ -(v00_20 + v01_21 + v02_22),
+        vROS_C1 ~ v20_10 + v21_11 + v22_12,
     ]
     return ODESystem(eqs, t; name)
 end
@@ -473,16 +396,16 @@ gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 prob_5 = SteadyStateProblem(five, [five.ET_C1 => 20μM, five.kf_NADH_C1 => 20Hz / μM, five.kf_Q_C1 => 1Hz / μM, five.kf_O2_C1 => 5e-4Hz / μM])
 prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.kf16_C1 => 0.001Hz / μM, markevich.kf17_C1 => 0.001Hz / μM / 20])
 prob_g = SteadyStateProblem(gauthier, [])
-alg = DynamicSS(FBDF())
-ealg = EnsembleThreads()
+alg = DynamicSS(TRBDF2())
+ealg = EnsembleSerial()
 
 # ## Varying MMP
 dpsirange = 100mV:5mV:200mV
 alter_dpsi = (prob, i, repeat) -> remake(prob, p=[dpsi => dpsirange[i]])
 
-eprob_5 = EnsembleProblem(prob_5; prob_func=alter_dpsi)
-eprob_m = EnsembleProblem(prob_m; prob_func=alter_dpsi)
-eprob_g = EnsembleProblem(prob_g; prob_func=alter_dpsi)
+eprob_5 = EnsembleProblem(prob_5; prob_func=alter_dpsi, safetycopy=false)
+eprob_m = EnsembleProblem(prob_m; prob_func=alter_dpsi, safetycopy=false)
+eprob_g = EnsembleProblem(prob_g; prob_func=alter_dpsi, safetycopy=false)
 @time sim_5 = solve(eprob_5, alg, ealg; trajectories=length(dpsirange))
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(dpsirange))
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(dpsirange))
@@ -495,6 +418,12 @@ xs = dpsirange
 ys = hcat(extract(sim_g, gauthier.vNADH_C1), extract(sim_m, markevich.vNADH_C1), extract(sim_5, five.vNADH_C1))
 
 plot(xs, ys, xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", label=["Gauthier" "Markevich" "Five"])
+
+# MMP vs Q turnover
+xs = dpsirange
+ys = hcat(extract(sim_g, gauthier.vQ_C1), extract(sim_m, markevich.vQ_C1), extract(sim_5, five.vQ_C1))
+
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Q rate (μM/ms)", label=["Gauthier" "Markevich" "Five"])
 
 #---
 ys = stack(extract.(Ref(sim_5), [five.C1_0, five.C1_1, five.C1_2, five.C1_3, five.C1_4]), dims=2)
@@ -512,9 +441,9 @@ nadhrange = 10μM:10μM:990μM
 nadrange = 1000μM .- nadhrange
 alter_nadh = (prob, i, repeat) -> remake(prob, p=[nadh => nadhrange[i], nad => nadrange[i]])
 
-eprob_5 = EnsembleProblem(prob_5; prob_func=alter_nadh)
-eprob_g = EnsembleProblem(prob_g; prob_func=alter_nadh)
-eprob_m = EnsembleProblem(prob_m; prob_func=alter_nadh)
+eprob_5 = EnsembleProblem(prob_5; prob_func=alter_nadh, safetycopy=false)
+eprob_g = EnsembleProblem(prob_g; prob_func=alter_nadh, safetycopy=false)
+eprob_m = EnsembleProblem(prob_m; prob_func=alter_nadh, safetycopy=false)
 @time sim_5 = solve(eprob_5, alg, ealg; trajectories=length(nadhrange))
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(nadhrange))
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(nadhrange))
