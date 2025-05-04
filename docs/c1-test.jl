@@ -254,10 +254,10 @@ function c1_markevich_full(; name=:c1markevich_full,
     return ODESystem(eqs, t; name)
 end
 
-# 5-state complex I model
-# Flavin and FeS can hold two electrons, respectively
-# One-step (and reversible) NADH oxidation and Q reduction
-function c1_5state(; name=:c1_5state,
+# 6-state complex I model
+# 5-state's FMNsq fraction is too high (stuck at F1N2)
+# One-step reversible NADH oxidation and Q reduction
+function c1_6state(; name=:c1_5state,
     Q_n=1.8mM, QH2_n=0.2mM,
     nad=500μM, nadh=500μM,
     dpsi=150mV, O2=6μM, sox_m=0.001μM,
@@ -284,6 +284,11 @@ function c1_5state(; name=:c1_5state,
         KI_NAD_C1 = 1000μM
         ## NADH + FMN = NAD + FMNH2
         KEQ_F2F0 = exp(2iVT * (Em_NAD - Em_FMN_FMNH))
+        ## FMNsq + N1a = FMN + N1ar
+        KEQ_F1_N1 = exp(iVT * (Em_N1a - Em_FMN_FMNsq))
+        KEQ_N1_N3 = exp(iVT * (Em_N3 - Em_N1a))
+        KEQ_N3_N2 = exp(iVT * (Em_N2 - Em_N3))
+        KEQ_F2_N1 = exp(iVT * (Em_N1a - Em_FMNsq_FMNH))
         ## FMNH2 + N2 = FMNsq + N2r
         KEQ_F2N0_F1N1 = exp(iVT * (Em_N2 - Em_FMNsq_FMNH))
         ## FMNH2 + N3 = FMNsq + N3r
@@ -304,20 +309,37 @@ function c1_5state(; name=:c1_5state,
         C1_2(t) = 0
         C1_3(t) = 0
         C1_4(t) = 0
+        C1_5(t) = 0
         ## Zero electron
-        F0N0(t)
+        F0N000(t)
         ## One electron
-        F1N0(t)
-        F0N1(t)
+        F1N000(t)
+        F0N100(t)
+        F0N010(t)
+        F0N001(t)
         ## Two electrons
-        F2N0(t)
-        F1N1(t)
-        F0N2(t)
+        F2N000(t)
+        F1N100(t)
+        F1N010(t)
+        F1N001(t)
+        F0N110(t)
+        F0N101(t)
+        F0N011(t)
         ## Three electrons
-        F2N1(t)
-        F1N2(t)
+        F2N100(t)
+        F2N010(t)
+        F2N001(t)
+        F1N110(t)
+        F1N101(t)
+        F1N011(t)
+        F0N111(t)
         ## Four electrons
-        F2N2(t)
+        F2N110(t)
+        F2N101(t)
+        F2N011(t)
+        F1N111(t)
+        ## Five electrons
+        F2N111(t)
         ## Rates
         vQ_C1(t)
         vROS_C1(t)
@@ -329,35 +351,59 @@ function c1_5state(; name=:c1_5state,
         FMNsq(t)
         FMNH(t)
         FMNH_NADH(t)
+        ## FeS states
+        N1ar(t)
+        N3r(t)
+        N2r(t)
     end
 
     fhm = h_m * inv(1E-7Molar)
-    f0 = KI_NAD_C1 / (KI_NAD_C1 + nad) ## Avaialble FMN
-    f2 = KI_NADH_C1 / (KI_NADH_C1 + nadh) ## Avaialble FMNH2
 
     ## NADH oxidation: F0 + NADH = F2 + NAD
     fnad = nad * KEQ_F2F0
-    v00_20 = kf_NADH_C1 * (F0N0 * f0 * nadh - F2N0 * f2 * fnad)
-    v01_21 = kf_NADH_C1 * (F0N1 * f0 * nadh - F2N1 * f2 * fnad)
-    v02_22 = kf_NADH_C1 * (F0N2 * f0 * nadh - F2N2 * f2 * fnad)
+    v0000_2000 = kf_NADH_C1 * (F0N000 * nadh - F2N000 * fnad)
+    v0100_2100 = kf_NADH_C1 * (F0N100 * nadh - F2N100 * fnad)
+    v0010_2010 = kf_NADH_C1 * (F0N010 * nadh - F2N010 * fnad)
+    v0001_2001 = kf_NADH_C1 * (F0N001 * nadh - F2N001 * fnad)
+    v0110_2110 = kf_NADH_C1 * (F0N110 * nadh - F2N110 * fnad)
+    v0101_2101 = kf_NADH_C1 * (F0N101 * nadh - F2N101 * fnad)
+    v0011_2011 = kf_NADH_C1 * (F0N011 * nadh - F2N011 * fnad)
+    v0111_2111 = kf_NADH_C1 * (F0N111 * nadh - F2N111 * fnad)
 
     ## Q reduction: N2 + Q + 6Hi = N0 + QH2 + 4Ho
     q = Q_n * fhm^2
     qh2 = QH2_n / KEQ_N2Q_N0QH2
-    v02_00 = kf_Q_C1 * (F0N2 * q - F0N0 * qh2)
-    v12_10 = kf_Q_C1 * (F1N2 * q - F1N0 * qh2)
-    v22_20 = kf_Q_C1 * (F2N2 * q - F2N0 * qh2)
+    v0011_0000 = kf_Q_C1 * (F0N011 * q - F0N000 * qh2)
+    v1011_1000 = kf_Q_C1 * (F1N011 * q - F1N000 * qh2)
+    v0111_0100 = kf_Q_C1 * (F0N111 * q - F0N100 * qh2)
+    v2011_1000 = kf_Q_C1 * (F2N011 * q - F2N000 * qh2)
+    v1111_1100 = kf_Q_C1 * (F1N111 * q - F1N100 * qh2)
+    v2111_2100 = kf_Q_C1 * (F2N111 * q - F2N100 * qh2)
 
     ## Superoxide rates (IF site only): F2 + O2 = F1 + SOX
     sox = sox_m / KEQ_O2_C1
-    v20_10 = kf_O2_C1 * (F2N0 * f2 * O2 - F1N0 * sox)
-    v21_11 = kf_O2_C1 * (F2N1 * f2 * O2 - F1N1 * sox)
-    v22_12 = kf_O2_C1 * (F2N2 * f2 * O2 - F1N2 * sox)
+    v2000_1000 = kf_O2_C1 * (F2N000 * O2 - F1N000 * sox)
+    v2100_1100 = kf_O2_C1 * (F2N100 * O2 - F1N100 * sox)
+    v2010_1010 = kf_O2_C1 * (F2N010 * O2 - F1N010 * sox)
+    v2001_1001 = kf_O2_C1 * (F2N001 * O2 - F1N001 * sox)
+    v2110_1110 = kf_O2_C1 * (F2N110 * O2 - F1N110 * sox)
+    v2101_1101 = kf_O2_C1 * (F2N101 * O2 - F1N101 * sox)
+    v2011_1011 = kf_O2_C1 * (F2N011 * O2 - F1N011 * sox)
+    v2111_1111 = kf_O2_C1 * (F2N111 * O2 - F1N111 * sox)
 
     ## Weight of each sub-state
-    wF1N0 = 1
-    wF0N1 = wF1N0 * KEQ_F1N0_F0N1 / fhm
-    den1 = wF1N0 + wF0N1
+    wF1N000 = 1
+    wF0N100 = wF1N000 * KEQ_F1_N1 / fhm
+    wF0N010 = wF0N100 * KEQ_N1_N3
+    wF0N001 = wF0N010 * KEQ_N3_N2
+    den1 = wF1N000 + wF0N100 + wF0N010 + wF0N001
+    wF2N000 = 1
+    wF1N100 = wF2N000 * KEQ_F2_N1
+    wF1N010 = wF1N100 * KEQ_N1_N3
+    wF1N001 = wF1N010 * KEQ_N3_N2
+    wF0N110 =
+    wF0N101 =
+    wF0N011 =
     wF2N0 = 1
     wF1N1 = wF2N0 * KEQ_F2N0_F1N1
     wF0N2 = wF1N1 * KEQ_F1N1_F0N2 / fhm
