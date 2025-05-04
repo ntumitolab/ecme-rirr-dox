@@ -401,6 +401,7 @@ function c1_6state(; name=:c1_5state,
     wF1N100 = wF2N000 * KEQ_F2_N1
     wF1N010 = wF1N100 * KEQ_N1_N3
     wF1N001 = wF1N010 * KEQ_N3_N2
+    ## TODO:
     wF0N110 =
     wF0N101 =
     wF0N011 =
