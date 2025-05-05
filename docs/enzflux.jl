@@ -39,9 +39,9 @@ eqs = let
     d2 = v12 - v23 + v42
     d3 = v23 - v34
     d4 = v34 - v47 - v42
-    d7 = v47 - v75
     d5 = v75 - v56
     d6 = v56 - v61
+    d7 = v47 - v75
     @assert isequal(d1 + d2 + d3 + d4 + d5 + d6 + d7, 0)
     [d1, d2, d3, d4, d5, d6, I1 + I2 + I3 + I4 + I5 + I6 + I7 - 1]
 end
@@ -51,27 +51,4 @@ end
 # Weights of all 7 states
 for k in (I1, I2, I3, I4, I5, I6, I7)
     println(numerator(sol[k]))
-end
-
-# ## Test complex I model
-@variables a12 a21 a23 a32 a34 a43 a41 a14
-@variables I1 I2 I3 I4
-
-eqs = let
-    v12 = I1 * a12 - I2 * a21
-    v23 = I2 * a23 - I3 * a32
-    v34 = I3 * a34 - I4 * a43
-    v41 = I4 * a41 - I1 * a14
-    d1 = v41 - v12
-    d2 = v12 - v23
-    d3 = v23 - v34
-    d4 = v34 - v41
-    @assert isequal(d1 + d2 + d3 + d4, 0)
-    [d1, d2, d3, I1 + I2 + I3 + I4 - 1]
-end
-
-@time sol = Symbolics.symbolic_solve(eqs, [I1, I2, I3, I4])[1]
-
-for k in (I1, I2, I3, I4)
-    println(k, " = ", numerator(sol[k]))
 end
