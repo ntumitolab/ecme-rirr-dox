@@ -273,7 +273,6 @@ function c1q(; name=:c1q,
         Em_N2 = -80mV               ## FeS N2 redox potential
         Em_Q_SQ_C1 = -300mV         ## -213mV in Markevich, 2015
         Em_SQ_QH2_C1 = +500mV       ## 800mV in Markevich, 2015
-        kf_O2_C1 = 1e-3Hz / μM      ## O2 reduction rate by IF site
         KI_NADH_C1 = 50μM
         KI_NAD_C1 = 1000μM
         ## NADH + FMN = NAD+ + FMNH-
@@ -305,12 +304,16 @@ function c1q(; name=:c1q,
         FMNH(t)
         FMNH_NADH(t)
         ## Quinone site
-        Iq_C1(t) ## Conserved
-        Q_C1(t) = 0
-        SQ_C1(t) = 0
-        QH2_C1(t) = 0
+        Iq_C1(t)
+        Q_C1(t)
+        SQ_C1(t)
+        QH2_C1(t)
+        wIq(t)
+        wIqQ(t)
+        wIqSQ(t)
+        wIqQH2(t)
         rKEQ13_C1(t)
-        ## N3 FeS clusters
+        ## FeS clusters
         N2_C1(t) ## Conserved
         N2r_C1(t) = 0
         N3_C1(t)
@@ -355,22 +358,39 @@ function c1q(; name=:c1q,
     fFMN = KI_NAD_C1 / (nad + KI_NAD_C1)
     fFMNH = KI_NADH_C1 / (nadh + KI_NADH_C1)
 
+    ## State transition rates in the quinone site
+    ## 1 = Iq 2 = IqQ, 3 = IqSQ, 4 = IqQH2
+    b12 = kf8_C1 * Q_n
+    b21 = kf8_C1 * rKEQ8_C1
+    b23 = kf9_C1 * N2r_C1 + kf17_C1 * rKEQ17_C1 * sox_m
+    b32 = kf9_C1 * rKEQ9_C1 * N2_C1 + kf17_C1 * O2
+    b34 = kf13_C1 * N2r_C1 * fhm^2
+    b43 = kf13_C1 * rKEQ13_C1 * N2_C1
+    b41 = kf14_C1
+    b14 = kf14_C1 * rKEQ14_C1 * QH2_n
+    qDen = wIq + wIqQ + wIqSQ + wIqQH2
+    qC1 = ET_C1 / qDen
+
     eqs = [
         D(N2r_C1) ~ v7 + v12 - v9 - v13,
-        D(Q_C1) ~ v8 - v9 + v17,
-        D(SQ_C1) ~ v9 - v17 - v13,
-        D(QH2_C1) ~ v13 - v14,
         rKEQ13_C1 ~ exp(-iVT * (Em_SQ_QH2_C1 - Em_N2 - 4dpsi)) * (h_i / h_m)^4,
-        ET_C1 ~ Iq_C1 + Q_C1 + SQ_C1 + QH2_C1,
+        wIq ~ b21*b32*b41 + b21*b32*b43 + b21*b34*b41 + b23*b34*b41,
+        wIqQ ~ b12*b32*b41 + b12*b32*b43 + b12*b34*b41 + b14*b32*b43,
+        wIqSQ ~ b12*b23*b41 + b12*b23*b43 + b14*b21*b43 + b14*b23*b43,
+        wIqQH2 ~ b12*b23*b34 + b14*b21*b32 + b14*b21*b34 + b14*b23*b34,
+        Iq_C1 ~ wIq * qC1,
+        Q_C1 ~ wIqQ * qC1,
+        SQ_C1 ~ wIqSQ * qC1,
+        QH2_C1 ~ wIqQH2 * qC1,
         ET_C1 ~ N2_C1 + N2r_C1,
         ET_C1 ~ N3_C1 + N3r_C1,
         N3_C1 ~ ET_C1 / (1 + rN3_C1),
         rN3_C1 ~ KEQ_NADH_N3 * NaNMath.sqrt(nadh / (nad * fhm)),
         FMN ~ ET_C1 / denf * fFMN,
         FMN_NAD ~ ET_C1 / denf * (1 - fFMN),
-        FMNsq ~ ET_C1 * rFMNHsq_FMN / denf,
-        FMNH ~ ET_C1 * rFMNH_FMN * fFMNH,
-        FMNH_NADH ~ ET_C1 * rFMNH_FMN * (1 - fFMNH),
+        FMNsq ~ ET_C1 / denf * rFMNHsq_FMN,
+        FMNH ~ ET_C1 / denf * rFMNH_FMN * fFMNH,
+        FMNH_NADH ~ ET_C1 / denf * rFMNH_FMN * (1 - fFMNH),
         vQ_C1 ~ -v8,
         vNADH_C1 ~ -0.5 * (v7 + v12 + v16),
         vROSIf ~ v16,
@@ -391,11 +411,11 @@ end
 end
 
 #---
-six = c1_6state(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
+qsys = c1q(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
-prob_6 = SteadyStateProblem(six, [six.ET_C1 => 20μM, six.kf_NADH_C1 => 50Hz / μM, six.kf_Q_C1 => 1Hz / μM, six.kf_O2_C1 => 5e-4Hz / μM])
+prob_q = SteadyStateProblem(qsys, [qsys.ET_C1 => 17μM, qsys.kf16_C1 => 0.001Hz / μM, qsys.kf17_C1 => 0.001Hz / μM / 20])
 prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.kf16_C1 => 0.001Hz / μM, markevich.kf17_C1 => 0.001Hz / μM / 20])
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(Rodas5P())
@@ -405,10 +425,10 @@ ealg = EnsembleSerial()
 dpsirange = 100mV:5mV:200mV
 alter_dpsi = (prob, i, repeat) -> remake(prob, p=[dpsi => dpsirange[i]])
 
-eprob_6 = EnsembleProblem(prob_6; prob_func=alter_dpsi, safetycopy=false)
+eprob_q = EnsembleProblem(prob_q; prob_func=alter_dpsi, safetycopy=false)
 eprob_m = EnsembleProblem(prob_m; prob_func=alter_dpsi, safetycopy=false)
 eprob_g = EnsembleProblem(prob_g; prob_func=alter_dpsi, safetycopy=false)
-@time sim_6 = solve(eprob_6, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
+@time sim_q = solve(eprob_q, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
 
@@ -417,40 +437,40 @@ extract(sim, k) = map(s -> s[k], sim)
 # MMP vs NADH turnover
 # markevich model has a steeper dependence
 xs = dpsirange
-ys = hcat(extract(sim_g, gauthier.vNADH_C1), extract(sim_m, markevich.vNADH_C1), extract(sim_6, six.vNADH_C1))
+ys = hcat(extract(sim_g, gauthier.vNADH_C1), extract(sim_m, markevich.vNADH_C1), extract(sim_q, qsys.vNADH_C1))
 
-plot(xs, ys, xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", label=["Gauthier" "Markevich" "Six"])
+plot(xs, ys, xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", label=["Gauthier" "Markevich" "IQ"])
 
 # MMP vs Q turnover
 xs = dpsirange
-ys = hcat(extract(sim_g, gauthier.vQ_C1), extract(sim_m, markevich.vQ_C1), extract(sim_5, five.vQ_C1))
+ys = hcat(extract(sim_g, gauthier.vQ_C1), extract(sim_m, markevich.vQ_C1), extract(sim_q, qsys.vQ_C1))
 
-plot(xs, ys, xlabel="MMP (mV)", ylabel="Q rate (μM/ms)", label=["Gauthier" "Markevich" "Five"])
-
-#---
-ys = stack(extract.(Ref(sim_6), [six.C1_0, six.C1_1, six.C1_2, six.C1_3, six.C1_4, six.C1_5]), dims=2)
-plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["C1_0" "C1_1" "C1_2" "C1_3" "C1_4" "C1_5"], legend=:right)
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Q rate (μM/ms)", label=["Gauthier" "Markevich" "IQ"])
 
 #---
-ys = stack(extract.(Ref(sim_6), [six.FMN, six.FMNsq, six.FMNH, six.N1ar, six.N2R]), dims=2)
+ys = stack(extract.(Ref(sim_q), [qsys.Q_C1, qsys.SQ_C1, qsys.QH2_C1, qsys.N2r_C1, qsys.N3r_C1]), dims=2)
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "N2r_C1" "N3r_C1"], legend=:right)
+
+#---
+ys = stack(extract.(Ref(sim_q), [qsys.FMN, qsys.FMNsq, qsys.FMNH, qsys.FMN_NAD, qsys.FMNH_NADH]), dims=2)
 plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH"], legend=:right)
 
 # MMP vs ROS production
 xs = dpsirange
 ys_g = extract(sim_g, gauthier.vROS_C1) .* 1000
 ys_m = extract(sim_m, markevich.vROS_C1) .* 1000
-ys_5 = extract(sim_5, five.vROS_C1) .* 1000
-plot(xs, [ys_g ys_m ys_5], xlabel="MMP (mV)", ylabel="ROS production (μM/s)", label=["Gauthier" "Markevich" "Five"])
+ys_q = extract(sim_q, qsys.vROS_C1) .* 1000
+plot(xs, [ys_g ys_m ys_q], xlabel="MMP (mV)", ylabel="ROS production (μM/s)", label=["Gauthier" "Markevich" "IQ"])
 
 # ## Varying NADH
 nadhrange = 10μM:10μM:990μM
 nadrange = 1000μM .- nadhrange
 alter_nadh = (prob, i, repeat) -> remake(prob, p=[nadh => nadhrange[i], nad => nadrange[i]])
 
-eprob_5 = EnsembleProblem(prob_5; prob_func=alter_nadh, safetycopy=false)
+eprob_q = EnsembleProblem(prob_q; prob_func=alter_nadh, safetycopy=false)
 eprob_g = EnsembleProblem(prob_g; prob_func=alter_nadh, safetycopy=false)
 eprob_m = EnsembleProblem(prob_m; prob_func=alter_nadh, safetycopy=false)
-@time sim_5 = solve(eprob_5, alg, ealg; trajectories=length(nadhrange), abstol=1e-8, reltol=1e-8)
+@time sim_q = solve(eprob_q, alg, ealg; trajectories=length(nadhrange), abstol=1e-8, reltol=1e-8)
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(nadhrange), abstol=1e-8, reltol=1e-8)
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(nadhrange), abstol=1e-8, reltol=1e-8)
 
@@ -458,46 +478,54 @@ eprob_m = EnsembleProblem(prob_m; prob_func=alter_nadh, safetycopy=false)
 xs = nadhrange
 ys_g = extract(sim_g, gauthier.vNADH_C1)
 ys_m = extract(sim_m, markevich.vNADH_C1)
-ys_5 = extract(sim_5, five.vNADH_C1)
+ys_q = extract(sim_q, qsys.vNADH_C1)
 
-plot(xs, [ys_g ys_m ys_5], xlabel="NADH (μM)", ylabel="NADH consumption (μM/ms)", label=["Gauthier" "Markevich" "Five"])
+plot(xs, [ys_g ys_m ys_q], xlabel="NADH (μM)", ylabel="NADH consumption (μM/ms)", label=["Gauthier" "Markevich" "IQ"])
 
 # NADH vs ROS production
-# Markevich's model is more sensitive
+# Q site model is more sensitive
 xs = nadhrange
-ys = [extract(sim_g, gauthier.vROS_C1) extract(sim_m, markevich.vROS_C1) extract(sim_5, five.vROS_C1)]
+ys = [extract(sim_g, gauthier.vROS_C1) extract(sim_m, markevich.vROS_C1) extract(sim_q, qsys.vROS_C1)]
 
-plot(xs, ys, xlabel="NADH (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "Five"])
+plot(xs, ys, xlabel="NADH (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "IQ"])
+
+#---
+ys = stack(extract.(Ref(sim_q), [qsys.Q_C1, qsys.SQ_C1, qsys.QH2_C1, qsys.N2r_C1, qsys.N3r_C1]), dims=2)
+plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "N2r_C1" "N3r_C1"], legend=:right)
+
+#---
+ys = stack(extract.(Ref(sim_q), [qsys.FMN, qsys.FMNsq, qsys.FMNH, qsys.FMN_NAD, qsys.FMNH_NADH]), dims=2)
+plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH"], legend=:right)
 
 # ## Varying Q
 qh2range = 10μM:10μM:1990μM
 qrange = 2000μM .- qh2range
 alter_qh2 = (prob, i, repeat) -> remake(prob, p=[QH2_n => qh2range[i], Q_n => qrange[i]])
 
-eprob_5 = EnsembleProblem(prob_5; prob_func=alter_qh2, safetycopy=false)
+eprob_q = EnsembleProblem(prob_q; prob_func=alter_qh2, safetycopy=false)
 eprob_g = EnsembleProblem(prob_g; prob_func=alter_qh2, safetycopy=false)
 eprob_m = EnsembleProblem(prob_m; prob_func=alter_qh2, safetycopy=false)
-@time sim_5 = solve(eprob_5, alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
+@time sim_q = solve(eprob_q, alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
 
 # QH2 vs NADH turnover
 xs = qh2range
-ys = [extract(sim_g, gauthier.vNADH_C1) extract(sim_m, markevich.vNADH_C1) extract(sim_5, five.vNADH_C1)]
+ys = [extract(sim_g, gauthier.vNADH_C1) extract(sim_m, markevich.vNADH_C1) extract(sim_q, qsys.vNADH_C1)]
 
-plot(xs, ys, xlabel="QH2 (μM)", ylabel="NADH rate (μM/ms)", label=["Gauthier" "Markevich" "Five"])
+plot(xs, ys, xlabel="QH2 (μM)", ylabel="NADH rate (μM/ms)", label=["Gauthier" "Markevich" "IQ"])
 
 # QH2 vs Q turnover
 xs = qh2range
-ys = [extract(sim_g, gauthier.vQ_C1) extract(sim_m, markevich.vQ_C1) extract(sim_5, five.vQ_C1)]
+ys = [extract(sim_g, gauthier.vQ_C1) extract(sim_m, markevich.vQ_C1) extract(sim_q, qsys.vQ_C1)]
 
-plot(xs, ys, xlabel="QH2 (μM)", ylabel="Q rate (μM/ms)", label=["Gauthier" "Markevich" "Five"])
+plot(xs, ys, xlabel="QH2 (μM)", ylabel="Q rate (μM/ms)", label=["Gauthier" "Markevich" "IQ"])
 
 # QH2 vs ROS production
 # Gauthier model produces a lot of SOX on high QH2
 xs = qh2range
-ys = [extract(sim_g, gauthier.vROS_C1) extract(sim_m, markevich.vROS_C1) extract(sim_5, five.vROS_C1)]
-plot(xs, ys, xlabel="QH2 (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "Five"])
+ys = [extract(sim_g, gauthier.vROS_C1) extract(sim_m, markevich.vROS_C1) extract(sim_q, qsys.vROS_C1)]
+plot(xs, ys, xlabel="QH2 (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "IQ"])
 
 #---
 @unpack C1_1, C1_2, C1_3, C1_4, C1_5, C1_6, C1_7 = gauthier
