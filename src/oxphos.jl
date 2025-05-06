@@ -145,13 +145,13 @@ function get_etc_sys(;
         ## Quinone site ROS generation
         v17 = kf17_C1 * (SQ_C1 * O2 - Q_C1 * sox_m * rKEQ17_C1)
         ## FMN + NADH = FMNH- + NAD+
-        rFMNH_FMN = (nadh / nad) * KEQ2_C1
+        rFMNH_FMN = (nadh_m / nad_m) * KEQ2_C1
         ## FMNHsq + N3 = FMN + N3− + Hi+
         rFMNHsq_FMN = rN3_C1 * fhm * rKEQ11_C1
         ## Weights in the flavin site
         denf = 1 + rFMNH_FMN + rFMNHsq_FMN
-        fFMN = KI_NAD_C1 / (nad + KI_NAD_C1)
-        fFMNH = KI_NADH_C1 / (nadh + KI_NADH_C1)
+        fFMN = KI_NAD_C1 / (nad_m + KI_NAD_C1)
+        fFMNH = KI_NADH_C1 / (nadh_m + KI_NADH_C1)
 
         ## State transition rates in the quinone site
         ## 1 = Iq 2 = IqQ, 3 = IqSQ, 4 = IqQH2
@@ -180,7 +180,7 @@ function get_etc_sys(;
             ET_C1 ~ N2_C1 + N2r_C1,
             ET_C1 ~ N3_C1 + N3r_C1,
             N3_C1 ~ ET_C1 / (1 + rN3_C1),
-            rN3_C1 ~ KEQ_NADH_N3 * NaNMath.sqrt(nadh / (nad * fhm)),
+            rN3_C1 ~ KEQ_NADH_N3 * NaNMath.sqrt(nadh_m / (nad_m * fhm)),
             FMN ~ ET_C1 / denf * fFMN,
             FMN_NAD ~ ET_C1 / denf * (1 - fFMN),
             FMNsq ~ ET_C1 / denf * rFMNHsq_FMN,
