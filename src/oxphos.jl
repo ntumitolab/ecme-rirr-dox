@@ -222,8 +222,8 @@ function get_etc_sys(;
         K36_C4 = 4.826e11Hz / mM
         K63_C4 = 4.826Hz / mM
         K37_C4 = 2.92367e6Hz
-        K73_C4 = 0.029236Hz  # @pH7
-        KI_DOX_C4 = 165μM  # DOX inhibition concentration (IC50) on complex IV
+        K73_C4 = 0.029236Hz # @pH7
+        KI_DOX_C4 = 165μM   # DOX inhibition concentration (IC50) on complex IV
     end
 
     @variables begin
@@ -291,13 +291,15 @@ function get_etc_sys(;
         EmQp_SQp = -160mV
         EmQn_SQn = +70mV
         EmSQn_QH2n = +170mV
-        EmbL = -40mV
-        EmbH = +40mV
+        EmbL_bHo = -40mV
+        EmbL_bHr = EmbL_bHo - 60mV
+        EmbH_bLo = +40mV
+        EmbH_bLr = EmbL_bHr - 60mV
         EmFeS = +280mV
         Emcytc1 = +245mV
         Emcytc = +255mV
         K03_C3 = 1666.63Hz / mM
-        KEQ3_C3 = exp(iVT * (EmFeS - EmSQp_QH2p))
+        KEQ3_C3 = exp(iVT * (EmFeS - EmSQp_QH2p)) # -10mV
         K04_C3 = 50.67Hz / mM
         KEQ4_OX_C3 = 129.9853 # +130mV
         KEQ4_RD_C3 = 13.7484  # +70mV
