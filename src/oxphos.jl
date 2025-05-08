@@ -121,9 +121,9 @@ function get_etc_sys(;
 
     c1eqs = let
         C1_CONC = ET_C1 * MT_PROT
-        # complex I inhibition by DOX and rotenone
+        ## complex I inhibition by DOX and rotenone
         C1_INHIB = hil(KI_DOX_C1, DOX, 3) * (1 - ROTENONE_BLOCK)
-        # Electron leak scaling factor from complex I
+        ## Electron leak scaling factor from complex I
         E_LEAK_C1 = 1 + K_RC_DOX * DOX
         fhm = h_m * inv(1E-7Molar)
         ## N3− + N2 = N3 + N2−
@@ -155,14 +155,14 @@ function get_etc_sys(;
 
         ## State transition rates in the quinone site
         ## 1 = Iq 2 = IqQ, 3 = IqSQ, 4 = IqQH2
-        b12 = kf8_C1 * Q_n
+        b12 = kf8_C1 * q
         b21 = kf8_C1 * rKEQ8_C1
         b23 = kf9_C1 * N2r_C1 + kf17_C1 * rKEQ17_C1 * sox_m
         b32 = kf9_C1 * rKEQ9_C1 * N2_C1 + kf17_C1 * O2
         b34 = kf13_C1 * N2r_C1 * fhm^2
         b43 = kf13_C1 * rKEQ13_C1 * N2_C1
         b41 = kf14_C1
-        b14 = kf14_C1 * rKEQ14_C1 * QH2_n
+        b14 = kf14_C1 * rKEQ14_C1 * qh2
         qDen = wIq + wIqQ + wIqSQ + wIqQH2
         qC1 = ET_C1 / qDen
 
@@ -191,10 +191,10 @@ function get_etc_sys(;
             vROSIf ~ v16,
             vROSIq ~ v17,
             vROSC1 ~ vROSIf + vROSIq,
-            TNC1 ~ -vNADHC1 / C1_CONC,
             vQH2C1 ~ -vQC1,
-            vHresC1 ~ 4v13,
+            vHresC1 ~ 2vQH2C1,
             vNADC1 ~ -vNADHC1,
+            TNC1 ~ vNADC1 / C1_CONC,
         ]
     end
 
