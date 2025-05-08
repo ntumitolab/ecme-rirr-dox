@@ -16,16 +16,16 @@ bcl = 1second
 @unpack DOX, rhoC4, rhoC3 = sys
 sts = unknowns(sys)
 u0 = build_u0(sys)
-alg = KenCarp47()
+alg = FBDF()
 opts = (; reltol=1e-6, abstol=1e-6, progress=true)
 
-# The collapse of MMP is between 295uM and 296uM of DOX
-doxrange = 400μM:10μM:500μM
+# The collapse of MMP is between 100uM and 120uM of DOX
+doxrange = 100μM:10μM:200μM
 prob = ODEProblem(sys, u0, tend)
 prob_func = (prob, i, repeat) -> remake(prob, p=[DOX => doxrange[i]])
 eprob = EnsembleProblem(prob; prob_func)
 
-@time sim = solve(eprob, alg, EnsembleThreads(); trajectories=length(doxrange), opts...)
+@time sim = solve(eprob, alg, EnsembleSerial(); trajectories=length(doxrange), opts...)
 
 #---
 fig = plot(title="MMP")
@@ -39,14 +39,7 @@ fig = plot(title="ATP")
 for (i, dox) in enumerate(doxrange)
     plot!(fig, sim[i], idxs=(sys.t/1000, sys.atp_i), lab="DOX = $(dox) μM")
 end
-plot!(fig, ylabel="Conc. (μM)", xlabel="Time (s)", legend=:right, ylim=(0, 8mM)) |> PNG
-
-#---
-fig = plot(title="ATP synthase")
-for (i, dox) in enumerate(doxrange)
-    plot!(fig, sim[i], idxs=(sys.t/1000, sys.vC5), lab="DOX = $(dox) μM")
-end
-plot!(fig, ylabel="Rate (μM/ms)", xlabel="Time (s)", legend=:right) |> PNG
+plot!(fig, ylabel="Conc. (μM)", xlabel="Time (s)", legend=:bottomright, ylim=(0, 8mM)) |> PNG
 
 #---
 fig = plot(title="Cytosolic superoxide")
@@ -84,4 +77,5 @@ plot(sim[end], idxs=[Q_n + Q_p, SQn, QH2_n+QH2_p, SQp], title="Q cycle ", legend
 @unpack cit, isoc, oaa, akg, scoa, suc, fum, mal = sys
 plot(sim[end], idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal], title="TCA cycle ", legend=:right) |> PNG
 
+#---
 plot(sim[end], idxs=[sys.nadh_m], legend=:right) |> PNG
