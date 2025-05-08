@@ -294,7 +294,7 @@ function get_etc_sys(;
         EmbL_bHo = -40mV
         EmbL_bHr = EmbL_bHo - 60mV
         EmbH_bLo = +40mV
-        EmbH_bLr = EmbL_bHr - 60mV
+        EmbH_bLr = EmbH_bLo - 60mV
         EmFeS = +280mV
         Emcytc1 = +245mV
         Emcytc = +255mV
