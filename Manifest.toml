@@ -17,9 +17,9 @@ weakdeps = ["ChainRulesCore", "ConstructionBase", "EnzymeCore"]
 
 [[deps.AbstractAlgebra]]
 deps = ["LinearAlgebra", "MacroTools", "Preferences", "Random", "RandomExtensions", "SparseArrays"]
-git-tree-sha1 = "621925f7ff4094d3c747a4e8c56d63c37d1ff9a0"
+git-tree-sha1 = "34d32b62988ea50c169c9d4bef9cb4ce6906d305"
 uuid = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
-version = "0.44.12"
+version = "0.44.13"
 weakdeps = ["Requires", "Test"]
 
     [deps.AbstractAlgebra.extensions]
