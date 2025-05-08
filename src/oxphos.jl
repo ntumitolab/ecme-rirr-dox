@@ -355,11 +355,10 @@ function get_etc_sys(;
         v1 = vQH2C1 + vSDH
         # QH2 diffusion
         v2 = KD_Q * (QH2_n - QH2_p)
-        # v3 = QH2 to FeS
-        Qo_avail = (rhoQo - SQp) / rhoQo
-        k03 = K03_C3 * (1 - MYXOTHIAZOLE_BLOCK)
-        v3 = k03 * (KEQ3_C3 * Qo_avail * fes_ox * QH2_p - fes_rd * SQp * fHi^2)
-        # v4 = SQp and bH
+        ## QH2 + FeS = SQp + FeS- + 2H+
+        Qo_avail = (rhoQo - SQp) / rhoQo * (1 - MYXOTHIAZOLE_BLOCK)
+        v3 = K03_C3 * (KEQ3_C3 * Qo_avail * fes_ox * QH2_p - fes_rd * SQp * fHi^2)
+        # v4: SQp + bL = Qp + bL-
         el4 = exp(-iVT * α_C3 * δ₁_C3 * dpsi)
         er4 = exp(iVT * α_C3 * (1 - δ₁_C3) * dpsi)
         v4_ox = K04_C3 * (KEQ4_OX_C3 * SQp * el4 * cytb_1 - Q_p * er4 * cytb_2)
@@ -369,13 +368,13 @@ function get_etc_sys(;
         # v6 = bL to bH
         v6 = K06_C3 * (KEQ6_C3 * cytb_2 * exp(-iVT * β_C3 * δ₂_C3 * dpsi) - cytb_3 * exp(iVT * β_C3 * (1 - δ₂_C3) * dpsi))
         # v7 = bH to Qn; v8: bH to SQn
-        Qi_avail = (rhoQi - SQn) / rhoQi
+        Qi_avail = (rhoQi - SQn) / rhoQi * C3_INHIB
         el7 = exp(-iVT * γ_C3 * δ₃_C3 * dpsi)
         er7 = exp(iVT * γ_C3 * (1 - δ₃_C3) * dpsi)
-        v7_ox = K07_OX_C3 * C3_INHIB * (KEQ7_OX_C3 * cytb_3 * Q_n * Qi_avail * el7 - cytb_1 * SQn * er7)
-        v7_rd = K07_RD_C3 * C3_INHIB * (KEQ7_RD_C3 * cytb_4 * Q_n * Qi_avail * el7 - cytb_2 * SQn * er7)
-        v8_ox = K08_OX_C3 * C3_INHIB * (KEQ8_OX_C3 * cytb_3 * SQn * fHm^2 * el7 - cytb_1 * QH2_n * Qi_avail * er7)
-        v8_rd = K08_RD_C3 * C3_INHIB * (KEQ8_RD_C3 * cytb_4 * SQn * fHm^2 * el7 - cytb_2 * QH2_n * Qi_avail * er7)
+        v7_ox = K07_OX_C3 *  (KEQ7_OX_C3 * cytb_3 * Q_n * Qi_avail * el7 - cytb_1 * SQn * er7)
+        v7_rd = K07_RD_C3 * (KEQ7_RD_C3 * cytb_4 * Q_n * Qi_avail * el7 - cytb_2 * SQn * er7)
+        v8_ox = K08_OX_C3 * (KEQ8_OX_C3 * cytb_3 * SQn * fHm^2 * el7 - cytb_1 * QH2_n * Qi_avail * er7)
+        v8_rd = K08_RD_C3 * (KEQ8_RD_C3 * cytb_4 * SQn * fHm^2 * el7 - cytb_2 * QH2_n * Qi_avail * er7)
         # v9 = fes -> cytc1
         v9 = K09_C3 * (KEQ9_C3 * fes_rd * cytc1_ox - fes_ox * cytc1_rd)
         # v10 = Qdot + O2 -> O2- + Q  (ROS produced by complex III)
@@ -400,7 +399,7 @@ function get_etc_sys(;
             D(fes_ox) ~ v9 - v3,
             D(cytc1_ox) ~ v33 - v9,
             D(cytc_ox) ~ vCytcOx - v33,
-            vHresC3 ~ 2 * v3,
+            vHresC3 ~ v3,
             vHres ~ vHresC1 + vHresC3 + vHresC4,
             vROSC3 ~ v10,
             vROS ~ vROSC3 + vROSC1,
