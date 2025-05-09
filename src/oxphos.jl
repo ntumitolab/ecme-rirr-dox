@@ -191,8 +191,8 @@ function get_etc_sys(;
             vROSIf ~ v16,
             vROSIq ~ v17,
             vROSC1 ~ vROSIf + vROSIq,
-            vQH2C1 ~ -vQC1,
-            vHresC1 ~ 2vQH2C1,
+            vQH2C1 ~ v14,
+            vHresC1 ~ 4v13,
             vNADC1 ~ -vNADHC1,
             TNC1 ~ vNADC1 / C1_CONC,
         ]
@@ -377,9 +377,9 @@ function get_etc_sys(;
         v8_rd = K08_RD_C3 * (KEQ8_RD_C3 * cytb_4 * SQn * fHm^2 * el7 - cytb_2 * QH2_n * Qi_avail * er7)
         # v9 = fes -> cytc1
         v9 = K09_C3 * (KEQ9_C3 * fes_rd * cytc1_ox - fes_ox * cytc1_rd)
-        # v10 = Qdot + O2 -> O2- + Q  (ROS produced by complex III)
+        # v10: SQp + O2 -> O2- + Q
         v10 = K010_C3 * (KEQ10_C3 * O2 * SQp - sox_m * Q_p)
-        # Redox reaction between cytc1 and cytc
+        # cytc1_2+  + cytc_3+ = cytc1_3+  + cytc_2+
         v33 = K33_C3 * (KEQ33_C3 * cytc1_rd * cytc_ox - cytc1_ox * cytc_rd)
         [
             C3_CONC ~ cytb_1 + cytb_2 + cytb_3 + cytb_4,
