@@ -13,8 +13,8 @@ bcl = 1.0second
 @named sys = build_model(; bcl, tend)
 u0 = build_u0(sys)
 sts = unknowns(sys)
-alg = TRBDF2()
-prob = ODEProblem(sys, u0, tend, [])
+alg = FBDF()
+prob = ODEProblem(sys, u0, tend, [sys.KCAT_IDH => 60Hz])
 @time sol = solve(prob, alg; reltol=1e-6, abstol=1e-6, progress=true)
 
 for i in sts
@@ -29,3 +29,6 @@ plot(sol, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal], legend=:right, title=
 # Q cycle
 @unpack Q_n, SQn, QH2_n, QH2_p, SQp, Q_p, fes_ox, fes_rd, cytc_ox, cytc_rd = sys
 pl_q = plot(sol, idxs=[Q_n + Q_p, SQn, QH2_n + QH2_p, SQp], title="Q cycle", legend=:left, xlabel="Time (ms)", ylabel="Conc. (μM)") |> PNG
+
+#---
+plot(sol, idxs = [sys.vHresC1, sys.vHresC3, sys.vHresC4])

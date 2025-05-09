@@ -1,14 +1,15 @@
 # TCA cycle model, default parameters values from Gauthier et al. (2013)
 function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m=8mM, mg_m=0.4mM, use_mg=false, name=:tcasys)
     @parameters begin
-        TCA_T = 1.3mM  # Total TCA metabolite pool
+        # Total TCA metabolite pool
+        TCA_T = 1.3mM
 
         ## Citrate synthase
-        KCAT_CS = 50Hz # Gauthier (2013), mitochondrial model
+        KCAT_CS = 50Hz
         ET_CS = 400μM
         KM_ACCOA_CS = 12.6μM
         KM_OAA_CS = 0.64μM
-        ACCOA = 1000μM  # 100μM
+        ACCOA = 1000μM
 
         ## ACO (aconitase)
         KF_ACO = 12.5Hz # Zhou, 2009
@@ -16,7 +17,7 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m=8mM, mg_m=0.
 
         ## IDH3 (Isocitrate dehydrogenase, NADH-producing)
         KI_NADH_IDH = 190μM
-        KCAT_IDH = 41Hz
+        KCAT_IDH = 60Hz
         ET_IDH = 109μM
         KH1_IDH = 1E-5mM
         KH2_IDH = 9E-4mM
