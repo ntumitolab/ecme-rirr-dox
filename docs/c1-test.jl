@@ -4,6 +4,8 @@ using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
 using SteadyStateDiffEq
 using OrdinaryDiffEq
+using OhMyThreads
+using Base.Threads: nthreads
 using NaNMath
 using Plots
 using ECMEDox
@@ -419,15 +421,18 @@ prob_q = SteadyStateProblem(qsys, [qsys.ET_C1 => 17μM, qsys.kf16_C1 => 0.001Hz 
 prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.kf16_C1 => 0.001Hz / μM, markevich.kf17_C1 => 0.001Hz / μM / 20])
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(Rodas5P())
-ealg = EnsembleSerial()
+ealg = EnsembleThreads()
 
 # ## Varying MMP
 dpsirange = 100mV:5mV:200mV
-alter_dpsi = (prob, i, repeat) -> remake(prob, p=[dpsi => dpsirange[i]])
+alter_dpsi = (prob, i, repeat) -> begin
+    prob.ps[dpsi] = dpsirange[i]
+    prob
+end
 
-eprob_q = EnsembleProblem(prob_q; prob_func=alter_dpsi, safetycopy=false)
-eprob_m = EnsembleProblem(prob_m; prob_func=alter_dpsi, safetycopy=false)
-eprob_g = EnsembleProblem(prob_g; prob_func=alter_dpsi, safetycopy=false)
+eprob_q = EnsembleProblem(prob_q; prob_func=alter_dpsi)
+eprob_m = EnsembleProblem(prob_m; prob_func=alter_dpsi)
+eprob_g = EnsembleProblem(prob_g; prob_func=alter_dpsi)
 @time sim_q = solve(eprob_q, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
@@ -464,12 +469,15 @@ plot(xs, [ys_g ys_m ys_q], xlabel="MMP (mV)", ylabel="ROS production (μM/s)", l
 
 # ## Varying NADH
 nadhrange = 10μM:10μM:990μM
-nadrange = 1000μM .- nadhrange
-alter_nadh = (prob, i, repeat) -> remake(prob, p=[nadh => nadhrange[i], nad => nadrange[i]])
+alter_nadh = (prob, i, repeat) -> begin
+    prob.ps[nadh] = nadhrange[i]
+    prob.ps[nad] = 1000μM - prob.ps[nadh]
+    prob
+end
 
-eprob_q = EnsembleProblem(prob_q; prob_func=alter_nadh, safetycopy=false)
-eprob_g = EnsembleProblem(prob_g; prob_func=alter_nadh, safetycopy=false)
-eprob_m = EnsembleProblem(prob_m; prob_func=alter_nadh, safetycopy=false)
+eprob_q = EnsembleProblem(prob_q; prob_func=alter_nadh)
+eprob_g = EnsembleProblem(prob_g; prob_func=alter_nadh)
+eprob_m = EnsembleProblem(prob_m; prob_func=alter_nadh)
 @time sim_q = solve(eprob_q, alg, ealg; trajectories=length(nadhrange), abstol=1e-8, reltol=1e-8)
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(nadhrange), abstol=1e-8, reltol=1e-8)
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(nadhrange), abstol=1e-8, reltol=1e-8)
@@ -499,12 +507,15 @@ plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["FMN" "FMNsq" "
 
 # ## Varying Q
 qh2range = 10μM:10μM:1990μM
-qrange = 2000μM .- qh2range
-alter_qh2 = (prob, i, repeat) -> remake(prob, p=[QH2_n => qh2range[i], Q_n => qrange[i]])
+alter_qh2 = (prob, i, repeat) -> begin
+    prob.ps[QH2_n] = qh2range[i]
+    prob.ps[Q_n] = 2000μM - prob.ps[QH2_n]
+    prob
+end
 
-eprob_q = EnsembleProblem(prob_q; prob_func=alter_qh2, safetycopy=false)
-eprob_g = EnsembleProblem(prob_g; prob_func=alter_qh2, safetycopy=false)
-eprob_m = EnsembleProblem(prob_m; prob_func=alter_qh2, safetycopy=false)
+eprob_q = EnsembleProblem(prob_q; prob_func=alter_qh2)
+eprob_g = EnsembleProblem(prob_g; prob_func=alter_qh2)
+eprob_m = EnsembleProblem(prob_m; prob_func=alter_qh2)
 @time sim_q = solve(eprob_q, alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)

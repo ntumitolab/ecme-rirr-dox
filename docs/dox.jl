@@ -16,16 +16,19 @@ bcl = 1second
 @unpack DOX, rhoC4, rhoC3 = sys
 sts = unknowns(sys)
 u0 = build_u0(sys)
-alg = FBDF()
+alg = KenCarp47()
 opts = (; reltol=1e-6, abstol=1e-6, progress=true)
-
-# The collapse of MMP is between 100uM and 120uM of DOX
-doxrange = 100μM:10μM:200μM
 prob = ODEProblem(sys, u0, tend)
-prob_func = (prob, i, repeat) -> remake(prob, p=[DOX => doxrange[i]])
-eprob = EnsembleProblem(prob; prob_func)
 
-@time sim = solve(eprob, alg, EnsembleSerial(); trajectories=length(doxrange), opts...)
+# The collapse of MMP is between 261uM and 263uM of DOX
+doxrange = 260μM:1μM:270μM
+prob_func = (prob, i, repeat) -> begin
+    prob.ps[DOX] = doxrange[i]
+    prob
+end
+
+eprob = EnsembleProblem(prob; prob_func)
+@time sim = solve(eprob, alg; trajectories=length(doxrange), opts...)
 
 #---
 fig = plot(title="MMP")
