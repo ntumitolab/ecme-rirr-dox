@@ -31,7 +31,7 @@ function c3_gauthier(suc, fum, dpsi;
         Em_FUM_SUC = 30mV
         ## midpoint potential of Q -> QH2
         Em_Q_QH2 = 100mV
-        ## (Reverse) equlibrium constant of SDH
+        ## (Reverse) equlibrium constant of SDH (-140meV)
         rKEQ_C2 = exp(-2iVT * (Em_Q_QH2 - Em_FUM_SUC))
         rhoC3 = 325μM
         rhoQo = rhoC3    # Qo seat
@@ -39,7 +39,7 @@ function c3_gauthier(suc, fum, dpsi;
         Q_T = 4mM        # Total CoQ pool
         KI_DOX_C3 = 185μM  # DOX inhibition concentration (IC50) on complex III
         EmSQp_QH2p = +290mV
-        EmQp_SQp = -160mV
+        EmQp_SQp = -170mV
         EmQn_SQn = +70mV
         EmSQn_QH2n = +170mV
         EmbL_bHo = -40mV
@@ -52,8 +52,8 @@ function c3_gauthier(suc, fum, dpsi;
         K03_C3 = 1666.63Hz / mM
         KEQ3_C3 = exp(iVT * (EmFeS - EmSQp_QH2p)) # -10mV
         K04_C3 = 50.67Hz / mM
-        KEQ4_OX_C3 = 129.9853 # +130mV
-        KEQ4_RD_C3 = 13.7484  # +70mV
+        KEQ4_OX_C3 = exp(iVT * (EmbL_bHo - EmQp_SQp)) # +130mV
+        KEQ4_RD_C3 = exp(iVT * (EmbL_bHr - EmQp_SQp)) # +70mV
         KD_Q = 22000Hz
         K06_C3 = 166.67Hz
         KEQ6_C3 = 9.4546 # +60mV
@@ -64,7 +64,7 @@ function c3_gauthier(suc, fum, dpsi;
         K08_OX_C3 = 83.33Hz / mM
         K08_RD_C3 = 8.33Hz / mM
         KEQ8_OX_C3 = 129.9853 # +130mV
-        KEQ8_RD_C3 = 9.4546   # +60mV
+        KEQ8_RD_C3 = 9.4546   # +60mV??? should be +190mV?
         K09_C3 = 832.48Hz / mM
         KEQ9_C3 = exp(iVT * (Emcytc1 - EmFeS))  # -35mV
         K010_C3 = 28.33Hz / mM
@@ -116,7 +116,7 @@ function c3_gauthier(suc, fum, dpsi;
     ## QH2 + FeS = SQp + FeS- + 2H+
     Qo_avail = (rhoQo - SQp) / rhoQo * (1 - MYXOTHIAZOLE_BLOCK)
     v3 = K03_C3 * (KEQ3_C3 * Qo_avail * fes_ox * QH2_p - fes_rd * SQp * fHi^2)
-    ## v4: SQp + bL = Qp + bL-
+    ## v4: SQp + bL = Qp + bL- (rds?)
     el4 = exp(-iVT * α_C3 * δ₁_C3 * dpsi)
     er4 = exp(iVT * α_C3 * (1 - δ₁_C3) * dpsi)
     v4_ox = K04_C3 * (KEQ4_OX_C3 * SQp * el4 * cytb_1 - Q_p * er4 * cytb_2)
@@ -183,7 +183,9 @@ end
 
 #---
 gsys = c3_gauthier(suc, fum, dpsi; cytc_ox, cytc_rd) |> structural_simplify
-prob_g = SteadyStateProblem(qsys, [])
+#---
+prob_g = SteadyStateProblem(gsys, [])
+
 alg = DynamicSS(Rodas5P())
 ealg = EnsembleThreads()
 extract(sim, k) = map(s -> s[k], sim)
@@ -215,6 +217,6 @@ xs = sucrange
 ys = [extract(sim_g, gsys.vHresC3) extract(sim_g, gsys.vROSC3) extract(sim_g, gsys.vSDH)]
 plot(xs, ys[:, 2], xlabel="Succinate (μM)", ylabel="Rate (mM/s)", label=["G (ROS)"])
 
-
 plot(xs, extract(sim_g, gsys.QH2_n * 2), xlabel="Succinate (μM)", ylabel="QH2 (μM)", label=["G"])
+
 plot(xs, ys, xlabel="Succinate (μM)", ylabel="Rate (mM/s)", label=["G (Resp.)" "G (ROS)" "G (SDH)"])
