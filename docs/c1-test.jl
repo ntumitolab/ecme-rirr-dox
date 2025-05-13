@@ -4,8 +4,6 @@ using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
 using SteadyStateDiffEq
 using OrdinaryDiffEq
-using OhMyThreads
-using Base.Threads: nthreads
 using NaNMath
 using Plots
 using ECMEDox
