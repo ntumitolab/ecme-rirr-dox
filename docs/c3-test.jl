@@ -33,7 +33,7 @@ function c3_gauthier(suc, fum, dpsi;
         Em_Q_QH2 = 100mV
         ## (Reverse) equlibrium constant of SDH (-140meV)
         rKEQ_C2 = exp(-2iVT * (Em_Q_QH2 - Em_FUM_SUC))
-        rhoC3 = 325μM
+        rhoC3 = 325μM    # Complex III activity
         rhoQo = rhoC3    # Qo seat
         rhoQi = rhoC3    # Qi seat
         Q_T = 4mM        # Total CoQ pool
@@ -74,7 +74,6 @@ function c3_gauthier(suc, fum, dpsi;
     end
 
     ## complex III inhibition by DOX and antimycin
-    C3_INHIB = 1 - ANTIMYCIN_BLOCK
     C3_CONC = rhoC3 * MT_PROT
 
     @variables begin
@@ -126,7 +125,7 @@ function c3_gauthier(suc, fum, dpsi;
     ## v6 = bL to bH
     v6 = K06_C3 * (KEQ6_C3 * cytb_2 * exp(-iVT * β_C3 * δ₂_C3 * dpsi) - cytb_3 * exp(iVT * β_C3 * (1 - δ₂_C3) * dpsi))
     ## v7 = bH to Qn; v8: bH to SQn
-    Qi_avail = (rhoQi - SQn) / rhoQi * C3_INHIB
+    Qi_avail = (rhoQi - SQn) / rhoQi * (1 - ANTIMYCIN_BLOCK)
     el7 = exp(-iVT * γ_C3 * δ₃_C3 * dpsi)
     er7 = exp(iVT * γ_C3 * (1 - δ₃_C3) * dpsi)
     qn = Q_n * Qi_avail
@@ -170,6 +169,109 @@ function c3_gauthier(suc, fum, dpsi;
         vROSC3 ~ v10,
     ]
     return ODESystem(eqs, t; name)
+end
+
+## Semireverse bc1 complex model adapted from Gauthier, 2013
+function c3_semireverse(suc, fum, dpsi;
+    MT_PROT=1,
+    O2=6μM,
+    sox_m=0.001μM,
+    h_i=exp10(-7) * Molar,
+    h_m=exp10(-7.6) * Molar,
+    ANTIMYCIN_BLOCK=0,
+    MYXOTHIAZOLE_BLOCK=0,
+    vQH2C1 = 0,
+    cytc_ox = 208μM,
+    cytc_rd = 325μM - cytc_ox,
+    name = :c3_semireverse)
+
+    ## complex III inhibition by DOX and antimycin
+    C3_INHIB = 1 - ANTIMYCIN_BLOCK
+    C3_CONC = rhoC3 * MT_PROT
+
+    @parameters begin
+        ## Reaction rate constant of SDH (complex II)
+        K_C2 = 250 / (minute * mM)
+        ## midpoint potential of FUM -> SUC
+        Em_FUM_SUC = 30mV
+        ## midpoint potential of Q -> QH2
+        Em_Q_QH2 = 100mV
+        ## (Reverse) equlibrium constant of SDH (-140meV)
+        rKEQ_C2 = exp(-2iVT * (Em_Q_QH2 - Em_FUM_SUC))
+        rhoC3 = 325μM    # Complex III activity
+        rhoQo = rhoC3    # Qo seat
+        rhoQi = rhoC3    # Qi seat
+        Q_T = 4mM        # Total CoQ pool
+        KI_DOX_C3 = 185μM  # DOX inhibition concentration (IC50) on complex III
+        EmQ_C3 = +100mV  # Ubiquinone redox potential
+        EmSQp_QH2p = +290mV
+        EmQp_SQp = -170mV
+        EmQn_SQn = +70mV
+        EmSQn_QH2n = +170mV
+        EmbL_bHo = -40mV
+        EmbL_bHr = EmbL_bHo - 60mV
+        EmbH_bLo = +40mV
+        EmbH_bLr = EmbH_bLo - 60mV
+        EmFeS = +280mV
+        Emcytc1 = +245mV
+        Emcytc = +255mV
+        ## QH2 + FeS + bL = Q + FeS- + bL- + 2Ho+
+        K04_C3 = 50.67Hz / mM
+        KEQ4_OX_C3 = exp(iVT * (EmFeS + EmbL_bHo - 2EmQ_C3))
+        KEQ4_RD_C3 = exp(iVT * (EmFeS + EmbL_bHr - 2EmQ_C3))
+        ## bL- + bH = bL + bH-
+        K06_C3 = 166.67Hz
+        KEQ6_C3 = exp(iVT * (EmbH_bLo - EmbL_bHo)) # +80mV
+        ## bH- + Q = bH + Q-
+        K07_OX_C3 = 13.33Hz / mM
+        K07_RD_C3 = 1.67Hz / mM
+        KEQ7_OX_C3 = exp(iVT * (EmQn_SQn - EmbH_bLo)) # +30mV
+        KEQ7_RD_C3 =  exp(iVT * (EmQn_SQn - EmbH_bLo)) # +90mV
+        K08_OX_C3 = 83.33Hz / mM
+        K08_RD_C3 = 8.33Hz / mM
+        KEQ8_OX_C3 = 129.9853 # +130mV
+        KEQ8_RD_C3 = 9.4546   # +60mV??? should be +190mV?
+        K09_C3 = 832.48Hz / mM
+        KEQ9_C3 = exp(iVT * (Emcytc1 - EmFeS))  # -35mV
+        K010_C3 = 28.33Hz / mM
+        KEQ10_C3 = 1.4541 # +10mV
+        K33_C3 = 2469.13Hz / mM
+        KEQ33_C3 = 2.1145 # +20mV
+    end
+
+    @variables begin
+        UQ(t) = Q_T
+        UQH2(t) ## Conserved
+        Q_n(t)
+        QH2_n(t)
+        QH2_p(t)
+        Q_p(t)
+        SQp(t) = 0
+        SQn(t) = 0
+        fes_ox(t) = C3_CONC
+        fes_rd(t) ## Conserved
+        cytc1_ox(t) = C3_CONC
+        cytc1_rd(t) ## Conserved
+        cytb_1(t) = C3_CONC
+        cytb_2(t) = 0
+        cytb_3(t) = 0
+        cytb_4(t) ## Conserved
+        vSDH(t)
+        vROSC3(t)
+        vHresC3(t)
+    end
+
+    ## Split of electrical potentials
+    δ₁_C3 = 0.5
+    δ₂_C3 = 0.5
+    δ₃_C3 = 0.5
+    ## Split of the electrical distance across the IMM
+    α_C3 = 0.25
+    β_C3 = 0.5
+    γ_C3 = 0.25
+    ## pH factors
+    fHi = h_i * inv(1E-7Molar)
+    fHm = h_m * inv(1E-7Molar)
 end
 
 #---
