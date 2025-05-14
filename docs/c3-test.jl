@@ -93,6 +93,8 @@ function c3_gauthier(suc, fum, dpsi;
         cytb_2(t) = 0
         cytb_3(t) = 0
         cytb_4(t) ## Conserved
+        fracbLrd(t)
+        fracbHrd(t)
         vSDH(t)
         vROSC3(t)
         vHresC3(t)
@@ -112,14 +114,14 @@ function c3_gauthier(suc, fum, dpsi;
     v1 = vQH2C1 + vSDH
     ## QH2 diffusion
     v2 = KD_Q * (QH2_n - QH2_p)
-    ## QH2 + FeS = SQp + FeS- + 2H+
+    ## QH2 + FeS = QH + FeS- + H+
     Qo_avail = (rhoQo - SQp) / rhoQo * (1 - MYXOTHIAZOLE_BLOCK)
-    v3 = K03_C3 * (KEQ3_C3 * Qo_avail * fes_ox * QH2_p - fes_rd * SQp * fHi^2)
-    ## v4: SQp + bL = Qp + bL- (rds?)
+    v3 = K03_C3 * (KEQ3_C3 * Qo_avail * fes_ox * QH2_p - fes_rd * SQp * fHi)
+    ## v4: QH + bL = Qp + bL- + H+
     el4 = exp(-iVT * α_C3 * δ₁_C3 * dpsi)
     er4 = exp(iVT * α_C3 * (1 - δ₁_C3) * dpsi)
-    v4_ox = K04_C3 * (KEQ4_OX_C3 * SQp * el4 * cytb_1 - Q_p * er4 * cytb_2)
-    v4_rd = K04_C3 * (KEQ4_RD_C3 * SQp * el4 * cytb_3 - Q_p * er4 * cytb_4)
+    v4_ox = K04_C3 * (KEQ4_OX_C3 * SQp * el4 * cytb_1 - Q_p * er4 * cytb_2 * fHi)
+    v4_rd = K04_C3 * (KEQ4_RD_C3 * SQp * el4 * cytb_3 - Q_p * er4 * cytb_4 * fHi)
     ## v5 = Q diffusion (p-side -> n-side)
     v5 = KD_Q * (Q_p - Q_n)
     ## v6 = bL to bH
@@ -155,6 +157,8 @@ function c3_gauthier(suc, fum, dpsi;
         Q_p ~ 0.5 * UQ,
         QH2_n ~ 0.5 * UQH2,
         QH2_p ~ 0.5 * UQH2,
+        fracbLrd ~ (cytb_2 + cytb_4) / C3_CONC,
+        fracbHrd ~ (cytb_3 + cytb_4) / C3_CONC,
         D(UQ) ~ dQn + dQp,
         # D(UQH2) ~ dQH2n + dQH2p,
         D(SQn) ~ v7_ox + v7_rd - v8_ox - v8_rd,
@@ -197,7 +201,7 @@ function c3_semireverse(suc, fum, dpsi;
         rhoC3 = 325μM    # Complex III activity
         Q_T = 4mM        # Total CoQ pool
         KI_DOX_C3 = 185μM  # DOX inhibition concentration (IC50) on complex III
-        EmQ_C3 = +100mV  # Ubiquinone redox potential
+        EmQ_C3 = +100mV  # Ubiquinone redox potential at complex III
         EmSQp_QH2p = +290mV
         EmQp_SQp = -170mV
         EmQn_SQn = +70mV
@@ -259,6 +263,8 @@ function c3_semireverse(suc, fum, dpsi;
         blr_bho(t) = 0
         blo_bhr(t) = 0
         blr_bhr(t) ## Conserved
+        fracbLrd(t)
+        fracbHrd(t)
         vSDH(t)
         vROSC3(t)
         vHresC3(t)
@@ -347,6 +353,8 @@ function c3_semireverse(suc, fum, dpsi;
         Q_p ~ 0.5 * UQ,
         QH2_n ~ 0.5 * UQH2,
         QH2_p ~ 0.5 * UQH2,
+        fracbLrd ~ (blr_bho + blr_bhr) / C3_CONC,
+        fracbHrd ~ (blo_bhr + blr_bhr) / C3_CONC,
         D(UQ) ~ dQn + dQp,
         # D(UQH2) ~ dQH2n + dQH2p,
         D(SQn) ~ v7ox + v7rd - v8ox - v8rd,
@@ -376,14 +384,14 @@ gsys = c3_gauthier(suc, fum, dpsi; cytc_ox, cytc_rd) |> structural_simplify
 rsys = c3_semireverse(suc, fum, dpsi; cytc_ox, cytc_rd) |> structural_simplify
 #---
 prob_g = SteadyStateProblem(gsys, [])
-prob_r = SteadyStateProblem(rsys, [rsys.K010_C3 => 340Hz / mM])
+prob_r = SteadyStateProblem(rsys, [rsys.K010_C3 => 340Hz / mM, rsys.EmQ_C3 => 80mV, rsys.EmbH_bLo => 30mV])
 
 alg = DynamicSS(Rodas5P())
 ealg = EnsembleThreads()
 extract(sim, k) = map(s -> s[k], sim)
 
 # ## Varying MMP
-dpsirange = 100mV:1mV:200mV
+dpsirange = 100mV:1mV:250mV
 alter_dpsi = (prob, i, repeat) -> begin
     prob.ps[dpsi] = dpsirange[i]
     prob
@@ -397,6 +405,14 @@ eprob_r = EnsembleProblem(prob_r; prob_func=alter_dpsi)
 xs = dpsirange
 ys = [extract(sim_g, gsys.vHresC3) extract(sim_r, rsys.vHresC3)]
 plot(xs, ys, xlabel="MMP (mV)", ylabel="Resp. Rate (mM/s)", label=["G" "R"])
+
+#---
+ys = [extract(sim_g, gsys.fracbLrd) extract(sim_r, rsys.fracbLrd) extract(sim_g, gsys.fracbHrd) extract(sim_r, rsys.fracbHrd)]
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Reduced fraction", label=["G (bL)" "R (bL)" "G (bH)" "R (bH)"], line=[:solid :dash :solid :dash])
+
+#---
+ys = [extract(sim_g, gsys.UQH2) extract(sim_r, rsys.UQH2)]
+plot(xs, ys, xlabel="MMP (mV)", ylabel="QH2 (μM)", label=["G" "R"])
 
 #---
 ys = [extract(sim_g, gsys.vROSC3) extract(sim_r, rsys.vROSC3)]
