@@ -139,13 +139,13 @@ function c3_gauthier(
         QH2_p ~ 0.5 * UQH2,
         fracbLrd ~ (cytb_2 + cytb_4) / C3_CONC,
         fracbHrd ~ (cytb_3 + cytb_4) / C3_CONC,
-        # D(UQH2) ~ dQH2n + dQH2p,
+        ## D(UQH2) ~ dQH2n + dQH2p,
         D(SQn) ~ v7_ox + v7_rd - v8_ox - v8_rd,
         D(SQp) ~ v3 - v10 - v4_ox - v4_rd,
         D(cytb_1) ~ v7_ox + v8_ox - v4_ox,
         D(cytb_2) ~ v4_ox + v7_rd + v8_rd - v6,
         D(cytb_3) ~ v6 - v4_rd - v7_ox - v8_ox,
-        # D(cytb_4) = v4_rd - v7_rd - v8_rd
+        ## D(cytb_4) = v4_rd - v7_rd - v8_rd
         D(fes_ox) ~ v9 - v3,
         D(cytc1_ox) ~ v33 - v9,
         vHresC3 ~ v3,
