@@ -27,10 +27,10 @@ function c3_gauthier(
     )
 
     @parameters begin
-        rhoC3 = 325μM    # Complex III activity
-        rhoQo = rhoC3    # Qo seat
-        rhoQi = rhoC3    # Qi seat
-        Q_T = 4mM        # Total CoQ pool
+        rhoC3 = 325μM    ## Complex III activity
+        rhoQo = rhoC3    ## Qo seat
+        rhoQi = rhoC3    ## Qi seat
+        Q_T = 4mM        ## Total CoQ pool
         EmSQp_QH2p = +290mV
         EmQp_SQp = -170mV
         EmQn_SQn = +70mV
@@ -43,27 +43,27 @@ function c3_gauthier(
         Emcytc1 = +245mV
         Emcytc = +255mV
         K03_C3 = 1666.63Hz / mM
-        KEQ3_C3 = exp(iVT * (EmFeS - EmSQp_QH2p)) # -10mV
+        KEQ3_C3 = exp(iVT * (EmFeS - EmSQp_QH2p)) ## -10mV
         K04_C3 = 50.67Hz / mM
-        KEQ4_OX_C3 = exp(iVT * (EmbL_bHo - EmQp_SQp)) # +130mV
-        KEQ4_RD_C3 = exp(iVT * (EmbL_bHr - EmQp_SQp)) # +70mV
+        KEQ4_OX_C3 = exp(iVT * (EmbL_bHo - EmQp_SQp)) ## +130mV
+        KEQ4_RD_C3 = exp(iVT * (EmbL_bHr - EmQp_SQp)) ## +70mV
         KD_Q = 22000Hz
         K06_C3 = 166.67Hz
-        KEQ6_C3 = 9.4546 # +60mV
+        KEQ6_C3 = 9.4546 ## +60mV
         K07_OX_C3 = 13.33Hz / mM
         K07_RD_C3 = 1.67Hz / mM
-        KEQ7_OX_C3 = 3.0748 # +30mV
-        KEQ7_RD_C3 = 29.0714 # +90mV
+        KEQ7_OX_C3 = 3.0748 ## +30mV
+        KEQ7_RD_C3 = 29.0714 ## +90mV
         K08_OX_C3 = 83.33Hz / mM
         K08_RD_C3 = 8.33Hz / mM
-        KEQ8_OX_C3 = 129.9853 # +130mV
-        KEQ8_RD_C3 = 9.4546   # +60mV??? should be +190mV?
+        KEQ8_OX_C3 = 129.9853 ## +130mV
+        KEQ8_RD_C3 = 9.4546   ## +60mV??? should be +190mV?
         K09_C3 = 832.48Hz / mM
-        KEQ9_C3 = exp(iVT * (Emcytc1 - EmFeS))  # -35mV
+        KEQ9_C3 = exp(iVT * (Emcytc1 - EmFeS))  ## -35mV
         K010_C3 = 28.33Hz / mM
-        KEQ10_C3 = 1.4541 # +10mV
+        KEQ10_C3 = 1.4541 ## +10mV
         K33_C3 = 2469.13Hz / mM
-        KEQ33_C3 = 2.1145 # +20mV
+        KEQ33_C3 = 2.1145 ## +20mV
     end
 
     ## complex III inhibition by DOX and antimycin
@@ -170,9 +170,9 @@ function c3_semireverse(dpsi;
     name = :c3_semireverse)
 
     @parameters begin
-        rhoC3 = 325μM    # Complex III activity
-        Q_T = 4mM        # Total CoQ pool
-        EmQ_C3 = +100mV  # Ubiquinone redox potential at complex III
+        rhoC3 = 325μM    ## Complex III activity
+        Q_T = 4mM        ## Total CoQ pool
+        EmQ_C3 = +100mV  ## Ubiquinone redox potential at complex III
         EmSQp_QH2p = +290mV
         EmQp_SQp = -170mV
         EmQn_SQn = +70mV
@@ -191,27 +191,27 @@ function c3_semireverse(dpsi;
         KEQ4_RD_C3 = exp(iVT * (EmFeS + EmbL_bHr - 2EmQ_C3))
         ## bL- + bH = bL + bH-
         K06_C3 = 166.67Hz
-        KEQ6_C3 = exp(iVT * (EmbH_bLo - EmbL_bHo)) # +70mV
+        KEQ6_C3 = exp(iVT * (EmbH_bLo - EmbL_bHo)) ## +70mV
         ## bH- + Q = bH + Q-
         K07_OX_C3 = 13.33Hz / mM
         K07_RD_C3 = 1.67Hz / mM
-        KEQ7_OX_C3 = exp(iVT * (EmQn_SQn - EmbH_bLo)) # +30mV
-        KEQ7_RD_C3 = exp(iVT * (EmQn_SQn - EmbH_bLr)) # +90mV
+        KEQ7_OX_C3 = exp(iVT * (EmQn_SQn - EmbH_bLo)) ## +30mV
+        KEQ7_RD_C3 = exp(iVT * (EmQn_SQn - EmbH_bLr)) ## +90mV
         ## bH- + Q- + 2H+ = bH + QH2
         K08_OX_C3 = 83.33Hz / mM
         K08_RD_C3 = 8.33Hz / mM
-        KEQ8_OX_C3 = exp(iVT * (EmSQn_QH2n - EmbH_bLo)) # +130mV
-        KEQ8_RD_C3 = exp(iVT * (EmSQn_QH2n - EmbH_bLr)) # +190mV
+        KEQ8_OX_C3 = exp(iVT * (EmSQn_QH2n - EmbH_bLo)) ## +130mV
+        KEQ8_RD_C3 = exp(iVT * (EmSQn_QH2n - EmbH_bLr)) ## +190mV
         ## FeS- + c1_3+ = FeS + c1_2+
         K09_C3 = 832.48Hz / mM
-        KEQ9_C3 = exp(iVT * (Emcytc1 - EmFeS))  # -40mV
+        KEQ9_C3 = exp(iVT * (Emcytc1 - EmFeS))  ## -40mV
         ## bL- + O2 + Q = bL + O2- + Q
         K010_C3 = 28.33Hz / mM
-        KEQ10_OX_C3 = exp(iVT * (EmO2 - EmbL_bHo)) # -130mV
-        KEQ10_RD_C3 = exp(iVT * (EmO2 - EmbL_bHr)) # -70mV
+        KEQ10_OX_C3 = exp(iVT * (EmO2 - EmbL_bHo)) ## -130mV
+        KEQ10_RD_C3 = exp(iVT * (EmO2 - EmbL_bHr)) ## -70mV
         ## c1_2+ + c_3+ = c1_3+ + c_2+
         K33_C3 = 2469.13Hz / mM
-        KEQ33_C3 = exp(iVT * (Emcytc - Emcytc1)) # +20mV
+        KEQ33_C3 = exp(iVT * (Emcytc - Emcytc1)) ## +20mV
     end
 
     ## complex III inhibition by DOX and antimycin
@@ -313,12 +313,12 @@ function c3_semireverse(dpsi;
         QH2_p ~ 0.5 * UQH2,
         fracbLrd ~ (blr_bho + blr_bhr) / C3_CONC,
         fracbHrd ~ (blo_bhr + blr_bhr) / C3_CONC,
-        # D(UQH2) ~ dQH2n + dQH2p,
+        ## D(UQH2) ~ dQH2n + dQH2p,
         D(SQn) ~ v7ox + v7rd - v8ox - v8rd,
         D(blo_bho) ~ v7ox + v8ox - v4ox,
         D(blr_bho) ~ v4ox + v7rd + v8rd - v6,
         D(blo_bhr) ~ v6 - v4rd - v7ox - v8ox,
-        # D(blr_bhr) = v4rd - v7rd - v8rd
+        ## D(blr_bhr) = v4rd - v7rd - v8rd
         D(fes_ox) ~ v9 - v4ox - v4rd,
         D(cytc1_ox) ~ v33 - v9,
         vHresC3 ~ v4ox + v4rd,
