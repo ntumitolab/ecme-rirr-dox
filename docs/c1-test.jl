@@ -283,16 +283,16 @@ function c1q(; name=:c1q,
         kf7_C1 = 10000Hz / μM
         rKEQ7_C1 = exp(-iVT * (Em_N2 - Em_N3))
         kf8_C1 = 10Hz / μM
-        rKEQ8_C1 = 10μM         ## Dissociation constant for Q
+        KEQ8_C1 = inv(10μM)         ## Association constant for Q
         kf9_C1 = 4E5Hz / μM
-        rKEQ9_C1 = exp(-iVT * (Em_Q_SQ_C1 - Em_N2))
+        KEQ9_C1 = exp(iVT * (Em_Q_SQ_C1 - Em_N2))
         rKEQ11_C1 = exp(-iVT * (Em_N3 - Em_FMN_FMNsq))
         kf13_C1 = 2.7e6Hz / μM
         kf14_C1 = 1000Hz
         rKEQ14_C1 = inv(20μM)       ## Dissociation constant for QH2
-        kf16_C1 = 2Hz / μM          ## SOX production rate from If site
+        kf16_C1 = 0.001Hz / μM      ## SOX production rate from If site
         rKEQ16_C1 = exp(-iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
-        kf17_C1 = 0.04Hz / μM       ## SOX production rate from Iq site
+        kf17_C1 = 0.001Hz / μM / 20 ## SOX production rate from Iq site
         rKEQ17_C1 = exp(-iVT * (Em_O2_SOX - Em_Q_SQ_C1))
     end
 
@@ -303,23 +303,22 @@ function c1q(; name=:c1q,
         FMNsq(t)
         FMNH(t)
         FMNH_NADH(t)
-        ## Quinone site
-        Iq_C1(t)
-        Q_C1(t)
-        SQ_C1(t)
-        QH2_C1(t)
-        wIq(t)
-        wIqQ(t)
-        wIqSQ(t)
-        wIqQH2(t)
-        rKEQ13_C1(t)
-        ## FeS clusters
-        N2_C1(t) ## Conserved
-        N2r_C1(t) = 0
+        ## N3r/N3 ratio from 0.5NADH + N3 = 0.5NAD + N3r + 0.5H+
+        rN3_C1(t)
         N3_C1(t)
         N3r_C1(t)
-        ## N3r/N3 ratio from reaction 0.5NADH + N3 = 0.5NAD + N3r + 0.5H+
-        rN3_C1(t)
+        ## number of electrons at the quinone site
+        Iq0(t)
+        N2_C1(t)
+        N2Q_C1(t)
+        Iq1(t) = 0
+        N2r_C1(t)
+        N2rQ_C1(t)
+        N2SQ_C1(t)
+        Iq2(t) = 0
+        N2rSQ_C1(t)
+        N2QH2_C1(t)
+        rKEQ13_C1(t)
         ## Reaction rates
         vQ_C1(t)
         vROS_C1(t)
@@ -329,60 +328,47 @@ function c1q(; name=:c1q,
         TN_C1(t)
     end
 
-    ## Mitochondrial pH
+    ## Mitochondrial pH factor
     fhm = h_m * inv(1E-7Molar)
-    ## N3− + N2 = N3 + N2−
-    v7 = kf7_C1 * (N3r_C1 * N2_C1 - N3_C1 * N2r_C1 * rKEQ7_C1)
-    ## Q association
-    q = Q_n * (1 - ROTENONE_BLOCK)
-    v8 = kf8_C1 * (Iq_C1 * q - Q_C1 * rKEQ8_C1)
-    ## CI.Q + N2− = CIQsq + N2
-    v9 = kf9_C1 * (Q_C1 * N2r_C1 - SQ_C1 * N2_C1 * rKEQ9_C1)
-    ## N2 + N3− = N2− + N3
-    v12 = v7
-    ## Second electron transfer
-    v13 = kf13_C1 * (SQ_C1 * N2r_C1 * fhm^2 - QH2_C1 * N2_C1 * rKEQ13_C1)
-    ## QH2 dissociation
-    qh2 = QH2_n * (1 - ROTENONE_BLOCK)
-    v14 = kf14_C1 * (QH2_C1 - Iq_C1 * qh2 * rKEQ14_C1)
-    ## Flavin site ROS generation
-    v16 = kf16_C1 * (FMNH * O2 - FMNsq * sox_m * rKEQ16_C1)
-    ## Quinone site ROS generation
-    v17 = kf17_C1 * (SQ_C1 * O2 - Q_C1 * sox_m * rKEQ17_C1)
     ## FMN + NADH = FMNH- + NAD+
     rFMNH_FMN = (nadh / nad) * KEQ2_C1
     ## FMNHsq + N3 = FMN + N3− + Hi+
     rFMNHsq_FMN = rN3_C1 * fhm * rKEQ11_C1
+
     ## Weights in the flavin site
     denf = 1 + rFMNH_FMN + rFMNHsq_FMN
     fFMN = KI_NAD_C1 / (nad + KI_NAD_C1)
     fFMNH = KI_NADH_C1 / (nadh + KI_NADH_C1)
 
+    ## Weights in the quinone site
+    q = Q_n * (1 - ROTENONE_BLOCK) * KEQ8_C1
+    qh2 = QH2_n * (1 - ROTENONE_BLOCK) * rKEQ14_C1
+    wn2 = 1
+    wn2_q = wn2 * q
+    den0 = wn2 + wn2_q
+    wn2r = 1
+    wn2r_q = wn2r * q
+    wn2_sq = wn2r_q * KEQ9_C1
+    den1 = wn2r + wn2r_q + wn2_sq
+    wn2rsq = 1
+
+
     ## State transition rates in the quinone site
-    ## 1 = Iq 2 = IqQ, 3 = IqSQ, 4 = IqQH2
-    b12 = kf8_C1 * Q_n
-    b21 = kf8_C1 * rKEQ8_C1
-    b23 = kf9_C1 * N2r_C1 + kf17_C1 * rKEQ17_C1 * sox_m
-    b32 = kf9_C1 * rKEQ9_C1 * N2_C1 + kf17_C1 * O2
-    b34 = kf13_C1 * N2r_C1 * fhm^2
-    b43 = kf13_C1 * rKEQ13_C1 * N2_C1
-    b41 = kf14_C1
-    b14 = kf14_C1 * rKEQ14_C1 * QH2_n
-    qDen = wIq + wIqQ + wIqSQ + wIqQH2
-    qC1 = ET_C1 / qDen
+    ## N3− + N2 = N3 + N2−
+    v7 = kf7_C1 * (N3r_C1 * (N2_C1 + N2Q_C1) - N3_C1 * (N2r_C1 + N2rQ_C1) * rKEQ7_C1)
+    v12 = kf7_C1 * (N3r_C1 * N2SQ_C1 - N3_C1 * N2rSQ_C1 * rKEQ7_C1)
+    ## Proton pumping and QH2 dissociation
+    ## N2rSQ + 6Hm = N2 + QH2 + 4Hi
+    qh2 = QH2_n * (1 - ROTENONE_BLOCK) * rKEQ14_C1
+    v14 = kf14_C1 * (N2rSQ_C1 * fhm^2 - qh2 * N2_C1 * rKEQ13_C1)
+    ## Flavin site ROS generation
+    v16 = kf16_C1 * (FMNH * O2 - FMNsq * sox_m * rKEQ16_C1)
+    ## Quinone site ROS generation
+    v17 = kf17_C1 * (N2SQ_C1 * O2 - N2Q_C1 * sox_m * rKEQ17_C1)
+    v18 = kf17_C1 * (N2rSQ_C1 * O2 - N2rQ_C1 * sox_m * rKEQ17_C1)
 
     eqs = [
-        D(N2r_C1) ~ v7 + v12 - v9 - v13,
         rKEQ13_C1 ~ exp(-iVT * (Em_SQ_QH2_C1 - Em_N2 - 4dpsi)) * (h_i / h_m)^4,
-        wIq ~ b21*b32*b41 + b21*b32*b43 + b21*b34*b41 + b23*b34*b41,
-        wIqQ ~ b12*b32*b41 + b12*b32*b43 + b12*b34*b41 + b14*b32*b43,
-        wIqSQ ~ b12*b23*b41 + b12*b23*b43 + b14*b21*b43 + b14*b23*b43,
-        wIqQH2 ~ b12*b23*b34 + b14*b21*b32 + b14*b21*b34 + b14*b23*b34,
-        Iq_C1 ~ wIq * qC1,
-        Q_C1 ~ wIqQ * qC1,
-        SQ_C1 ~ wIqSQ * qC1,
-        QH2_C1 ~ wIqQH2 * qC1,
-        ET_C1 ~ N2_C1 + N2r_C1,
         ET_C1 ~ N3_C1 + N3r_C1,
         N3_C1 ~ ET_C1 / (1 + rN3_C1),
         rN3_C1 ~ KEQ_NADH_N3 * NaNMath.sqrt(nadh / (nad * fhm)),
@@ -391,10 +377,19 @@ function c1q(; name=:c1q,
         FMNsq ~ ET_C1 / denf * rFMNHsq_FMN,
         FMNH ~ ET_C1 / denf * rFMNH_FMN * fFMNH,
         FMNH_NADH ~ ET_C1 / denf * rFMNH_FMN * (1 - fFMNH),
-        vQ_C1 ~ -v8,
+        Iq0 ~ ET_C1 - Iq1 - Iq2,
+        N2_C1 ~ wn2 * Iq0 / den0,
+        N2Q_C1 ~ wn2_q * Iq0 / den0,
+        D(Iq1) ~ v7 - v12 - v17,
+        N2r_C1 ~ wn2r * Iq1 / den1,
+        N2rQ_C1 ~ wn2r_q * Iq1 / den1,
+        N2SQ_C1 ~ wn2_sq * Iq1 / den1,
+        D(Iq2) ~ v12 - v14 - v18,
+        N2rSQ_C1 ~ Iq2,
+        vQ_C1 ~ -v14,
         vNADH_C1 ~ -0.5 * (v7 + v12 + v16),
         vROSIf ~ v16,
-        vROSIq ~ v17,
+        vROSIq ~ v17 + v18,
         vROS_C1 ~ vROSIf + vROSIq,
         TN_C1 ~ -vNADH_C1 / ET_C1,
     ]
@@ -415,7 +410,7 @@ qsys = c1q(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
-prob_q = SteadyStateProblem(qsys, [qsys.ET_C1 => 17μM, qsys.kf16_C1 => 0.001Hz / μM, qsys.kf17_C1 => 0.001Hz / μM / 20])
+prob_q = SteadyStateProblem(qsys, [qsys.ET_C1 => 17μM])
 prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.kf16_C1 => 0.001Hz / μM, markevich.kf17_C1 => 0.001Hz / μM / 20])
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(Rodas5P())
@@ -451,11 +446,11 @@ ys = hcat(extract(sim_g, gauthier.vQ_C1), extract(sim_m, markevich.vQ_C1), extra
 plot(xs, ys, xlabel="MMP (mV)", ylabel="Q rate (μM/ms)", label=["Gauthier" "Markevich" "IQ"])
 
 #---
-ys = stack(extract.(Ref(sim_q), [qsys.Q_C1, qsys.SQ_C1, qsys.QH2_C1, qsys.N2r_C1, qsys.N3r_C1]), dims=2)
-plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "N2r_C1" "N3r_C1"], legend=:right)
+ys = stack(extract.(Ref(sim_q), [qsys.N2_C1, qsys.N2Q_C1, qsys.N2r_C1, qsys.N2rQ_C1, qsys.N2SQ_C1, qsys.N2rSQ_C1]), dims=2)
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["N2_C1" "N2Q_C1" "N2r_C1" "N2rQ_C1" "N2SQ_C1" "N2rSQ_C1"], legend=:right)
 
 #---
-ys = stack(extract.(Ref(sim_q), [qsys.FMN, qsys.FMNsq, qsys.FMNH, qsys.FMN_NAD, qsys.FMNH_NADH]), dims=2)
+ys = stack(extract.(Ref(sim_q), [qsys.N2_C1, qsys.N2Q_C1, qsys.N2r_C1, qsys.N2rQ_C1, qsys.N2SQ_C1, qsys.N2rSQ_C1]), dims=2)
 plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH"], legend=:right)
 
 # MMP vs ROS production
@@ -496,8 +491,8 @@ ys = [extract(sim_g, gauthier.vROS_C1) extract(sim_m, markevich.vROS_C1) extract
 plot(xs, ys, xlabel="NADH (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "IQ"])
 
 #---
-ys = stack(extract.(Ref(sim_q), [qsys.Q_C1, qsys.SQ_C1, qsys.QH2_C1, qsys.N2r_C1, qsys.N3r_C1]), dims=2)
-plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "N2r_C1" "N3r_C1"], legend=:right)
+ys = stack(extract.(Ref(sim_q), [qsys.N2_C1, qsys.N2Q_C1, qsys.N2r_C1, qsys.N2rQ_C1, qsys.N2SQ_C1, qsys.N2rSQ_C1]), dims=2)
+plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["N2_C1" "N2Q_C1" "N2r_C1" "N2rQ_C1" "N2SQ_C1" "N2rSQ_C1"], legend=:right)
 
 #---
 ys = stack(extract.(Ref(sim_q), [qsys.FMN, qsys.FMNsq, qsys.FMNH, qsys.FMN_NAD, qsys.FMNH_NADH]), dims=2)
