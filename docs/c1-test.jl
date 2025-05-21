@@ -278,18 +278,20 @@ function c1q(; name=:c1q,
         ## NADH + FMN = NAD+ + FMNH-
         KEQ_NADH_FMN = exp(2iVT * (Em_FMN_FMNH - Em_NAD))
         ## FMNH- + N2 = FMNsq + N2r
-        KEQ_FMNH_N2 = exp(iVT * (Em_N2 - Em_FMNsq_FMNH))
+        rKEQ_FMNH_N2 = exp(-iVT * (Em_N2 - Em_FMNsq_FMNH))
         ## N2r + Q = N2 + SQ
         rKEQ_N2r_Q = exp(-iVT * (Em_Q_SQ_C1 - Em_N2))
         ## Dismutation: 2FMNH = FMN + FMNH- + H+
         rKEQ_FMNsq_Dis = exp(-iVT * (Em_FMNsq_FMNH - Em_FMN_FMNsq))
-        ## ET from IF to Q
+        ## ET from N2 to Q
         kf7_C1 = 10000Hz / μM
         ## Q binding
         kf8_C1 = 10Hz / μM
-        rKEQ8_C1 = 10μM
-        ## ET from IF to SQ
-        kf13_C1 = 2.7e6Hz / μM
+        KEQ8_C1 = inv(10μM)
+        kf9_C1 = 4E5Hz
+        rKEQ9_C1 = exp(-iVT * (Em_Q_SQ_C1 - Em_N2))
+        ## ET from N2 to SQ
+        kf13_C1 = 2.7e6Hz
         ## QH2 unbinding
         kf14_C1 = 1000Hz
         rKEQ14_C1 = inv(20μM)
@@ -308,13 +310,12 @@ function c1q(; name=:c1q,
         FMNsq(t)
         FMNH(t)
         FMNH_NADH(t)
-        IN2(t)
-        IN2r(t)
         ## Quinone site
-        Iq(t)
-        IqQ(t) = 0
-        IqSQ(t) = 0
-        IqQH2(t)
+        N2Q(t)
+        N2rQ(t) = 0
+        N2QH(t) = 0
+        N2rQH(t) = 0
+        N2QH2(t) = 0
         rKEQ_N2r_SQ(t)
         ## Reaction rates
         vQ_C1(t)
@@ -337,21 +338,21 @@ function c1q(; name=:c1q,
 
     ## State transition rates in the quinone site
     ## Q binding
-    q = Q_n
-    v8 = kf8_C1 * (Iq * q - IqQ * rKEQ8_C1)
-    ## First electron transfer
-    v9 = kf7_C1 * (IqQ * IN2r - IqSQ * IN2 * rKEQ_N2r_Q)
-    ## Second electron transfer
-    v13 = kf13_C1 * (IqSQ * IN2r * fhm^2 - IqQH2 * IN2 * rKEQ_N2r_SQ)
-    ## QH2 unbinding
+    q = Q_n * KEQ8_C1
     qh2 = QH2_n * rKEQ14_C1
-    wi = 1
-    wqh2 = wi * qh2
-    v14 = kf14_C1 * (IqQH2 - Iq * qh2 * rKEQ14_C1)
+    ## First electron transfer
+    v7 = kf7_C1 * (N2Q * FMNH - N2rQ * FMNsq * rKEQ_FMNH_N2)
+    v9 = kf9_C1 * (N2rQ * fhm - N2QH * rKEQ9_C1)
+    ## Second electron transfer
+    v12 = kf7_C1 * (N2QH * FMNH - N2rQH * FMNsq * rKEQ_FMNH_N2)
+    v13 = kf13_C1 * (N2rQH * fhm - N2QH2 * rKEQ_N2r_SQ)
+    ## Q binding and QH2 unbinding
+    v14 = kf14_C1 * (N2QH2 * q - N2Q * qh2)
     ## Flavin site ROS generation
     v16 = kf16_C1 * (FMNH * O2 - FMNsq * sox_m * rKEQ16_C1)
     ## Quinone site ROS generation
-    v17 = kf17_C1 * (IqSQ * O2 - IqQ * sox_m * rKEQ17_C1)
+    v17 = kf17_C1 * (N2QH * O2 - N2Q * sox_m * fhm * rKEQ17_C1)
+    v17b = kf17_C1 * (N2rQH * O2 - N2rQ * sox_m * fhm * rKEQ17_C1)
 
     eqs = [
         rKEQ_N2r_SQ ~ exp(-iVT * (Em_SQ_QH2_C1 - Em_N2 - 4dpsi)) * (h_i / h_m)^4,
@@ -360,16 +361,15 @@ function c1q(; name=:c1q,
         FMNH ~ wFMNH * ET_C1 / denf,
         FMNsq ~ wFMNsq * ET_C1 / denf,
         FMNH_NADH ~ wFMNH_NADH * ET_C1 / denf,
-        ET_C1 ~ IN2 + IN2r,
-        IN2 ~ FMNsq / (FMNsq + FMNH * KEQ_FMNH_N2),
-        Iq ~ (ET_C1 - IqQ - IqSQ) * wi / (wi + wqh2),
-        IqQH2 ~ (ET_C1 - IqQ - IqSQ) * wqh2 / (wi + wqh2),
-        D(IqQ) ~ v8 - v9 + v17,
-        D(IqSQ) ~ v9 - v13 - v17,
-        vQ_C1 ~ -v8,
-        vNADH_C1 ~ -0.5 * (v9 + v13 + v16),
+        N2Q ~ ET_C1 - (N2rQ + N2QH + N2rQH + N2QH2),
+        D(N2rQ) ~ v7 - v9 + v17b,
+        D(N2QH) ~ v9 - v12 - v17,
+        D(N2rQH) ~ v12 - v13 - v17b,
+        D(N2QH2) ~ v13 - v14,
+        vQ_C1 ~ -v14,
+        vNADH_C1 ~ -0.5 * (v7 + v12 + v16),
         vROSIf ~ v16,
-        vROSIq ~ v17,
+        vROSIq ~ v17 + v17b,
         vROS_C1 ~ vROSIf + vROSIq,
         TN_C1 ~ -vNADH_C1 / ET_C1,
     ]
