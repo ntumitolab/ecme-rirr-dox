@@ -390,7 +390,7 @@ qsys = c1q(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
-prob_q = SteadyStateProblem(qsys, [qsys.ET_C1 => 2.5μM, qsys.kf7_C1 => 10000Hz / μM, qsys.kf8_C1 => 1Hz / μM, qsys.kf13_C1 => 100000Hz / μM, qsys.kf16_C1 => 0.0010Hz / μM, qsys.kf17_C1 => 0.0003Hz])
+prob_q = SteadyStateProblem(qsys, [qsys.ET_C1 => 2.5μM])
 prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.kf16_C1 => 0.001Hz / μM, markevich.kf17_C1 => 0.001Hz / μM / 20])
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(Rodas5P())
@@ -420,8 +420,8 @@ ys = hcat(extract(sim_g, gauthier.vNADH_C1), extract(sim_m, markevich.vNADH_C1),
 plot(xs, ys, xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", label=["Gauthier" "Markevich" "IQ"])
 
 #---
-ys = stack(extract.(Ref(sim_q), [qsys.IqQ, qsys.IqSQ, qsys.IqQH2]), dims=2)
-plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["IqQ" "IqSQ" "IqQH2"], legend=:left)
+ys = stack(extract.(Ref(sim_q), [qsys.N2Q, qsys.N2rQ,qsys.N2QH, qsys.N2rQH,qsys.N2QH2]), dims=2)
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["N2Q" "N2rQ" "N2QH" "N2rQH" "N2QH2"], legend=:left)
 
 #---
 ys = stack(extract.(Ref(sim_q), [qsys.FMN, qsys.FMNsq, qsys.FMNH, qsys.FMN_NAD, qsys.FMNH_NADH]), dims=2)
