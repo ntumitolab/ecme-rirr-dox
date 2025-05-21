@@ -272,14 +272,15 @@ function c1q(; name=:c1q,
         Em_NAD = -320mV             ## NAD/NADH avg redox potential
         Em_Q_SQ_C1 = -300mV         ## -213mV in Markevich, 2015
         Em_SQ_QH2_C1 = +500mV       ## 800mV in Markevich, 2015
-        KI_NADH_C1 = 150μM
+        Em_N2 = -80mV
+        KI_NADH_C1 = 50μM
         KI_NAD_C1 = 1000μM
         ## NADH + FMN = NAD+ + FMNH-
         KEQ_NADH_FMN = exp(2iVT * (Em_FMN_FMNH - Em_NAD))
-        ## FMNH- + Q = FMNsq + SQ
-        rKEQ_FMNH_Q = exp(-iVT * (Em_Q_SQ_C1 - Em_FMNsq_FMNH))
-        ## FMNsq + Q = FMN + SQ + H+
-        rKEQ_FMNsq_Q = exp(-iVT * (Em_Q_SQ_C1 - Em_FMN_FMNsq))
+        ## FMNH- + N2 = FMNsq + N2r
+        KEQ_FMNH_N2 = exp(iVT * (Em_N2 - Em_FMNsq_FMNH))
+        ## N2r + Q = N2 + SQ
+        rKEQ_N2r_Q = exp(-iVT * (Em_Q_SQ_C1 - Em_N2))
         ## Dismutation: 2FMNH = FMN + FMNH- + H+
         rKEQ_FMNsq_Dis = exp(-iVT * (Em_FMNsq_FMNH - Em_FMN_FMNsq))
         ## ET from IF to Q
@@ -307,13 +308,14 @@ function c1q(; name=:c1q,
         FMNsq(t)
         FMNH(t)
         FMNH_NADH(t)
+        IN2(t)
+        IN2r(t)
         ## Quinone site
         Iq(t)
         IqQ(t) = 0
         IqSQ(t) = 0
         IqQH2(t) = 0
-        rKEQ_FMNH_SQ(t)
-        rKEQ_FMNsq_SQ(t)
+        rKEQ_N2r_SQ(t)
         ## Reaction rates
         vQ_C1(t)
         vROS_C1(t)
@@ -338,11 +340,9 @@ function c1q(; name=:c1q,
     q = Q_n
     v8 = kf8_C1 * (Iq * q - IqQ * rKEQ8_C1)
     ## First electron transfer
-    v9 = kf7_C1 * (IqQ * FMNH - IqSQ * FMNsq * rKEQ_FMNH_Q)
-    v10 = kf7_C1 * (IqQ * FMNsq - IqSQ * FMN * fhm * rKEQ_FMNsq_Q)
+    v9 = kf7_C1 * (IqQ * IN2r - IqSQ * IN2 * rKEQ_N2r_Q)
     ## Second electron transfer
-    v12 = kf13_C1 * (IqSQ * FMNH * fhm^2 - IqQH2 * FMNsq * rKEQ_FMNH_SQ)
-    v13 = kf13_C1 * (IqSQ * FMNsq * fhm^2 - IqQH2 * FMN * fhm * rKEQ_FMNsq_SQ)
+    v13 = kf13_C1 * (IqSQ * IN2r * fhm^2 - IqQH2 * IN2 * rKEQ_N2r_SQ)
     ## QH2 unbinding
     qh2 = QH2_n
     v14 = kf14_C1 * (IqQH2 - Iq * qh2 * rKEQ14_C1)
@@ -352,19 +352,20 @@ function c1q(; name=:c1q,
     v17 = kf17_C1 * (IqSQ * O2 - IqQ * sox_m * rKEQ17_C1)
 
     eqs = [
-        rKEQ_FMNH_SQ ~ exp(-iVT * (Em_SQ_QH2_C1 - Em_FMNsq_FMNH - 4dpsi)) * (h_i / h_m)^4,
-        rKEQ_FMNsq_SQ ~ exp(-iVT * (Em_SQ_QH2_C1 - Em_FMN_FMNsq - 4dpsi)) * (h_i / h_m)^4,
+        rKEQ_N2r_SQ ~ exp(-iVT * (Em_SQ_QH2_C1 - Em_N2 - 4dpsi)) * (h_i / h_m)^4,
         FMN ~ wFMN * ET_C1 / denf,
         FMN_NAD ~ wFMN_NAD * ET_C1 / denf,
         FMNH ~ wFMNH * ET_C1 / denf,
         FMNsq ~ wFMNsq * ET_C1 / denf,
         FMNH_NADH ~ wFMNH_NADH * ET_C1 / denf,
+        ET_C1 ~ IN2 + IN2r,
+        IN2 ~ FMNsq / (FMNsq + FMNH * KEQ_FMNH_N2),
         ET_C1 ~ Iq + IqQ + IqSQ + IqQH2,
-        D(IqQ) ~ v8 - v9 - v10 + v17,
-        D(IqSQ) ~ v9 + v10 - v12 - v13 - v17,
-        D(IqQH2) ~ v12 + v13 - v14,
+        D(IqQ) ~ v8 - v9 + v17,
+        D(IqSQ) ~ v9 - v13 - v17,
+        D(IqQH2) ~ v13 - v14,
         vQ_C1 ~ -v8,
-        vNADH_C1 ~ -0.5 * (v9 + v10 + v12 + v13 + v16),
+        vNADH_C1 ~ -0.5 * (v9 + v13 + v16),
         vROSIf ~ v16,
         vROSIq ~ v17,
         vROS_C1 ~ vROSIf + vROSIq,
@@ -387,7 +388,7 @@ qsys = c1q(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
-prob_q = SteadyStateProblem(qsys, [qsys.ET_C1 => 5μM, qsys.kf7_C1 => 1e3Hz / μM, qsys.kf8_C1 => 10Hz / μM, qsys.kf13_C1 => 1e5Hz / μM, qsys.kf14_C1 => 1000Hz, qsys.kf16_C1 => 0.0010Hz / μM, qsys.kf17_C1 => 0.0003Hz])
+prob_q = SteadyStateProblem(qsys, [qsys.ET_C1 => 2.5μM, qsys.kf7_C1 => 1e3Hz / μM, qsys.kf8_C1 => 10Hz / μM, qsys.kf13_C1 => 1e5Hz / μM, qsys.kf14_C1 => 1000Hz, qsys.kf16_C1 => 0.0010Hz / μM, qsys.kf17_C1 => 0.0003Hz])
 prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.kf16_C1 => 0.001Hz / μM, markevich.kf17_C1 => 0.001Hz / μM / 20])
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(Rodas5P())
