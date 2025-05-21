@@ -388,7 +388,7 @@ qsys = c1q(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
-prob_q = SteadyStateProblem(qsys, [qsys.ET_C1 => 2.5μM, qsys.kf7_C1 => 1e3Hz / μM, qsys.kf8_C1 => 10Hz / μM, qsys.kf13_C1 => 1e5Hz / μM, qsys.kf14_C1 => 1000Hz, qsys.kf16_C1 => 0.0010Hz / μM, qsys.kf17_C1 => 0.0003Hz])
+prob_q = SteadyStateProblem(qsys, [qsys.ET_C1 => 2.5μM, qsys.kf7_C1 => 1000Hz / μM, qsys.kf8_C1 => 10Hz / μM, qsys.kf13_C1 => 5000Hz / μM, qsys.kf14_C1 => 1000Hz, qsys.kf16_C1 => 0.0010Hz / μM, qsys.kf17_C1 => 0.0003Hz])
 prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.kf16_C1 => 0.001Hz / μM, markevich.kf17_C1 => 0.001Hz / μM / 20])
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(Rodas5P())
