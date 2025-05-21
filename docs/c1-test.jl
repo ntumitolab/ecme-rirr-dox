@@ -314,7 +314,7 @@ function c1q(; name=:c1q,
         Iq(t)
         IqQ(t) = 0
         IqSQ(t) = 0
-        IqQH2(t) = 0
+        IqQH2(t)
         rKEQ_N2r_SQ(t)
         ## Reaction rates
         vQ_C1(t)
@@ -344,7 +344,9 @@ function c1q(; name=:c1q,
     ## Second electron transfer
     v13 = kf13_C1 * (IqSQ * IN2r * fhm^2 - IqQH2 * IN2 * rKEQ_N2r_SQ)
     ## QH2 unbinding
-    qh2 = QH2_n
+    qh2 = QH2_n * rKEQ14_C1
+    wi = 1
+    wqh2 = wi * qh2
     v14 = kf14_C1 * (IqQH2 - Iq * qh2 * rKEQ14_C1)
     ## Flavin site ROS generation
     v16 = kf16_C1 * (FMNH * O2 - FMNsq * sox_m * rKEQ16_C1)
@@ -360,10 +362,10 @@ function c1q(; name=:c1q,
         FMNH_NADH ~ wFMNH_NADH * ET_C1 / denf,
         ET_C1 ~ IN2 + IN2r,
         IN2 ~ FMNsq / (FMNsq + FMNH * KEQ_FMNH_N2),
-        ET_C1 ~ Iq + IqQ + IqSQ + IqQH2,
+        Iq ~ (ET_C1 - IqQ - IqSQ) * wi / (wi + wqh2),
+        IqQH2 ~ (ET_C1 - IqQ - IqSQ) * wqh2 / (wi + wqh2),
         D(IqQ) ~ v8 - v9 + v17,
         D(IqSQ) ~ v9 - v13 - v17,
-        D(IqQH2) ~ v13 - v14,
         vQ_C1 ~ -v8,
         vNADH_C1 ~ -0.5 * (v9 + v13 + v16),
         vROSIf ~ v16,
@@ -388,7 +390,7 @@ qsys = c1q(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
-prob_q = SteadyStateProblem(qsys, [qsys.ET_C1 => 2.5μM, qsys.kf7_C1 => 1000Hz / μM, qsys.kf8_C1 => 10Hz / μM, qsys.kf13_C1 => 5000Hz / μM, qsys.kf14_C1 => 1000Hz, qsys.kf16_C1 => 0.0010Hz / μM, qsys.kf17_C1 => 0.0003Hz])
+prob_q = SteadyStateProblem(qsys, [qsys.ET_C1 => 2.5μM, qsys.kf7_C1 => 10000Hz / μM, qsys.kf8_C1 => 1Hz / μM, qsys.kf13_C1 => 100000Hz / μM, qsys.kf16_C1 => 0.0010Hz / μM, qsys.kf17_C1 => 0.0003Hz])
 prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.kf16_C1 => 0.001Hz / μM, markevich.kf17_C1 => 0.001Hz / μM / 20])
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(Rodas5P())
@@ -471,11 +473,11 @@ plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["FMN" "FMNsq" "
 
 #---
 ys = stack(extract.(Ref(sim_q), [qsys.IqQ, qsys.IqSQ, qsys.IqQH2]), dims=2)
-plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["IqQ" "IqSQ" "IqQH2"], legend=:left, title="Iq model")
+plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["IqQ" "IqSQ" "IqQH2"], title="Iq model")
 
 #---
 ys = stack(extract.(Ref(sim_q), [qsys.FMN, qsys.FMNsq, qsys.FMNH, qsys.FMN_NAD, qsys.FMNH_NADH]), dims=2)
-plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH"], legend=:right)
+plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH"])
 
 # ## Varying Q
 qh2range = 10μM:10μM:1990μM
