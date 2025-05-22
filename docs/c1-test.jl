@@ -280,6 +280,7 @@ function c1q(; name=:c1q,
         ## FMNH- + N2 = FMNsq + N2r
         rKEQ_FMNH_N2 = exp(-iVT * (Em_N2 - Em_FMNsq_FMNH))
         ## N2r + Q = N2 + SQ
+        kf9_C1 = 4E5Hz
         rKEQ_N2r_Q = exp(-iVT * (Em_Q_SQ_C1 - Em_N2))
         ## Dismutation: 2FMNH = FMN + FMNH- + H+
         rKEQ_FMNsq_Dis = exp(-iVT * (Em_FMNsq_FMNH - Em_FMN_FMNsq))
@@ -288,8 +289,6 @@ function c1q(; name=:c1q,
         ## Q binding
         kf8_C1 = 10Hz / μM
         KEQ8_C1 = inv(10μM)
-        kf9_C1 = 4E5Hz
-        rKEQ9_C1 = exp(-iVT * (Em_Q_SQ_C1 - Em_N2))
         ## ET from N2 to SQ
         kf13_C1 = 2.7e6Hz
         ## QH2 unbinding
@@ -336,17 +335,15 @@ function c1q(; name=:c1q,
     wFMNsq = NaNMath.sqrt(wFMN * wFMNH * rKEQ_FMNsq_Dis * fhm)
     denf = wFMN + wFMN_NAD + wFMNH + wFMNH_NADH + wFMNsq
 
-    ## State transition rates in the quinone site
-    ## Q binding
-    q = Q_n * KEQ8_C1
-    qh2 = QH2_n * rKEQ14_C1
     ## First electron transfer
     v7 = kf7_C1 * (N2Q * FMNH - N2rQ * FMNsq * rKEQ_FMNH_N2)
-    v9 = kf9_C1 * (N2rQ * fhm - N2QH * rKEQ9_C1)
+    v9 = kf9_C1 * (N2rQ * fhm - N2QH * rKEQ_N2r_Q)
     ## Second electron transfer
     v12 = kf7_C1 * (N2QH * FMNH - N2rQH * FMNsq * rKEQ_FMNH_N2)
     v13 = kf13_C1 * (N2rQH * fhm - N2QH2 * rKEQ_N2r_SQ)
     ## Q binding and QH2 unbinding
+    q = Q_n * KEQ8_C1
+    qh2 = QH2_n * rKEQ14_C1
     v14 = kf14_C1 * (N2QH2 * q - N2Q * qh2)
     ## Flavin site ROS generation
     v16 = kf16_C1 * (FMNH * O2 - FMNsq * sox_m * rKEQ16_C1)
@@ -390,7 +387,7 @@ qsys = c1q(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
-prob_q = SteadyStateProblem(qsys, [qsys.ET_C1 => 2.5μM])
+prob_q = SteadyStateProblem(qsys, [qsys.ET_C1 => 17μM, qsys.kf9_C1 => 1E6Hz])
 prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.kf16_C1 => 0.001Hz / μM, markevich.kf17_C1 => 0.001Hz / μM / 20])
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(Rodas5P())
