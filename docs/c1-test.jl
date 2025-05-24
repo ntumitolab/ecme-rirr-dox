@@ -7,7 +7,7 @@ using OrdinaryDiffEq
 using NaNMath
 using Plots
 using ECMEDox
-using ECMEDox: mM, μM, iVT, mV, Molar, Hz, ms
+using ECMEDox: mM, μM, nM, iVT, mV, Molar, Hz, ms
 
 # Gauthier 2012 7-state QSSA model
 function c1_gauthier(; name=:c1gauthier,
@@ -280,25 +280,19 @@ function c1q(; name=:c1q,
         KD_NAD_C1 = 25μM
         ## NADH + FMN = NAD+ + FMNH-
         KEQ_NADH_FMN = exp(2iVT * (Em_FMN_FMNH - Em_NAD))
-        ## FMNH- + N3 = FMNsq + N3-
-        KEQ_FMNH_N3 = exp(iVT * (Em_N3 - Em_FMNsq_FMNH))
-        ## N3- + N2 = N3 + N2-
-        rKEQ_N3_N2 = exp(-iVT * (Em_N2 - Em_N3))
-        ## N2r + Q = N2 + SQ
-        kf9_C1 = 4E5Hz
-        rKEQ_N2r_Q = exp(-iVT * (Em_Q_SQ_C1 - Em_N2))
-        ## Dismutation: 2FMNH = FMN + FMNH- + H+; Keq = 0.03
+        ## 2FMNsq = (N1a) = FMN + FMNH- + H+
         rKEQ_FMNsq_Dis = exp(-iVT * (Em_FMNsq_FMNH - Em_FMN_FMNsq))
-        ## ET from N3 to N2
-        kf7_C1 = 10000Hz / μM
-        ## Q binding
-        kf8_C1 = 10Hz / μM
-        KEQ8_C1 = inv(10μM)
-        ## ET from N2 to SQ
+        ## FMNH- + N2 = FMNsq + N2-
+        KEQ_FMNH_N2 = exp(iVT * (Em_N2 - Em_FMNsq_FMNH))
+        ## N2r + Q = N2 + SQ
+        kf7_C1 = 10000Hz
+        rKEQ_N2r_Q = exp(-iVT * (Em_Q_SQ_C1 - Em_N2))
+        ## N2r + SQ = N2 + QH2
         kf13_C1 = 2.7e6Hz
-        ## QH2 unbinding
+        ## Q binding and QH2 unbinding
         kf14_C1 = 1000Hz
-        rKEQ14_C1 = inv(20μM)
+        rKD_Q_C1 = inv(10μM)
+        rKD_QH2_C1 = inv(20μM)
         ## SOX production from IF site
         kf16_C1 = 0.001Hz / μM
         rKEQ16_C1 = exp(-iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
@@ -316,15 +310,12 @@ function c1q(; name=:c1q,
         FMNH_NADH(t)
         FMN_NADH(t)
         FMNH_NAD(t)
-        N3_C1(t)
-        N3r_C1(t)
+        N2_C1(t)
+        N2r_C1(t)
         ## Quinone site
-        N2Q(t)
-        N2rQ(t) = 0
-        N2QH(t) = 0
-        N2rQH(t) = 0
-        N2QH2(t) = 0
-        N2rQH2(t) = 0
+        Q_C1(t)
+        SQ_C1(t) = 0
+        QH2_C1(t) = 0
         rKEQ_N2r_SQ(t)
         ## Reaction rates
         vQ_C1(t)
@@ -347,20 +338,17 @@ function c1q(; name=:c1q,
     wFMNsq = NaNMath.sqrt(wFMN * wFMNH * rKEQ_FMNsq_Dis * fhm)
     denf = wFMN + wFMN_NAD + wFMNH + wFMNH_NADH + wFMNsq + wFMN_NADH + wFMNH_NAD
     ## First electron transfer
-    v7 = kf7_C1 * (N2Q * N3r_C1 - N2rQ * N3_C1 * rKEQ_N3_N2)
-    v9 = kf9_C1 * (N2rQ * fhm - N2QH * rKEQ_N2r_Q)
+    v7 = kf7_C1 * (N2r_C1 * Q_C1 - N2_C1 * SQ_C1 * rKEQ_N2r_Q)
     ## Second electron transfer
-    v12 = kf7_C1 * (N2QH * N3r_C1 - N2rQH * N3_C1 * rKEQ_N3_N2)
-    v13 = kf13_C1 * (N2rQH * fhm - N2QH2 * rKEQ_N2r_SQ)
+    v13 = kf13_C1 * (N2r_C1 * SQ_C1 * fhm^2 - N2_C1 * QH2_C1 * rKEQ_N2r_SQ)
     ## Q binding and QH2 unbinding
-    q = Q_n * KEQ8_C1
-    qh2 = QH2_n * rKEQ14_C1
-    v14 = kf14_C1 * (N2QH2 * q - N2Q * qh2)
+    q = Q_n * rKD_Q_C1
+    qh2 = QH2_n * rKD_QH2_C1
+    v14 = kf14_C1 * (QH2_C1 * q - Q_C1 * qh2)
     ## Flavin site ROS generation
     v16 = kf16_C1 * (FMNH * O2 - FMNsq * sox_m * rKEQ16_C1)
     ## Quinone site ROS generation
-    v17 = kf17_C1 * (N2QH * O2 - N2Q * sox_m * fhm * rKEQ17_C1)
-    v17b = kf17_C1 * (N2rQH * O2 - N2rQ * sox_m * fhm * rKEQ17_C1)
+    v17 = kf17_C1 * (SQ_C1 * O2 - Q_C1 * sox_m * rKEQ17_C1)
 
     eqs = [
         rKEQ_N2r_SQ ~ exp(-iVT * (Em_SQ_QH2_C1 - Em_N2 - 4dpsi)) * (h_i / h_m)^4,
@@ -371,17 +359,15 @@ function c1q(; name=:c1q,
         FMNH_NADH ~ wFMNH_NADH * ET_C1 / denf,
         FMN_NADH ~ wFMN_NADH * ET_C1 / denf,
         FMNH_NAD ~ wFMNH_NAD * ET_C1 / denf,
-        N3_C1 ~ FMNsq / (FMNsq + FMNH * KEQ_FMNH_N3),
-        N3r_C1 ~ ET_C1 - N3_C1,
-        N2Q ~ ET_C1 - (N2rQ + N2QH + N2rQH + N2QH2),
-        D(N2rQ) ~ v7 - v9 + v17b,
-        D(N2QH) ~ v9 - v12 - v17,
-        D(N2rQH) ~ v12 - v13 - v17b,
-        D(N2QH2) ~ v13 - v14,
+        N2_C1 ~ FMNsq / (FMNsq + FMNH * KEQ_FMNH_N2),
+        N2r_C1 ~ 1 - N2_C1,
+        ET_C1 ~ Q_C1 + SQ_C1 + QH2_C1,
+        D(SQ_C1) ~ v7 - v13 - v17,
+        D(QH2_C1) ~ v13 - v14,
         vQ_C1 ~ -v14,
-        vNADH_C1 ~ -0.5 * (v7 + v12 + v16),
+        vNADH_C1 ~ -0.5 * (v7 + v13 + v16),
         vROSIf ~ v16,
-        vROSIq ~ v17 + v17b,
+        vROSIq ~ v17,
         vROS_C1 ~ vROSIf + vROSIq,
         TN_C1 ~ -vNADH_C1 / ET_C1,
     ]
@@ -402,7 +388,7 @@ qsys = c1q(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
-prob_q = SteadyStateProblem(qsys, [qsys.ET_C1 => 17μM])
+prob_q = SteadyStateProblem(qsys, [qsys.ET_C1 => 300nM])
 prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.kf16_C1 => 0.001Hz / μM, markevich.kf17_C1 => 0.001Hz / μM / 20])
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(Rodas5P())
@@ -431,9 +417,11 @@ ys = hcat(extract(sim_g, gauthier.vNADH_C1), extract(sim_m, markevich.vNADH_C1),
 
 plot(xs, ys, xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", label=["Gauthier" "Markevich" "IQ"])
 
+extract(sim_q, qsys.TN_C1) .* 1000
+extract(sim_q, -80 + 26.7 * log(qsys.N2_C1 / qsys.N2r_C1))
 #---
-ys = stack(extract.(Ref(sim_q), [qsys.N2Q, qsys.N2rQ, qsys.N2QH, qsys.N2rQH,qsys.N2QH2]), dims=2)
-plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["N2Q" "N2rQ" "N2QH" "N2rQH" "N2QH2"], legend=:left)
+ys = stack(extract.(Ref(sim_q), [qsys.Q_C1, qsys.SQ_C1, qsys.QH2_C1]), dims=2)
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1"], legend=:left)
 
 #---
 ys = stack(extract.(Ref(sim_q), [qsys.FMN, qsys.FMNsq, qsys.FMNH, qsys.FMN_NAD, qsys.FMNH_NADH, qsys.FMN_NADH, qsys.FMNH_NAD]), dims=2)
@@ -488,8 +476,8 @@ ys = stack(extract.(Ref(sim_m), [markevich.FMN, markevich.FMNsq, markevich.FMNH,
 plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH"], legend=:topleft, title="M model")
 
 #---
-ys = stack(extract.(Ref(sim_q), [qsys.IqQ, qsys.IqSQ, qsys.IqQH2]), dims=2)
-plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["IqQ" "IqSQ" "IqQH2"], title="Iq model")
+ys = stack(extract.(Ref(sim_q), [qsys.Q_C1, qsys.SQ_C1, qsys.QH2_C1]), dims=2)
+plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1"], title="Iq model")
 
 #---
 ys = stack(extract.(Ref(sim_q), [qsys.FMN, qsys.FMNsq, qsys.FMNH, qsys.FMN_NAD, qsys.FMNH_NADH]), dims=2)
@@ -529,7 +517,7 @@ ys = [extract(sim_g, gauthier.vROS_C1) extract(sim_m, markevich.vROS_C1) extract
 plot(xs, ys, xlabel="QH2 (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "IQ"])
 
 #---
-ys = stack(extract.(Ref(sim_q), [qsys.IqQ, qsys.IqSQ, qsys.IqQH2]), dims=2)
+ys = stack(extract.(Ref(sim_q), [qsys.Q_C1, qsys.SQ_C1, qsys.QH2_C1]), dims=2)
 plot(xs, ys, xlabel="QH2 (μM)", ylabel="Concentration", label=["IqQ" "IqSQ" "IqQH2"], legend=:left)
 
 #---
