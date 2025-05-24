@@ -263,7 +263,7 @@ function c1q(; name=:c1q,
     DOX=0μM, ROTENONE_BLOCK=0)
 
     @parameters begin
-        ET_C1 = 17μM                ## Activity of complex I
+        ET_C1 = 1μM                ## Activity of complex I
         Em_O2_SOX = -160mV          ## O2/Superoxide redox potential
         Em_FMN_FMNsq = -387mV       ## FMN/FMNH- avg redox potential
         Em_FMNsq_FMNH = -293mV      ## FMN semiquinone/FMNH- redox potential
@@ -290,7 +290,7 @@ function c1q(; name=:c1q,
         ## N2r + SQ = N2 + QH2
         kf13_C1 = 2.7e6Hz
         ## Q binding and QH2 unbinding
-        kf14_C1 = 1000Hz
+        kf14_C1 = 10Hz
         rKD_Q_C1 = inv(10μM)
         rKD_QH2_C1 = inv(20μM)
         ## SOX production from IF site
@@ -388,8 +388,19 @@ qsys = c1q(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
 
-prob_q = SteadyStateProblem(qsys, [qsys.ET_C1 => 300nM])
-prob_m = SteadyStateProblem(markevich, [markevich.ET_C1 => 17μM, markevich.kf16_C1 => 0.001Hz / μM, markevich.kf17_C1 => 0.001Hz / μM / 20])
+prob_q = SteadyStateProblem(qsys, [
+    qsys.ET_C1 => 1μM,
+    qsys.kf7_C1 => 10000Hz,
+    qsys.kf13_C1 => 2.7e6Hz,
+    qsys.kf14_C1 => 10Hz,
+    qsys.kf16_C1 => 0.020Hz / μM,
+    qsys.kf17_C1 => 0.017Hz / μM / 20,
+])
+prob_m = SteadyStateProblem(markevich, [
+    markevich.ET_C1 => 17μM,
+    markevich.kf16_C1 => 0.001Hz / μM,
+    markevich.kf17_C1 => 0.001Hz / μM / 20,
+])
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(Rodas5P())
 ealg = EnsembleThreads()
@@ -417,7 +428,10 @@ ys = hcat(extract(sim_g, gauthier.vNADH_C1), extract(sim_m, markevich.vNADH_C1),
 
 plot(xs, ys, xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", label=["Gauthier" "Markevich" "IQ"])
 
+# Turnover rate (Hz)
 extract(sim_q, qsys.TN_C1) .* 1000
+
+# IF redox potential (mV)
 extract(sim_q, -80 + 26.7 * log(qsys.N2_C1 / qsys.N2r_C1))
 #---
 ys = stack(extract.(Ref(sim_q), [qsys.Q_C1, qsys.SQ_C1, qsys.QH2_C1]), dims=2)
@@ -425,11 +439,12 @@ plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "Q
 
 #---
 ys = stack(extract.(Ref(sim_q), [qsys.FMN, qsys.FMNsq, qsys.FMNH, qsys.FMN_NAD, qsys.FMNH_NADH, qsys.FMN_NADH, qsys.FMNH_NAD]), dims=2)
-plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH" "FMN_NADH" "FMNH_NAD"], legend=:right)
+pl1 = plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH" "FMN_NADH" "FMNH_NAD"], title="IQ model", legend=:right)
 
-#---
 ys = stack(extract.(Ref(sim_m), [markevich.FMN, markevich.FMNsq, markevich.FMNH, markevich.FMN_NAD, markevich.FMNH_NADH, markevich.FMN_NADH, markevich.FMNH_NAD]), dims=2)
-plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH" "FMN_NADH" "FMNH_NAD"], legend=:right)
+pl2 = plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH" "FMN_NADH" "FMNH_NAD"], title="M model", legend=:right)
+
+plot(pl1, pl2)
 
 # MMP vs ROS production
 xs = dpsirange
@@ -518,7 +533,7 @@ plot(xs, ys, xlabel="QH2 (μM)", ylabel="ROS production", label=["Gauthier" "Mar
 
 #---
 ys = stack(extract.(Ref(sim_q), [qsys.Q_C1, qsys.SQ_C1, qsys.QH2_C1]), dims=2)
-plot(xs, ys, xlabel="QH2 (μM)", ylabel="Concentration", label=["IqQ" "IqSQ" "IqQH2"], legend=:left)
+plot(xs, ys, xlabel="QH2 (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1"], legend=:left)
 
 #---
 @unpack C1_1, C1_2, C1_3, C1_4, C1_5, C1_6, C1_7 = gauthier
