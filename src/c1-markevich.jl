@@ -155,7 +155,7 @@ function c1_markevich_full(; name=:c1markevich_full,
         vROS_C1 ~ vROSIf + vROSIq,
         TN_C1 ~ -vNADH_C1 / ET_C1,
     ]
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end
 
 # Simplified Markevich 2015 model
@@ -287,12 +287,13 @@ function c1_markevich_s(; name=:c1markevich_s,
 
     eqs = [
         D(N2r_C1) ~ v7 + v12 - v9 - v13,
-        FMN_NADH ~ ,
-        FMNH_NAD ~ ,
-        FMN_NAD ~ ,
-        FMNH_NADH ~ ,
-        FMNH ~ ,
-        FMNsq ~ ,
+        FMN ~ wFMN * fC1,
+        FMN_NADH ~ wFMN_NADH * fC1,
+        FMNH_NAD ~ wFMNH_NAD * fC1,
+        FMN_NAD ~ wFMN_NAD * fC1,
+        FMNH_NADH ~ wFMNH_NADH * fC1,
+        FMNH ~ wFMNH * fC1,
+        FMNsq ~ wFMNsq * fC1,
         ET_C1 ~ N2_C1 + N2r_C1,
         ET_C1 ~ N3_C1 + N3r_C1,
         N3_C1 ~ FMN * (FMN + FMNsq * KEQ6_C1),
@@ -315,5 +316,5 @@ function c1_markevich_s(; name=:c1markevich_s,
         vNADC1 ~ -vNADHC1,
         TNC1 ~ vNADC1 / C1_CONC,
     ]
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end
