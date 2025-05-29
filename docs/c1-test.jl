@@ -95,7 +95,7 @@ function c1_gauthier(; name=:c1gauthier,
         vNADH_C1 ~ -0.5v23,
         TN_C1 ~ -vNADH_C1 / ET_C1,
     ]
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end
 
 # Markevich 2015 mass action model
@@ -251,7 +251,7 @@ function c1_markevich_full(; name=:c1markevich_full,
         vROS_C1 ~ vROSIf + vROSIq,
         TN_C1 ~ -vNADH_C1 / ET_C1,
     ]
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end
 
 # Q-site complex I model
@@ -371,7 +371,7 @@ function c1q(; name=:c1q,
         vROS_C1 ~ vROSIf + vROSIq,
         TN_C1 ~ -vNADH_C1 / ET_C1,
     ]
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end
 
 #---
@@ -384,9 +384,9 @@ end
 end
 
 #---
-qsys = c1q(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
-markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
-gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> structural_simplify
+qsys = c1q(; Q_n, QH2_n, nad, nadh, dpsi) |> mtkcompile
+markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> mtkcompile
+gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> mtkcompile
 
 prob_q = SteadyStateProblem(qsys, [
     qsys.ET_C1 => 1μM,
