@@ -165,5 +165,5 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m=exp10(-7.6) * Molar, ca_
         D(mal) ~ vFH - vMDH,
         D(oaa) ~ vMDH - vCS - vAAT,
     ]
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end

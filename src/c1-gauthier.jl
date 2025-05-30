@@ -96,5 +96,5 @@ function c1_gauthier(; name=:c1gauthier,
         vHresC1 ~ 2 * v61,
         TNC1 ~ -vNADH_C1 / ET_C1,
     ]
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end

@@ -15,5 +15,5 @@ function get_inak_sys(; atp_i, adp_i, vm, na_i, na_o, k_o, name=:naksys)
     f_nak = inv(1.0 + 0.1245 * exp(-0.1iVT * vm) + 0.0365 * fnao_NAK * exp(-iVT * vm))
     f_atp = hil(atp_i * hil(KI_ADP_NAK, adp_i), KM_ATP_NAK)
     eqs = [INaK ~ IMAX_NAK * fko_NAK * fnai * f_atp * f_nak]
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end

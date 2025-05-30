@@ -14,7 +14,7 @@ bcl = 1.0second
 u0 = build_u0(sys)
 sts = unknowns(sys)
 alg = KenCarp47()
-prob = ODEProblem(sys, u0, tend, [sys.KCAT_IDH => 50Hz])
+prob = ODEProblem(sys, [u0; sys.KCAT_IDH => 35Hz], tend)
 @time sol = solve(prob, alg; reltol=1e-6, abstol=1e-6, progress=true)
 
 for i in sts
@@ -27,8 +27,8 @@ end
 plot(sol, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal], legend=:right, title="CAC metabolites") |> PNG
 
 # Q cycle
-@unpack Q_n, SQn, QH2_n, QH2_p, SQp, Q_p, fes_ox, fes_rd, cytc_ox, cytc_rd = sys
-pl_q = plot(sol, idxs=[Q_n + Q_p, SQn, QH2_n + QH2_p, SQp], title="Q cycle", legend=:left, xlabel="Time (ms)", ylabel="Conc. (μM)") |> PNG
+@unpack Q_n, SQn, QH2_n, QH2_p, Q_p, fes_ox, fes_rd, cytc_ox, cytc_rd = sys
+pl_q = plot(sol, idxs=[Q_n + Q_p, SQn, QH2_n + QH2_p], title="Q cycle", legend=:left, xlabel="Time (ms)", ylabel="Conc. (μM)") |> PNG
 
 #---
 plot(sol, idxs = [sys.vHresC1, sys.vHresC3, sys.vHresC4])

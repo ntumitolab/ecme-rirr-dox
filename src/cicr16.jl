@@ -3,7 +3,7 @@
 function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
     @parameters begin
         A_LCC = 2
-        B_LCC = 2
+        B_LCC = 1/2
         ω_LCC = 0.01 / ms
         f_LCC = 0.3 / ms
         g_LCC = 2 / ms
@@ -44,8 +44,8 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
     ω, f, g = ω_LCC, f_LCC, g_LCC
     α = α_lcc
     β = β_lcc
-    α′ = 2α
-    β′ = 0.5β
+    α′ = A_LCC * α
+    β′ = B_LCC * β
     γ = γ_LCC * ca_ss
     vc0c1 = 4α * c0_lcc - β * c1_lcc
     vc1c2 = 3α * c1_lcc - 2β * c2_lcc
@@ -57,14 +57,14 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
     vca2ca3 = 2α′ * cca2_lcc - 3β′ * cca3_lcc
     vca3ca4 = α′ * cca3_lcc - 4β′ * cca4_lcc
     vc0ca0 = γ * c0_lcc - ω * cca0_lcc
-    vc1ca1 = 2γ * c1_lcc - ω / 2 * cca1_lcc
-    vc2ca2 = 4γ * c2_lcc - ω / 4 * cca2_lcc
-    vc3ca3 = 8γ * c3_lcc - ω / 8 * cca3_lcc
-    vc4ca4 = 16γ * c4_lcc - ω / 16 * cca4_lcc
+    vc1ca1 = A_LCC * γ * c1_lcc - ω * B_LCC * cca1_lcc
+    vc2ca2 = A_LCC^2 * γ * c2_lcc - ω * B_LCC^2 * cca2_lcc
+    vc3ca3 = A_LCC^3 * γ * c3_lcc - ω * B_LCC^3 * cca3_lcc
+    vc4ca4 = A_LCC^4 * γ * c4_lcc - ω * B_LCC^4 * cca4_lcc
 
     eqs = [
-        α_lcc ~ 0.4 / ms * exp((v + 2) / 10),
-        β_lcc ~ 0.05 / ms * exp(-(v + 2) / 13),
+        α_lcc ~ 0.4kHz * exp((v + 2) / 10),
+        β_lcc ~ 0.05kHz * exp(-(v + 2) / 13),
         1 ~ c0_lcc + c1_lcc + c2_lcc + c3_lcc + c4_lcc + o_lcc + cca0_lcc + cca1_lcc + cca2_lcc + cca3_lcc + cca4_lcc,
         # D(c0_lcc) ~ -vc0c1 - vc0ca0,
         D(c1_lcc) ~ vc0c1 - vc1c2 - vc1ca1,
@@ -84,7 +84,7 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
         ICaL ~ 6 * x_yca * o_lcc * ICaMax,
         ICaK ~ hil(I_CA_HALF_LCC, ICaMax) * x_yca * o_lcc * ghk(P_K_LCC, vm, k_i, k_o)
     ]
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end
 
 "Ryanodine receptor (RyR)"
@@ -118,5 +118,5 @@ function get_ryr_sys(ca_jsr, ca_ss; name=:ryrsys)
         D(pc2_ryr) ~ vo1c2,
         Jrel ~ R_RYR * (po1_ryr + po2_ryr) * (ca_jsr - ca_ss)
     ]
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end

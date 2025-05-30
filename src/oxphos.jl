@@ -117,11 +117,11 @@ function get_etc_sys(;
         fhm = h_m * inv(1E-7Molar)
         ## Weights in the flavin site
         wFMN = 1
-        wFMN_NAD = wFMN * nad / KI_NAD_C1
-        wFMN_NADH = wFMN * nadh / KD_NADH_C1
-        wFMNH = wFMN * (nadh / nad) * KEQ_NADH_FMN
-        wFMNH_NAD = wFMNH * nad / KD_NAD_C1
-        wFMNH_NADH = wFMNH * nadh / KI_NADH_C1
+        wFMN_NAD = wFMN * nad_m / KI_NAD_C1
+        wFMN_NADH = wFMN * nadh_m / KD_NADH_C1
+        wFMNH = wFMN * (nadh_m / nad_m) * KEQ_NADH_FMN
+        wFMNH_NAD = wFMNH * nad_m / KD_NAD_C1
+        wFMNH_NADH = wFMNH * nadh_m / KI_NADH_C1
         wFMNsq = NaNMath.sqrt(wFMN * wFMNH * rKEQ_FMNsq_Dis * fhm)
         denf = wFMN + wFMN_NAD + wFMNH + wFMNH_NADH + wFMNsq + wFMN_NADH + wFMNH_NAD
         fC1 = C1_CONC / denf
@@ -430,7 +430,7 @@ function get_etc_sys(;
         ]
     end
 
-    return ODESystem([c1eqs; c2eqs; c4eqs; c3eqs], t; name)
+    return System([c1eqs; c2eqs; c4eqs; c3eqs], t; name)
 end
 
 function get_c5_sys(; dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=1, C5_INHIB=1, use_mg=false, mg_i=1mM, mg_m=0.4mM, name=:c5sys)
@@ -506,5 +506,5 @@ function get_c5_sys(; dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=
         vC5 ~ v_c5,
         vHu ~ v_hu,
     ]
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end

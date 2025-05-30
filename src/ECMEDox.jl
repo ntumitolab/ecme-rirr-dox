@@ -136,9 +136,9 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
 
     if bcl > 0
         discrete_events = [collect(tstart:bcl:tend) => [iStim ~ istim], collect(tstart+duty:bcl:tend) => [iStim ~ 0]]
-        sys = ODESystem(eqs, t; name, discrete_events)
+        sys = System(eqs, t; name, discrete_events)
     else
-        sys = ODESystem(eqs, t; name)
+        sys = System(eqs, t; name)
     end
 
     for s in (lccsys, ryrsys, cksys, forcesys, jcasys, iksys, inasys, inaksys, tcassys, etcsys, c5sys, rossys, mitocasys)

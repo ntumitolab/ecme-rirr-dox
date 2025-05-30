@@ -78,5 +78,5 @@ function get_force_sys(; atp_i, adp_i, ca_i, name=:forcesys)
         D(x_p3) ~ v23,
         D(x_n1) ~ v15 - v54,
     ]
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end
