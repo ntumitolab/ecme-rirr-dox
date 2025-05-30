@@ -40,7 +40,7 @@ function get_etc_sys(;
     # Rapid equlibrium in the flavin site
     # QSSA for the catalytic cycle in the quinone site
     @parameters begin
-        ET_C1 = 17μM              ## Activity of complex I
+        ET_C1 = 1μM              ## Activity of complex I
         KI_DOX_C1 = 400μM         ## DOX IC50 on complex I
         K_RC_DOX = 1000 / 15mM    ## DOX redox cycling constant
         Em_O2_SOX = -160mV        ## O2/Superoxide redox potential
@@ -48,30 +48,33 @@ function get_etc_sys(;
         Em_FMNsq_FMNH = -293mV    ## FMN semiquinone/FMNH- redox potential
         Em_FMN_FMNH = -340mV      ## FMN/FMNH- avg redox potential
         Em_NAD = -320mV           ## NAD/NADH avg redox potential
-        Em_N3 = -250mV
         Em_N2 = -80mV
         Em_Q_SQ_C1 = -300mV       ## -213mV in Markevich, 2015
         Em_SQ_QH2_C1 = +500mV     ## 800mV (?) in Markevich, 2015
         KI_NADH_C1 = 50μM
+        KD_NADH_C1 = 100μM
         KI_NAD_C1 = 1000μM
+        KD_NAD_C1 = 25μM
         ## NADH + FMN = NAD+ + FMNH-
-        KEQ2_C1 = exp(2iVT * (Em_FMN_FMNH - Em_NAD))
-        ## 0.5NADH + N3 = 0.5NAD + N3r + 0.5H+
-        KEQ_NADH_N3 = exp(iVT * (Em_N3 - Em_NAD))
-        rKEQ6_C1 = exp(-iVT * (Em_N3 - Em_FMNsq_FMNH))
+        KEQ_NADH_FMN = exp(2iVT * (Em_FMN_FMNH - Em_NAD))
+        ## 2FMNsq = (N1a) = FMN + FMNH- + H+
+        rKEQ_FMNsq_Dis = exp(-iVT * (Em_FMNsq_FMNH - Em_FMN_FMNsq))
+        ## FMNH- + N2 = FMNsq + N2-
+        KEQ_FMNH_N2 = exp(iVT * (Em_N2 - Em_FMNsq_FMNH))
+        ## N2r + Q = N2 + SQ
         kf7_C1 = 10000Hz / μM
-        rKEQ7_C1 = exp(-iVT * (Em_N2 - Em_N3))
-        kf8_C1 = 10Hz / μM
-        rKEQ8_C1 = 10μM         ## Dissociation constant for Q
-        kf9_C1 = 4E5Hz / μM
-        rKEQ9_C1 = exp(-iVT * (Em_Q_SQ_C1 - Em_N2))
-        rKEQ11_C1 = exp(-iVT * (Em_N3 - Em_FMN_FMNsq))
-        kf13_C1 = 2.7e6Hz / μM
-        kf14_C1 = 1000Hz
-        rKEQ14_C1 = inv(20μM)       ## Dissociation constant for QH2
-        kf16_C1 = 2Hz / μM          ## SOX production rate from If site
+        rKEQ_N2r_Q = exp(-iVT * (Em_Q_SQ_C1 - Em_N2))
+        ## N2r + SQ = N2 + QH2
+        kf13_C1 = 2.7e6Hz
+        ## Q binding and QH2 unbinding
+        kf14_C1 = 10Hz
+        rKD_Q_C1 = inv(10μM)
+        rKD_QH2_C1 = inv(20μM)
+        ## SOX production from IF site
+        kf16_C1 = 0.001Hz / μM
         rKEQ16_C1 = exp(-iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
-        kf17_C1 = 0.04Hz / μM       ## SOX production rate from Iq site
+        ## SOX production from IQ site
+        kf17_C1 = 0.001Hz / μM / 20
         rKEQ17_C1 = exp(-iVT * (Em_O2_SOX - Em_Q_SQ_C1))
     end
 
@@ -82,25 +85,17 @@ function get_etc_sys(;
         FMNsq(t)
         FMNH(t)
         FMNH_NADH(t)
+        FMN_NADH(t)
+        FMNH_NAD(t)
+        N2_C1(t)
+        N2r_C1(t)
         ## Quinone site
-        Iq_C1(t)
         Q_C1(t)
         SQ_C1(t)
         QH2_C1(t)
-        wIq(t)
-        wIqQ(t)
-        wIqSQ(t)
-        wIqQH2(t)
-        rKEQ13_C1(t)
-        ## FeS clusters
-        N2_C1(t) ## Conserved
-        N2r_C1(t) = 0
-        N3_C1(t)
-        N3r_C1(t)
-        ## N3r/N3 ratio from reaction 0.5NADH + N3 = 0.5NAD + N3r + 0.5H+
-        rN3_C1(t)
+        rKEQ_N2r_SQ(t)
         ## Reaction rates
-        TNC1(t)  ## Flavin site turnover number
+        TNC1(t)
         vQC1(t)
         vQH2C1(t)
         vNADHC1(t)
@@ -115,76 +110,84 @@ function get_etc_sys(;
         C1_CONC = ET_C1 * MT_PROT
         ## complex I inhibition by DOX and rotenone
         C1_INHIB = hil(KI_DOX_C1, DOX, 3) * (1 - ROTENONE_BLOCK)
+        n2 = C1_INHIB * N2_C1
+        n2r = C1_INHIB * N2r_C1
         ## Electron leak scaling factor from complex I
         E_LEAK_C1 = 1 + K_RC_DOX * DOX
         fhm = h_m * inv(1E-7Molar)
-        ## N3− + N2 = N3 + N2−
-        v7 = kf7_C1 * (N3r_C1 * N2_C1 - N3_C1 * N2r_C1 * rKEQ7_C1)
-        ## Q association
-        q = Q_n * C1_INHIB
-        v8 = kf8_C1 * (Iq_C1 * q - Q_C1 * rKEQ8_C1)
-        ## CI.Q + N2− = CIQsq + N2
-        v9 = kf9_C1 * (Q_C1 * N2r_C1 - SQ_C1 * N2_C1 * rKEQ9_C1)
-        ## N2 + N3− = N2− + N3
-        v12 = v7
+        ## Weights in the flavin site
+        wFMN = 1
+        wFMN_NAD = wFMN * nad / KI_NAD_C1
+        wFMN_NADH = wFMN * nadh / KD_NADH_C1
+        wFMNH = wFMN * (nadh / nad) * KEQ_NADH_FMN
+        wFMNH_NAD = wFMNH * nad / KD_NAD_C1
+        wFMNH_NADH = wFMNH * nadh / KI_NADH_C1
+        wFMNsq = NaNMath.sqrt(wFMN * wFMNH * rKEQ_FMNsq_Dis * fhm)
+        denf = wFMN + wFMN_NAD + wFMNH + wFMNH_NADH + wFMNsq + wFMN_NADH + wFMNH_NAD
+        fC1 = C1_CONC / denf
+        ## First electron transfer
+        v7 = kf7_C1 * C1_INHIB * (N2r_C1 * Q_C1 - N2_C1 * SQ_C1 * rKEQ_N2r_Q)
         ## Second electron transfer
-        v13 = kf13_C1 * (SQ_C1 * N2r_C1 * fhm^2 - QH2_C1 * N2_C1 * rKEQ13_C1)
-        ## QH2 dissociation
-        qh2 = QH2_n * C1_INHIB
-        v14 = kf14_C1 * (QH2_C1 - Iq_C1 * qh2 * rKEQ14_C1)
+        v13 = kf13_C1 * C1_INHIB * (N2r_C1 * SQ_C1 * fhm^2 - N2_C1 * QH2_C1 * rKEQ_N2r_SQ)
+        ## Q binding and QH2 unbinding
+        q = Q_n * rKD_Q_C1
+        qh2 = QH2_n * rKD_QH2_C1
+        v14 = kf14_C1 * (QH2_C1 * q - Q_C1 * qh2)
         ## Flavin site ROS generation
         v16 = kf16_C1 * E_LEAK_C1 * (FMNH * O2 - FMNsq * sox_m * rKEQ16_C1)
         ## Quinone site ROS generation
         v17 = kf17_C1 * (SQ_C1 * O2 - Q_C1 * sox_m * rKEQ17_C1)
-        ## FMN + NADH = FMNH- + NAD+
-        rFMNH_FMN = (nadh_m / nad_m) * KEQ2_C1
-        ## FMNHsq + N3 = FMN + N3− + Hi+
-        rFMNHsq_FMN = rN3_C1 * fhm * rKEQ11_C1
-        ## Weights in the flavin site
-        denf = 1 + rFMNH_FMN + rFMNHsq_FMN
-        fFMN = KI_NAD_C1 / (nad_m + KI_NAD_C1)
-        fFMNH = KI_NADH_C1 / (nadh_m + KI_NADH_C1)
 
         ## State transition rates in the quinone site
-        ## 1 = Iq 2 = IqQ, 3 = IqSQ, 4 = IqQH2
-        b12 = kf8_C1 * q
-        b21 = kf8_C1 * rKEQ8_C1
-        b23 = kf9_C1 * N2r_C1 + kf17_C1 * rKEQ17_C1 * sox_m
-        b32 = kf9_C1 * rKEQ9_C1 * N2_C1 + kf17_C1 * O2
-        b34 = kf13_C1 * N2r_C1 * fhm^2
-        b43 = kf13_C1 * rKEQ13_C1 * N2_C1
-        b41 = kf14_C1
-        b14 = kf14_C1 * rKEQ14_C1 * qh2
-        qDen = wIq + wIqQ + wIqSQ + wIqQH2
-        qC1 = ET_C1 / qDen
+        ## 1 = IqQ, 2 = IqSQ, 3 = IqQH2
+        ## First electron transfer
+        b12a = kf7_C1 * n2r
+        b21a = kf7_C1 * rKEQ_N2r_Q * n2
+        v7 = b12a * Q_C1 - b21a * SQ_C1
+        ## Quinone site ROS generation
+        b21b = kf17_C1 * O2
+        b12b = kf17_C1 * rKEQ17_C1 * sox_m
+        v17 = b21b * SQ_C1 - b12b * Q_C1
+        b12 = b12a + b12b
+        b21 = b21a + b21b
+        ## Second electron transfer
+        b23 = kf13_C1 * n2r * fhm^2
+        b32 = kf13_C1 * rKEQ_N2r_SQ * n2
+        v13 = b23 * SQ_C1 - b32 * QH2_C1
+        ## Q binding and QH2 unbinding
+        q = Q_n * rKD_Q_C1
+        qh2 = QH2_n * rKD_QH2_C1
+        b31 = kf14_C1 * q
+        b13 = kf14_C1 * qh2
+        v14 = b31 * QH2_C1 - b13 * Q_C1
+
+        w1 = b21 * (b31 + b32) + b23 * b31
+        w2 = b12 * (b31 + b32) + b13 * b32
+        w3 = b12 * b23 + b13 * (b21 + b23)
+        qDen = w1 + w2 + w3
+        qC1 = C1_CONC / qDen
 
         eqs = [
-            D(N2r_C1) ~ v7 + v12 - v9 - v13,
-            rKEQ13_C1 ~ exp(-iVT * (Em_SQ_QH2_C1 - Em_N2 - 4dpsi)) * (h_i / h_m)^4,
-            wIq ~ b21 * b32 * b41 + b21 * b32 * b43 + b21 * b34 * b41 + b23 * b34 * b41,
-            wIqQ ~ b12 * b32 * b41 + b12 * b32 * b43 + b12 * b34 * b41 + b14 * b32 * b43,
-            wIqSQ ~ b12 * b23 * b41 + b12 * b23 * b43 + b14 * b21 * b43 + b14 * b23 * b43,
-            wIqQH2 ~ b12 * b23 * b34 + b14 * b21 * b32 + b14 * b21 * b34 + b14 * b23 * b34,
-            Iq_C1 ~ wIq * qC1,
-            Q_C1 ~ wIqQ * qC1,
-            SQ_C1 ~ wIqSQ * qC1,
-            QH2_C1 ~ wIqQH2 * qC1,
-            ET_C1 ~ N2_C1 + N2r_C1,
-            ET_C1 ~ N3_C1 + N3r_C1,
-            N3_C1 ~ ET_C1 / (1 + rN3_C1),
-            rN3_C1 ~ KEQ_NADH_N3 * NaNMath.sqrt(nadh_m / (nad_m * fhm)),
-            FMN ~ ET_C1 / denf * fFMN,
-            FMN_NAD ~ ET_C1 / denf * (1 - fFMN),
-            FMNsq ~ ET_C1 / denf * rFMNHsq_FMN,
-            FMNH ~ ET_C1 / denf * rFMNH_FMN * fFMNH,
-            FMNH_NADH ~ ET_C1 / denf * rFMNH_FMN * (1 - fFMNH),
-            vQC1 ~ -v8,
-            vNADHC1 ~ -0.5 * (v7 + v12 + v16),
+            rKEQ_N2r_SQ ~ exp(-iVT * (Em_SQ_QH2_C1 - Em_N2 - 4dpsi)) * (h_i / h_m)^4,
+            FMN ~ wFMN * fC1,
+            FMN_NAD ~ wFMN_NAD * fC1,
+            FMNH ~ wFMNH * fC1,
+            FMNsq ~ wFMNsq * fC1,
+            FMNH_NADH ~ wFMNH_NADH * fC1,
+            FMN_NADH ~ wFMN_NADH * fC1,
+            FMNH_NAD ~ wFMNH_NAD * fC1,
+            N2_C1 ~ FMNsq / (FMNsq + FMNH * KEQ_FMNH_N2),
+            N2r_C1 ~ 1 - N2_C1,
+            Q_C1 ~ w1 * qC1,
+            SQ_C1 ~ w2 * qC1,
+            QH2_C1 ~ C1_CONC - Q_C1 - SQ_C1,
+            vQC1 ~ -v14,
+            vNADHC1 ~ -0.5 * (v7 + v13 + v16),
             vROSIf ~ v16,
             vROSIq ~ v17,
             vROSC1 ~ vROSIf + vROSIq,
             vQH2C1 ~ v14,
-            vHresC1 ~ 4v13,
+            vHresC1 ~ 4 * v13,
             vNADC1 ~ -vNADHC1,
             TNC1 ~ vNADC1 / C1_CONC,
         ]
@@ -419,7 +422,7 @@ function get_etc_sys(;
             ## D(blr_bhr) = v4rd - v7rd - v8rd
             D(fes_ox) ~ v9 - v4ox - v4rd,
             D(cytc1_ox) ~ v33 - v9,
-            D(cytc_ox) ~ 4* vO2 - v33,
+            D(cytc_ox) ~ 4 * vO2 - v33,
             vHresC3 ~ v4ox + v4rd,
             vHres ~ vHresC1 + vHresC3 + vHresC4,
             vROSC3 ~ v10ox + v10rd,
