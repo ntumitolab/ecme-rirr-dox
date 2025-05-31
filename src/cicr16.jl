@@ -4,9 +4,9 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
     @parameters begin
         A_LCC = 2
         B_LCC = 1/2
-        ω_LCC = 0.01 / ms
-        f_LCC = 0.3 / ms
-        g_LCC = 2 / ms
+        ω_LCC = 0.01kHz
+        f_LCC = 0.3kHz
+        g_LCC = 2kHz
         γ_LCC = 0.1875 / (ms * mM)
         P_CA_LCC = 1E-3cm * Hz # 1.24E-3cm * Hz
         P_K_LCC = 1.11E-11cm * Hz
@@ -31,7 +31,8 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
         cca2_lcc(t) = 0
         cca3_lcc(t) = 0
         cca4_lcc(t) = 0
-        x_yca(t) = 1 # Voltage-gated LCC
+        # Voltage-gated LCC
+        x_yca(t) = 1
         y_inf(t)
         τ_yca(t)
         # Currents
@@ -44,8 +45,8 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
     ω, f, g = ω_LCC, f_LCC, g_LCC
     α = α_lcc
     β = β_lcc
-    α′ = A_LCC * α
-    β′ = B_LCC * β
+    α′ = 2α
+    β′ = 0.5β
     γ = γ_LCC * ca_ss
     vc0c1 = 4α * c0_lcc - β * c1_lcc
     vc1c2 = 3α * c1_lcc - 2β * c2_lcc
@@ -57,10 +58,10 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
     vca2ca3 = 2α′ * cca2_lcc - 3β′ * cca3_lcc
     vca3ca4 = α′ * cca3_lcc - 4β′ * cca4_lcc
     vc0ca0 = γ * c0_lcc - ω * cca0_lcc
-    vc1ca1 = A_LCC * γ * c1_lcc - ω * B_LCC * cca1_lcc
-    vc2ca2 = A_LCC^2 * γ * c2_lcc - ω * B_LCC^2 * cca2_lcc
-    vc3ca3 = A_LCC^3 * γ * c3_lcc - ω * B_LCC^3 * cca3_lcc
-    vc4ca4 = A_LCC^4 * γ * c4_lcc - ω * B_LCC^4 * cca4_lcc
+    vc1ca1 = 2γ * c1_lcc - ω / 2 * cca1_lcc
+    vc2ca2 = 4γ * c2_lcc - ω / 4 * cca2_lcc
+    vc3ca3 = 8γ * c3_lcc - ω / 8 * cca3_lcc
+    vc4ca4 = 16γ * c4_lcc - ω / 16 * cca4_lcc
 
     eqs = [
         α_lcc ~ 0.4kHz * exp((v + 2) / 10),

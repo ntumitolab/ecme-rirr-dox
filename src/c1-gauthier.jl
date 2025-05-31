@@ -4,7 +4,7 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 using NaNMath
 
 function c1_gauthier(; name=:c1gauthier,
-    Q_n=3.0mM, QH2_n=0.3mM, nad=500μM, nadh=500μM,
+    Q_n=3.0mM, QH2_n=0.3mM, nad_m=500μM, nadh_m=500μM,
     dpsi=150mV, O2=6μM, sox_m=0.001μM,
     h_i=exp10(-7) * Molar, h_m=exp10(-7.6) * Molar,
     C1_INHIB=1)
@@ -56,10 +56,10 @@ function c1_gauthier(; name=:c1gauthier,
     a56 = K56_C1
     a61 = K61_C1 / fv
     a16 = K16_C1 * fv
-    a23 = K23_C1 * NaNMath.sqrt(nadh)
+    a23 = K23_C1 * NaNMath.sqrt(nadh_m)
     a32 = K32_C1
     a34 = K34_C1
-    a43 = K43_C1 * NaNMath.sqrt(nad)
+    a43 = K43_C1 * NaNMath.sqrt(nad_m)
     a47 = C1_INHIB * K47_C1 * NaNMath.sqrt(Q_n * h_m)
     a74 = K74_C1
     a57 = C1_INHIB * K57_C1 * NaNMath.sqrt(QH2_n)
@@ -94,7 +94,7 @@ function c1_gauthier(; name=:c1gauthier,
         vROSC1 ~ v42,
         vNADHC1 ~ -0.5 * v23,
         vHresC1 ~ 2 * v61,
-        TNC1 ~ -vNADH_C1 / ET_C1,
+        TNC1 ~ -vNADHC1 / ET_C1,
     ]
     return System(eqs, t; name)
 end

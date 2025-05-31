@@ -39,17 +39,18 @@ function c1_gauthier(; name=:c1gauthier,
     end
 
     @variables begin
-        C1_1(t) = 0
+        C1_1(t)
         C1_2(t) ## Conserved
-        C1_3(t) = 0
-        C1_4(t) = 0
-        C1_5(t) = 0
-        C1_6(t) = 0
-        C1_7(t) = 0
-        vQ_C1(t)
-        vNADH_C1(t)
-        vROS_C1(t)
-        TN_C1(t) ## Turnover number
+        C1_3(t)
+        C1_4(t)
+        C1_5(t)
+        C1_6(t)
+        C1_7(t)
+        vQC1(t)
+        vNADHC1(t)
+        vROSC1(t)
+        vHresC1(t)
+        TNC1(t) ## Turnover number
     end
 
     fhi = h_i / 1E-7Molar
@@ -73,27 +74,34 @@ function c1_gauthier(; name=:c1gauthier,
     a42 = K42_C1 * O2
     a24 = K42_C1 * exp(iVT * (Em_FMNH2_FMNH - Em_O2_SOX)) * sox_m
 
-    v12 = a12 * C1_1 - a21 * C1_2
-    v23 = a23 * C1_2 - a32 * C1_3
-    v34 = a34 * C1_3 - a43 * C1_4
-    v47 = a47 * C1_4 - a74 * C1_7
-    v75 = a75 * C1_7 - a57 * C1_5
-    v56 = a56 * C1_5 - a65 * C1_6
-    v61 = a61 * C1_6 - a16 * C1_1
-    v42 = a42 * C1_4 - a24 * C1_2
+    ## KA pattern
+    w1 = a21 * a32 * a42 * a56 * a61 * a74 + a21 * a32 * a42 * a56 * a61 * a75 + a21 * a32 * a42 * a57 * a61 * a74 + a21 * a32 * a42 * a57 * a65 * a74 + a21 * a32 * a43 * a56 * a61 * a74 + a21 * a32 * a43 * a56 * a61 * a75 + a21 * a32 * a43 * a57 * a61 * a74 + a21 * a32 * a43 * a57 * a65 * a74 + a21 * a32 * a47 * a56 * a61 * a75 + a21 * a34 * a42 * a56 * a61 * a74 + a21 * a34 * a42 * a56 * a61 * a75 + a21 * a34 * a42 * a57 * a61 * a74 + a21 * a34 * a42 * a57 * a65 * a74 + a21 * a34 * a47 * a56 * a61 * a75 + a23 * a34 * a47 * a56 * a61 * a75 + a24 * a32 * a47 * a56 * a61 * a75 + a24 * a34 * a47 * a56 * a61 * a75
+    w2 = a12 * a32 * a42 * a56 * a61 * a74 + a12 * a32 * a42 * a56 * a61 * a75 + a12 * a32 * a42 * a57 * a61 * a74 + a12 * a32 * a42 * a57 * a65 * a74 + a12 * a32 * a43 * a56 * a61 * a74 + a12 * a32 * a43 * a56 * a61 * a75 + a12 * a32 * a43 * a57 * a61 * a74 + a12 * a32 * a43 * a57 * a65 * a74 + a12 * a32 * a47 * a56 * a61 * a75 + a12 * a34 * a42 * a56 * a61 * a74 + a12 * a34 * a42 * a56 * a61 * a75 + a12 * a34 * a42 * a57 * a61 * a74 + a12 * a34 * a42 * a57 * a65 * a74 + a12 * a34 * a47 * a56 * a61 * a75 + a16 * a32 * a42 * a57 * a65 * a74 + a16 * a32 * a43 * a57 * a65 * a74 + a16 * a34 * a42 * a57 * a65 * a74
+    w3 = a12 * a23 * a42 * a56 * a61 * a74 + a12 * a23 * a42 * a56 * a61 * a75 + a12 * a23 * a42 * a57 * a61 * a74 + a12 * a23 * a42 * a57 * a65 * a74 + a12 * a23 * a43 * a56 * a61 * a74 + a12 * a23 * a43 * a56 * a61 * a75 + a12 * a23 * a43 * a57 * a61 * a74 + a12 * a23 * a43 * a57 * a65 * a74 + a12 * a23 * a47 * a56 * a61 * a75 + a12 * a24 * a43 * a56 * a61 * a74 + a12 * a24 * a43 * a56 * a61 * a75 + a12 * a24 * a43 * a57 * a61 * a74 + a12 * a24 * a43 * a57 * a65 * a74 + a16 * a21 * a43 * a57 * a65 * a74 + a16 * a23 * a42 * a57 * a65 * a74 + a16 * a23 * a43 * a57 * a65 * a74 + a16 * a24 * a43 * a57 * a65 * a74
+    w4 = a12 * a23 * a34 * a56 * a61 * a74 + a12 * a23 * a34 * a56 * a61 * a75 + a12 * a23 * a34 * a57 * a61 * a74 + a12 * a23 * a34 * a57 * a65 * a74 + a12 * a24 * a32 * a56 * a61 * a74 + a12 * a24 * a32 * a56 * a61 * a75 + a12 * a24 * a32 * a57 * a61 * a74 + a12 * a24 * a32 * a57 * a65 * a74 + a12 * a24 * a34 * a56 * a61 * a74 + a12 * a24 * a34 * a56 * a61 * a75 + a12 * a24 * a34 * a57 * a61 * a74 + a12 * a24 * a34 * a57 * a65 * a74 + a16 * a21 * a32 * a57 * a65 * a74 + a16 * a21 * a34 * a57 * a65 * a74 + a16 * a23 * a34 * a57 * a65 * a74 + a16 * a24 * a32 * a57 * a65 * a74 + a16 * a24 * a34 * a57 * a65 * a74
+    w5 = a12 * a23 * a34 * a47 * a61 * a75 + a12 * a23 * a34 * a47 * a65 * a75 + a12 * a24 * a32 * a47 * a61 * a75 + a12 * a24 * a32 * a47 * a65 * a75 + a12 * a24 * a34 * a47 * a61 * a75 + a12 * a24 * a34 * a47 * a65 * a75 + a16 * a21 * a32 * a42 * a65 * a74 + a16 * a21 * a32 * a42 * a65 * a75 + a16 * a21 * a32 * a43 * a65 * a74 + a16 * a21 * a32 * a43 * a65 * a75 + a16 * a21 * a32 * a47 * a65 * a75 + a16 * a21 * a34 * a42 * a65 * a74 + a16 * a21 * a34 * a42 * a65 * a75 + a16 * a21 * a34 * a47 * a65 * a75 + a16 * a23 * a34 * a47 * a65 * a75 + a16 * a24 * a32 * a47 * a65 * a75 + a16 * a24 * a34 * a47 * a65 * a75
+    w6 = a12 * a23 * a34 * a47 * a56 * a75 + a12 * a24 * a32 * a47 * a56 * a75 + a12 * a24 * a34 * a47 * a56 * a75 + a16 * a21 * a32 * a42 * a56 * a74 + a16 * a21 * a32 * a42 * a56 * a75 + a16 * a21 * a32 * a42 * a57 * a74 + a16 * a21 * a32 * a43 * a56 * a74 + a16 * a21 * a32 * a43 * a56 * a75 + a16 * a21 * a32 * a43 * a57 * a74 + a16 * a21 * a32 * a47 * a56 * a75 + a16 * a21 * a34 * a42 * a56 * a74 + a16 * a21 * a34 * a42 * a56 * a75 + a16 * a21 * a34 * a42 * a57 * a74 + a16 * a21 * a34 * a47 * a56 * a75 + a16 * a23 * a34 * a47 * a56 * a75 + a16 * a24 * a32 * a47 * a56 * a75 + a16 * a24 * a34 * a47 * a56 * a75
+    w7 = a12 * a23 * a34 * a47 * a56 * a61 + a12 * a23 * a34 * a47 * a57 * a61 + a12 * a23 * a34 * a47 * a57 * a65 + a12 * a24 * a32 * a47 * a56 * a61 + a12 * a24 * a32 * a47 * a57 * a61 + a12 * a24 * a32 * a47 * a57 * a65 + a12 * a24 * a34 * a47 * a56 * a61 + a12 * a24 * a34 * a47 * a57 * a61 + a12 * a24 * a34 * a47 * a57 * a65 + a16 * a21 * a32 * a42 * a57 * a65 + a16 * a21 * a32 * a43 * a57 * a65 + a16 * a21 * a32 * a47 * a57 * a65 + a16 * a21 * a34 * a42 * a57 * a65 + a16 * a21 * a34 * a47 * a57 * a65 + a16 * a23 * a34 * a47 * a57 * a65 + a16 * a24 * a32 * a47 * a57 * a65 + a16 * a24 * a34 * a47 * a57 * a65
 
+    den = w1 + w2 + w3 + w4 + w5 + w6 + w7
+
+    v47 = a47 * C1_4 - a74 * C1_7
+    v42 = a42 * C1_4 - a24 * C1_2
+    v23 = a23 * C1_2 - a32 * C1_3
+    v61 = a61 * C1_1 - a16 * C1_6
     eqs = [
-        ET_C1 ~ C1_1 + C1_2 + C1_3 + C1_4 + C1_5 + C1_6 + C1_7,
-        D(C1_1) ~ v61 - v12,
-        D(C1_3) ~ v23 - v34,
-        D(C1_4) ~ v34 - v47 - v42,
-        D(C1_7) ~ v47 - v75,
-        D(C1_5) ~ v75 - v56,
-        D(C1_6) ~ v56 - v61,
-        vQ_C1 ~ -0.5v47,
-        vROS_C1 ~ v42,
-        vNADH_C1 ~ -0.5v23,
-        TN_C1 ~ -vNADH_C1 / ET_C1,
+        C1_1 ~ w1 / den * ET_C1,
+        C1_2 ~ w2 / den * ET_C1,
+        C1_3 ~ w3 / den * ET_C1,
+        C1_4 ~ w4 / den * ET_C1,
+        C1_7 ~ w5 / den * ET_C1,
+        C1_5 ~ w6 / den * ET_C1,
+        C1_6 ~ w7 / den * ET_C1,
+        vQC1 ~ -0.5 * v47,
+        vROSC1 ~ v42,
+        vNADHC1 ~ -0.5 * v23,
+        vHresC1 ~ 2 * v61,
+        TNC1 ~ -vNADHC1 / ET_C1,
     ]
     return System(eqs, t; name)
 end
@@ -171,15 +179,15 @@ function c1_markevich_full(; name=:c1markevich_full,
         N1a_C1(t)
         N1ar_C1(t) = 0
         KEQ13_C1(t)
-        vQ_C1(t)
-        vQH2_C1(t)
-        vNADH_C1(t)
-        vNAD_C1(t)
+        vQC1(t)
+        vQH2C1(t)
+        vNADHC1(t)
+        vNADC1(t)
         vROSIf(t)
         vROSIq(t)
-        vROS_C1(t)
-        TN_C1(t) ## NADH turnover number
-        vHres_C1(t)
+        vROSC1(t)
+        TNC1(t) ## NADH turnover number
+        vHresC1(t)
     end
 
     fhm = h_m / 1E-7Molar
@@ -242,14 +250,15 @@ function c1_markevich_full(; name=:c1markevich_full,
         D(QH2_C1) ~ v13 - v14,
 
         ## Positive: production; negative: consumption
-        vNADH_C1 ~ -(v1 + v5),
-        vNAD_C1 ~ v3 - v4,
-        vQ_C1 ~ -v8,
-        vQH2_C1 ~ v14,
+        vNADHC1 ~ -(v1 + v5),
+        vNADC1 ~ v3 - v4,
+        vQC1 ~ -v8,
+        vQH2C1 ~ v14,
         vROSIf ~ v16,
         vROSIq ~ v17,
-        vROS_C1 ~ vROSIf + vROSIq,
-        TN_C1 ~ -vNADH_C1 / ET_C1,
+        vHresC1 ~ 4 * v13,
+        vROSC1 ~ vROSIf + vROSIq,
+        TNC1 ~ -vNADHC1 / ET_C1,
     ]
     return System(eqs, t; name)
 end
@@ -260,19 +269,19 @@ function c1q(; name=:c1q,
     nad=500μM, nadh=500μM,
     dpsi=150mV, O2=6μM, sox_m=0.001μM,
     h_i=exp10(-7) * Molar, h_m=exp10(-7.6) * Molar,
-    DOX=0μM, ROTENONE_BLOCK=0)
+    DOX=0μM, ROTENONE_BLOCK=0, MT_PROT=1)
 
     @parameters begin
         ET_C1 = 1μM                ## Activity of complex I
+        KI_DOX_C1 = 400μM         ## DOX IC50 on complex I
+        K_RC_DOX = 1000 / 15mM    ## DOX redox cycling constant
         Em_O2_SOX = -160mV          ## O2/Superoxide redox potential
         Em_FMN_FMNsq = -387mV       ## FMN/FMNH- avg redox potential
         Em_FMNsq_FMNH = -293mV      ## FMN semiquinone/FMNH- redox potential
-        ## FMN/FMNH- avg redox potential
-        Em_FMN_FMNH = (Em_FMN_FMNsq + Em_FMNsq_FMNH)/2
+        Em_FMN_FMNH = -340mV        ## FMN/FMNH- avg redox potential
         Em_NAD = -320mV             ## NAD/NADH avg redox potential
         Em_Q_SQ_C1 = -300mV         ## -213mV in Markevich, 2015
         Em_SQ_QH2_C1 = +500mV       ## 800mV in Markevich, 2015
-        Em_N3 = -250mV
         Em_N2 = -80mV
         KI_NADH_C1 = 50μM
         KD_NADH_C1 = 100μM
@@ -294,10 +303,10 @@ function c1q(; name=:c1q,
         rKD_Q_C1 = inv(10μM)
         rKD_QH2_C1 = inv(20μM)
         ## SOX production from IF site
-        kf16_C1 = 0.001Hz / μM
+        kf16_C1 = 0.020Hz / μM
         rKEQ16_C1 = exp(-iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
         ## SOX production from IQ site
-        kf17_C1 = 0.001Hz / μM / 20
+        kf17_C1 = 0.001Hz / μM
         rKEQ17_C1 = exp(-iVT * (Em_O2_SOX - Em_Q_SQ_C1))
     end
 
@@ -314,18 +323,25 @@ function c1q(; name=:c1q,
         N2r_C1(t)
         ## Quinone site
         Q_C1(t)
-        SQ_C1(t) = 0
-        QH2_C1(t) = 0
+        SQ_C1(t)
+        QH2_C1(t)
         rKEQ_N2r_SQ(t)
         ## Reaction rates
-        vQ_C1(t)
-        vROS_C1(t)
+        vQC1(t)
+        vQH2C1(t)
+        vROSC1(t)
         vROSIf(t)
         vROSIq(t)
-        vNADH_C1(t)
-        TN_C1(t)
+        vNADHC1(t)
+        vNADC1(t)
+        TNC1(t)
+        vHresC1(t)
     end
 
+    C1_CONC = ET_C1 * MT_PROT
+    C1_INHIB = 1 - ROTENONE_BLOCK
+    n2 = C1_INHIB * N2_C1
+    n2r = C1_INHIB * N2r_C1
     ## Mitochondrial pH factor
     fhm = h_m * inv(1E-7Molar)
     ## Weights in the flavin site
@@ -337,10 +353,11 @@ function c1q(; name=:c1q,
     wFMNH_NADH = wFMNH * nadh / KI_NADH_C1
     wFMNsq = NaNMath.sqrt(wFMN * wFMNH * rKEQ_FMNsq_Dis * fhm)
     denf = wFMN + wFMN_NAD + wFMNH + wFMNH_NADH + wFMNsq + wFMN_NADH + wFMNH_NAD
+    fC1 = C1_CONC / denf
     ## First electron transfer
-    v7 = kf7_C1 * (N2r_C1 * Q_C1 - N2_C1 * SQ_C1 * rKEQ_N2r_Q)
+    v7 = kf7_C1 * C1_INHIB * (N2r_C1 * Q_C1 - N2_C1 * SQ_C1 * rKEQ_N2r_Q)
     ## Second electron transfer
-    v13 = kf13_C1 * (N2r_C1 * SQ_C1 * fhm^2 - N2_C1 * QH2_C1 * rKEQ_N2r_SQ)
+    v13 = kf13_C1 * C1_INHIB * (N2r_C1 * SQ_C1 * fhm^2 - N2_C1 * QH2_C1 * rKEQ_N2r_SQ)
     ## Q binding and QH2 unbinding
     q = Q_n * rKD_Q_C1
     qh2 = QH2_n * rKD_QH2_C1
@@ -350,26 +367,58 @@ function c1q(; name=:c1q,
     ## Quinone site ROS generation
     v17 = kf17_C1 * (SQ_C1 * O2 - Q_C1 * sox_m * rKEQ17_C1)
 
+    ## State transition rates in the quinone site
+    ## 1 = IqQ, 2 = IqSQ, 3 = IqQH2
+    ## First electron transfer
+    b12a = kf7_C1 * n2r
+    b21a = kf7_C1 * rKEQ_N2r_Q * n2
+    v7 = b12a * Q_C1 - b21a * SQ_C1
+    ## Quinone site ROS generation
+    b21b = kf17_C1 * O2
+    b12b = kf17_C1 * rKEQ17_C1 * sox_m
+    v17 = b21b * SQ_C1 - b12b * Q_C1
+    b12 = b12a + b12b
+    b21 = b21a + b21b
+    ## Second electron transfer
+    b23 = kf13_C1 * n2r * fhm^2
+    b32 = kf13_C1 * rKEQ_N2r_SQ * n2
+    v13 = b23 * SQ_C1 - b32 * QH2_C1
+    ## Q binding and QH2 unbinding
+    q = Q_n * rKD_Q_C1
+    qh2 = QH2_n * rKD_QH2_C1
+    b31 = kf14_C1 * q
+    b13 = kf14_C1 * qh2
+    v14 = b31 * QH2_C1 - b13 * Q_C1
+
+    w1 = b21 * (b31 + b32) + b23 * b31
+    w2 = b12 * (b31 + b32) + b13 * b32
+    w3 = b12 * b23 + b13 * (b21 + b23)
+    qDen = w1 + w2 + w3
+    qC1 = C1_CONC / qDen
+
     eqs = [
         rKEQ_N2r_SQ ~ exp(-iVT * (Em_SQ_QH2_C1 - Em_N2 - 4dpsi)) * (h_i / h_m)^4,
-        FMN ~ wFMN * ET_C1 / denf,
-        FMN_NAD ~ wFMN_NAD * ET_C1 / denf,
-        FMNH ~ wFMNH * ET_C1 / denf,
-        FMNsq ~ wFMNsq * ET_C1 / denf,
-        FMNH_NADH ~ wFMNH_NADH * ET_C1 / denf,
-        FMN_NADH ~ wFMN_NADH * ET_C1 / denf,
-        FMNH_NAD ~ wFMNH_NAD * ET_C1 / denf,
+        FMN ~ wFMN * fC1,
+        FMN_NAD ~ wFMN_NAD * fC1,
+        FMNH ~ wFMNH * fC1,
+        FMNsq ~ wFMNsq * fC1,
+        FMNH_NADH ~ wFMNH_NADH * fC1,
+        FMN_NADH ~ wFMN_NADH * fC1,
+        FMNH_NAD ~ wFMNH_NAD * fC1,
         N2_C1 ~ FMNsq / (FMNsq + FMNH * KEQ_FMNH_N2),
         N2r_C1 ~ 1 - N2_C1,
-        ET_C1 ~ Q_C1 + SQ_C1 + QH2_C1,
-        D(SQ_C1) ~ v7 - v13 - v17,
-        D(QH2_C1) ~ v13 - v14,
-        vQ_C1 ~ -v14,
-        vNADH_C1 ~ -0.5 * (v7 + v13 + v16),
+        Q_C1 ~ w1 * qC1,
+        SQ_C1 ~ w2 * qC1,
+        QH2_C1 ~ w3 * qC1,
+        vQC1 ~ -v14,
+        vNADHC1 ~ -0.5 * (v7 + v13 + v16),
         vROSIf ~ v16,
         vROSIq ~ v17,
-        vROS_C1 ~ vROSIf + vROSIq,
-        TN_C1 ~ -vNADH_C1 / ET_C1,
+        vROSC1 ~ vROSIf + vROSIq,
+        vQH2C1 ~ v14,
+        vHresC1 ~ 4 * v13,
+        vNADC1 ~ -vNADHC1,
+        TNC1 ~ vNADC1 / C1_CONC,
     ]
     return System(eqs, t; name)
 end
@@ -390,11 +439,6 @@ gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> mtkcompile
 
 prob_q = SteadyStateProblem(qsys, [
     qsys.ET_C1 => 1μM,
-    qsys.kf7_C1 => 10000Hz,
-    qsys.kf13_C1 => 2.7e6Hz,
-    qsys.kf14_C1 => 10Hz,
-    qsys.kf16_C1 => 0.020Hz / μM,
-    qsys.kf17_C1 => 0.017Hz / μM / 20,
 ])
 prob_m = SteadyStateProblem(markevich, [
     markevich.ET_C1 => 17μM,
@@ -404,6 +448,9 @@ prob_m = SteadyStateProblem(markevich, [
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(Rodas5P())
 ealg = EnsembleThreads()
+
+#---
+observed(gauthier)
 
 # ## Varying MMP
 dpsirange = 100mV:5mV:200mV
@@ -424,12 +471,12 @@ extract(sim, k) = map(s -> s[k], sim)
 # MMP vs NADH turnover
 # markevich model has a steeper dependence
 xs = dpsirange
-ys = hcat(extract(sim_g, gauthier.vNADH_C1), extract(sim_m, markevich.vNADH_C1), extract(sim_q, qsys.vNADH_C1))
+ys = hcat(extract(sim_g, gauthier.vNADHC1), extract(sim_m, markevich.vNADHC1), extract(sim_q, qsys.vNADHC1))
 
 plot(xs, ys, xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", label=["Gauthier" "Markevich" "IQ"])
 
 # Turnover rate (Hz)
-extract(sim_q, qsys.TN_C1) .* 1000
+extract(sim_q, qsys.TNC1) .* 1000
 
 # IF redox potential (mV)
 extract(sim_q, -80 + 26.7 * log(qsys.N2_C1 / qsys.N2r_C1))
@@ -448,9 +495,9 @@ plot(pl1, pl2)
 
 # MMP vs ROS production
 xs = dpsirange
-ys_g = extract(sim_g, gauthier.vROS_C1) .* 1000
-ys_m = extract(sim_m, markevich.vROS_C1) .* 1000
-ys_q = extract(sim_q, qsys.vROS_C1) .* 1000
+ys_g = extract(sim_g, gauthier.vROSC1) .* 1000
+ys_m = extract(sim_m, markevich.vROSC1) .* 1000
+ys_q = extract(sim_q, qsys.vROSC1) .* 1000
 plot(xs, [ys_g ys_m ys_q], xlabel="MMP (mV)", ylabel="ROS production (μM/s)", label=["Gauthier" "Markevich" "IQ"])
 
 # ## Varying NADH
@@ -470,15 +517,15 @@ eprob_m = EnsembleProblem(prob_m; prob_func=alter_nadh)
 
 # NADH vs turnover
 xs = nadhrange
-ys_g = extract(sim_g, gauthier.vNADH_C1)
-ys_m = extract(sim_m, markevich.vNADH_C1)
-ys_q = extract(sim_q, qsys.vNADH_C1)
+ys_g = extract(sim_g, gauthier.vNADHC1)
+ys_m = extract(sim_m, markevich.vNADHC1)
+ys_q = extract(sim_q, qsys.vNADHC1)
 
 plot(xs, [ys_g ys_m ys_q], xlabel="NADH (μM)", ylabel="NADH consumption (μM/ms)", label=["Gauthier" "Markevich" "IQ"])
 
 # NADH vs ROS production
 xs = nadhrange
-ys = [extract(sim_g, gauthier.vROS_C1) extract(sim_m, markevich.vROS_C1) extract(sim_q, qsys.vROS_C1)]
+ys = [extract(sim_g, gauthier.vROSC1) extract(sim_m, markevich.vROSC1) extract(sim_q, qsys.vROSC1)]
 
 plot(xs, ys, xlabel="NADH (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "IQ"])
 
@@ -515,20 +562,20 @@ eprob_m = EnsembleProblem(prob_m; prob_func=alter_qh2)
 
 # QH2 vs NADH turnover
 xs = qh2range
-ys = [extract(sim_g, gauthier.vNADH_C1) extract(sim_m, markevich.vNADH_C1) extract(sim_q, qsys.vNADH_C1)]
+ys = [extract(sim_g, gauthier.vNADHC1) extract(sim_m, markevich.vNADHC1) extract(sim_q, qsys.vNADHC1)]
 
 plot(xs, ys, xlabel="QH2 (μM)", ylabel="NADH rate (μM/ms)", label=["Gauthier" "Markevich" "IQ"])
 
 # QH2 vs Q turnover
 xs = qh2range
-ys = [extract(sim_g, gauthier.vQ_C1) extract(sim_m, markevich.vQ_C1) extract(sim_q, qsys.vQ_C1)]
+ys = [extract(sim_g, gauthier.vQC1) extract(sim_m, markevich.vQC1) extract(sim_q, qsys.vQC1)]
 
 plot(xs, ys, xlabel="QH2 (μM)", ylabel="Q rate (μM/ms)", label=["Gauthier" "Markevich" "IQ"])
 
 # QH2 vs ROS production
 # Gauthier model produces a lot of SOX on high QH2
 xs = qh2range
-ys = [extract(sim_g, gauthier.vROS_C1) extract(sim_m, markevich.vROS_C1) extract(sim_q, qsys.vROS_C1)]
+ys = [extract(sim_g, gauthier.vROSC1) extract(sim_m, markevich.vROSC1) extract(sim_q, qsys.vROSC1)]
 plot(xs, ys, xlabel="QH2 (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "IQ"])
 
 #---

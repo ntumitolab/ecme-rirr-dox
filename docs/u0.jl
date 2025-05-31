@@ -14,7 +14,7 @@ bcl = 1.0second
 u0 = build_u0(sys)
 sts = unknowns(sys)
 alg = KenCarp47()
-prob = ODEProblem(sys, [u0; sys.KCAT_IDH => 35Hz], tend)
+prob = ODEProblem(sys, [u0; sys.KCAT_IDH => 50Hz], tend)
 @time sol = solve(prob, alg; reltol=1e-6, abstol=1e-6, progress=true)
 
 for i in sts

@@ -6,7 +6,7 @@ using NaNMath
 # https://pmc.ncbi.nlm.nih.gov/articles/PMC4426091/
 function c1_markevich_full(; name=:c1markevich_full,
     Q_n=1.8mM, QH2_n=0.2mM,
-    nad=500μM, nadh=500μM,
+    nad_m=500μM, nadh_m=500μM,
     dpsi=150mV, O2=6μM, sox_m=0.001μM,
     h_i=exp10(-7) * Molar, h_m=exp10(-7.6) * Molar,
     DOX=0μM, ROTENONE_BLOCK=0)
@@ -89,15 +89,15 @@ function c1_markevich_full(; name=:c1markevich_full,
     fhm = h_m / 1E-7Molar
     C1_INHIB = (1 - ROTENONE_BLOCK)
     ## NADH + FMN = FMN.NADH
-    v1 = kf1_C1 * (nadh * FMN - FMN_NADH / KEQ1_C1)
+    v1 = kf1_C1 * (nadh_m * FMN - FMN_NADH / KEQ1_C1)
     ## FMN.NADH = FMNH−.NAD+
     v2 = kf2_C1 * (FMN_NADH - FMNH_NAD / KEQ2_C1)
     ## FMNH−.NAD+ = FMNH− + NAD+
-    v3 = kf3_C1 * (FMNH_NAD - FMNH * nad / KEQ3_C1)
+    v3 = kf3_C1 * (FMNH_NAD - FMNH * nad_m / KEQ3_C1)
     ## FMN + NAD+ = FMN.NAD+
-    v4 = kf4_C1 * (nad * FMN - FMN_NAD / KEQ4_C1)
+    v4 = kf4_C1 * (nad_m * FMN - FMN_NAD / KEQ4_C1)
     ## FMNH− + NADH = FMNH−.NADH
-    v5 = kf5_C1 * (FMNH * nadh - FMNH_NADH / KEQ5_C1)
+    v5 = kf5_C1 * (FMNH * nadh_m - FMNH_NADH / KEQ5_C1)
     ## FMNH− + N3 = FMNHsq + N3−
     v6 = kf6_C1 * (FMNH * N3_C1 - FMNsq * N3r_C1 / KEQ6_C1)
     ## N3− + N2 = N3 + N2−
@@ -244,11 +244,11 @@ function c1_markevich_s(; name=:c1markevich_s,
     fhm = h_m * inv(1E-7Molar)
     ## Weights in the flavin site
     wFMN = 1
-    wFMN_NAD = wFMN * nad / KI_NAD_C1
-    wFMN_NADH = wFMN * nadh / KD_NADH_C1
-    wFMNH = wFMN * (nadh / nad) * KEQ_NADH_FMN
-    wFMNH_NAD = wFMNH * nad / KD_NAD_C1
-    wFMNH_NADH = wFMNH * nadh / KI_NADH_C1
+    wFMN_NAD = wFMN * nad_m / KI_NAD_C1
+    wFMN_NADH = wFMN * nadh_m / KD_NADH_C1
+    wFMNH = wFMN * (nadh_m / nad_m) * KEQ_NADH_FMN
+    wFMNH_NAD = wFMNH * nad_m / KD_NAD_C1
+    wFMNH_NADH = wFMNH * nadh_m / KI_NADH_C1
     wFMNsq = NaNMath.sqrt(wFMN * wFMNH * rKEQ_FMNsq_Dis * fhm)
     denf = wFMN + wFMN_NAD + wFMNH + wFMNH_NADH + wFMNsq + wFMN_NADH + wFMNH_NAD
     fC1 = C1_CONC / denf
