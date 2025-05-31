@@ -11,6 +11,7 @@ using DisplayAs: PNG
 tend = 1000.0second
 bcl = 1.0second
 @named sys = build_model(; bcl, tend)
+discrete_events(sys)[1]
 u0 = build_u0(sys)
 sts = unknowns(sys)
 alg = KenCarp47()
