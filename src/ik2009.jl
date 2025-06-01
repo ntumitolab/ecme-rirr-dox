@@ -41,5 +41,5 @@ function get_ik_sys(; na_i, na_o, k_i, k_o, mg_i, vm, atp_i, adp_i, name=:iksys)
         IKp ~ G_KP * ΔVK / (1 + exp(-(vm - 7.488) / 5.98)),
         IKatp ~ G0_KATP * f_atp * ΔVK
     ]
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end

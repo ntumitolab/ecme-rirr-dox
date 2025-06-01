@@ -59,5 +59,5 @@ function get_jca_sys(; atp_i, adp_i, ca_i, ca_nsr, ca_jsr, ca_ss, ca_o, na_i, na
         Jtr ~ R_TR * (ca_nsr - ca_jsr),
         Jxfer ~ R_XFER * (ca_ss - ca_i),
     ]
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end

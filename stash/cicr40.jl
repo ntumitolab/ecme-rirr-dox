@@ -129,5 +129,5 @@ function get_cicr40_sys(ca_i, ca_jsr, ca_o, vm, A_CAP, V_SS_SINGLE=0.203E-6pL; n
     end
     push!(eqs, xca[1, 1] ~ xca1)
 
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end
