@@ -18,7 +18,7 @@ sts = unknowns(sys)
 u0 = build_u0(sys)
 alg = KenCarp47()
 stim = build_stim_callbacks(sys.iStim, tend)
-opts = (; reltol=1e-6, abstol=1e-6, progress=true, cb=stim)
+opts = (; reltol=1e-6, abstol=1e-6, progress=true, callback=stim)
 prob = ODEProblem(sys, u0, tend)
 
 # The collapse of MMP is between 261uM and 263uM of DOX
