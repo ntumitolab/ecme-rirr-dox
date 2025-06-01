@@ -40,7 +40,7 @@ function get_mitoh_sys(na_m, na_i, h_m, h_i, pi_m, pi_i; name=:mitohsys)
         vNHE ~ ET_NHE / (1 + (H_KI_NHE / h_i)^NI_NHE) * (β₁⁺ * β₂⁺ - β₁⁻ * β₂⁻) / (β₁⁺ + β₂⁺ + β₁⁻ + β₂⁻),
         vPIC ~ ET_PIC * (KF_PIC * ϕf - KB_PIC * ϕb) / (1 + f_pi + f_pm + f_ohi + f_ohm + ϕf + ϕb)
     ]
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end
 
 "Mitochondrial calcium handling"
@@ -68,6 +68,6 @@ function get_mitoca_sys(; na_i, ca_m, ca_i, dpsi, name=:mitocasys)
     f_ca = hil(ca_m, KM_CA_NCLX)
     r_ca = ca_m / ca_i
     v_naca = VMAX_NCLX * exp(iVT * B_NCLX * (dpsi - DPSI_OFFSET_MCU)) * r_ca * f_na * f_ca
-
-    return ODESystem([vUni ~ v_mcu, vNaCa ~ v_naca], t; name)
+    eqs = [vUni ~ v_mcu, vNaCa ~ v_naca]
+    return System(eqs, t; name)
 end

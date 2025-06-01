@@ -118,5 +118,5 @@ function get_cicr9_sys(; ca_i, ca_sr, ca_o, vm, A_CAP=1.534E-4cm², V_DS=2e-4μm
         D(y_ii) ~ v_ci_ii + v_ic_ii
     ]
 
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end

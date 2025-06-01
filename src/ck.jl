@@ -32,5 +32,5 @@ function get_ck_sys(; atp_i, adp_i, name=:cksys)
         D(crp_i) ~ vCK_mito - vTR_crp,
         D(crp_ic) ~ vTR_crp + vCK_cyto
     ]
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end

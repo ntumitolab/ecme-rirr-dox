@@ -22,7 +22,7 @@ vSOD = sox * (k1 * (sol[EA] + sol[EB]) + k3 * sol[EB])
 
 simplify(vSOD)
 
-# ## Complex I model
+# ## Complex I Gauthier model
 @variables a12 a21 a65 a56 a61 a16 a23 a32 a34 a43 a47 a74 a57 a75 a42 a24
 @variables I1 I2 I3 I4 I5 I6 I7
 

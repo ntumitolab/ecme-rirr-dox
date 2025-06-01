@@ -40,5 +40,5 @@ function get_ina_sys(; na_i, na_o, ca_i, ca_o, vm, name=:inasys)
         ENa ~ nernst(na_o, na_i),
         ECa ~ nernst(ca_o, ca_i, 2),
     ]
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end

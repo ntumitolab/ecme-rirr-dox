@@ -3,10 +3,10 @@
 function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
     @parameters begin
         A_LCC = 2
-        B_LCC = 2
-        ω_LCC = 0.01 / ms
-        f_LCC = 0.3 / ms
-        g_LCC = 2 / ms
+        B_LCC = 1/2
+        ω_LCC = 0.01kHz
+        f_LCC = 0.3kHz
+        g_LCC = 2kHz
         γ_LCC = 0.1875 / (ms * mM)
         P_CA_LCC = 1E-3cm * Hz # 1.24E-3cm * Hz
         P_K_LCC = 1.11E-11cm * Hz
@@ -31,7 +31,8 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
         cca2_lcc(t) = 0
         cca3_lcc(t) = 0
         cca4_lcc(t) = 0
-        x_yca(t) = 1 # Voltage-gated LCC
+        # Voltage-gated LCC
+        x_yca(t) = 1
         y_inf(t)
         τ_yca(t)
         # Currents
@@ -63,8 +64,8 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
     vc4ca4 = 16γ * c4_lcc - ω / 16 * cca4_lcc
 
     eqs = [
-        α_lcc ~ 0.4 / ms * exp((v + 2) / 10),
-        β_lcc ~ 0.05 / ms * exp(-(v + 2) / 13),
+        α_lcc ~ 0.4kHz * exp((v + 2) / 10),
+        β_lcc ~ 0.05kHz * exp(-(v + 2) / 13),
         1 ~ c0_lcc + c1_lcc + c2_lcc + c3_lcc + c4_lcc + o_lcc + cca0_lcc + cca1_lcc + cca2_lcc + cca3_lcc + cca4_lcc,
         # D(c0_lcc) ~ -vc0c1 - vc0ca0,
         D(c1_lcc) ~ vc0c1 - vc1c2 - vc1ca1,
@@ -84,7 +85,7 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
         ICaL ~ 6 * x_yca * o_lcc * ICaMax,
         ICaK ~ hil(I_CA_HALF_LCC, ICaMax) * x_yca * o_lcc * ghk(P_K_LCC, vm, k_i, k_o)
     ]
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end
 
 "Ryanodine receptor (RyR)"
@@ -118,5 +119,5 @@ function get_ryr_sys(ca_jsr, ca_ss; name=:ryrsys)
         D(pc2_ryr) ~ vo1c2,
         Jrel ~ R_RYR * (po1_ryr + po2_ryr) * (ca_jsr - ca_ss)
     ]
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end

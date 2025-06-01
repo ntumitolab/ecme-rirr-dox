@@ -95,5 +95,5 @@ function get_ros_sys(; dpsi, sox_m, nadph_i=75μM, V_MITO_V_MYO=0.615, name=:ros
         D(h2o2_i) ~ 0.5vSOD_i - vGPX_i - vCAT,
         D(gssg_i) ~ -0.5 * (vGR_i - vGPX_i)
     ]
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end

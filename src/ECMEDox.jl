@@ -11,7 +11,6 @@ include("utils.jl")
 include("ck.jl")
 include("nakpump.jl")
 include("cicr16.jl")
-include("cicr40.jl")
 include("cicr9.jl")
 include("ina.jl")
 include("ik2009.jl")
@@ -136,10 +135,11 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
     ]
 
     if bcl > 0
-        discrete_events = [collect(tstart:bcl:tend) => [iStim ~ istim], collect(tstart+duty:bcl:tend) => [iStim ~ 0]]
-        sys = ODESystem(eqs, t; name, discrete_events)
+        ts = tstart:bcl:tend
+        discrete_events = [collect(ts) => [iStim ~ istim], collect(ts .+ duty) => [iStim ~ 0]]
+        sys = System(eqs, t; name, discrete_events)
     else
-        sys = ODESystem(eqs, t; name)
+        sys = System(eqs, t; name)
     end
 
     for s in (lccsys, ryrsys, cksys, forcesys, jcasys, iksys, inasys, inaksys, tcassys, etcsys, c5sys, rossys, mitocasys)
@@ -147,7 +147,7 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
     end
 
     if simplify
-        sys = structural_simplify(sys)
+        sys = mtkcompile(sys)
     end
 
     return sys

@@ -151,7 +151,7 @@ function c3_gauthier(
         vHresC3 ~ v3,
         vROSC3 ~ v10,
     ]
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end
 
 ## Semireverse bc1 complex model adapted from Gauthier, 2013
@@ -324,7 +324,7 @@ function c3_semireverse(dpsi;
         vHresC3 ~ v4ox + v4rd,
         vROSC3 ~ v10ox + v10rd,
     ]
-    return ODESystem(eqs, t; name)
+    return System(eqs, t; name)
 end
 
 #---
@@ -337,8 +337,8 @@ end
 end
 
 #---
-gsys = c3_gauthier(dpsi; cytc_ox, cytc_rd, UQ, UQH2) |> structural_simplify
-rsys = c3_semireverse(dpsi; cytc_ox, cytc_rd, UQ, UQH2) |> structural_simplify
+gsys = c3_gauthier(dpsi; cytc_ox, cytc_rd, UQ, UQH2) |> mtkcompile
+rsys = c3_semireverse(dpsi; cytc_ox, cytc_rd, UQ, UQH2) |> mtkcompile
 #---
 prob_g = SteadyStateProblem(gsys, [])
 prob_r = SteadyStateProblem(rsys, [rsys.K010_C3 => 1400Hz / mM, rsys.EmQ_C3 => 73mV, rsys.K04_C3 => 70Hz / mM])
