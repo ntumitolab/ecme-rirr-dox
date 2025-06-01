@@ -135,7 +135,8 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
     ]
 
     if bcl > 0
-        discrete_events = [collect(tstart:bcl:tend) => [iStim ~ istim], collect(tstart+duty:bcl:tend) => [iStim ~ 0]]
+        ts = tstart:bcl:tend
+        discrete_events = [collect(ts) => [iStim ~ istim], collect(ts .+ duty) => [iStim ~ 0]]
         sys = System(eqs, t; name, discrete_events)
     else
         sys = System(eqs, t; name)
@@ -146,7 +147,7 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
     end
 
     if simplify
-        sys = structural_simplify(sys)
+        sys = mtkcompile(sys)
     end
 
     return sys
