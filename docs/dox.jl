@@ -7,17 +7,18 @@ using ModelingToolkit
 using Plots
 using DisplayAs: PNG
 using ECMEDox
-using ECMEDox: second, mM, Hz, μM
+using ECMEDox: second, mM, Hz, μM, build_stim_callbacks
 Plots.default(lw=1.5, size=(600, 600))
 
 tend = 1000.0second
 bcl = 1second
-@named sys = build_model(; bcl, tend)
-@unpack DOX, rhoC4, rhoC3 = sys
+@named sys = build_model(; bcl=0, tend)
+@unpack DOX = sys
 sts = unknowns(sys)
 u0 = build_u0(sys)
 alg = KenCarp47()
-opts = (; reltol=1e-6, abstol=1e-6, progress=true)
+stim = build_stim_callbacks(sys.iStim, tend)
+opts = (; reltol=1e-6, abstol=1e-6, progress=true, cb=stim)
 prob = ODEProblem(sys, u0, tend)
 
 # The collapse of MMP is between 261uM and 263uM of DOX
