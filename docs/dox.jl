@@ -74,8 +74,8 @@ end
 plot!(fig, ylabel="Percentage (%)", xlabel="Time (s)", legend=:right) |> PNG
 
 #----
-@unpack Q_n, SQn, QH2_n, QH2_p, SQp, Q_p, fes_ox, fes_rd, cytc_ox, cytc_rd = sys
-plot(sim[end], idxs=[Q_n + Q_p, SQn, QH2_n+QH2_p, SQp], title="Q cycle ", legend=:right) |> PNG
+@unpack Q_n, SQn, QH2_n, QH2_p, Q_p, fes_ox, fes_rd, cytc_ox, cytc_rd = sys
+plot(sim[end], idxs=[Q_n + Q_p, SQn, QH2_n+QH2_p], title="Q cycle ", legend=:right) |> PNG
 
 #---
 @unpack cit, isoc, oaa, akg, scoa, suc, fum, mal = sys
