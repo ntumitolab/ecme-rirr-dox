@@ -34,183 +34,47 @@
 | $[H^+]_i$       | 100                   | nM                 | Cytosolic proton (pH = 7)                |
 | $[H^+]_m$       | 25.12                 | nM                 | Mitochondrial proton (pH = 7.6)          |
 
-## Citric acid cycle
+## Electrophysiolgy
 
-ODEs in the citric acid cycle.
-
-$$
-\begin{align}
-\frac{d [ISOC]}{dt} &= J_{ACO} -J_{IDH3} \\
-\frac{d [\alpha KG]}{dt} &= J_{IDH3} - J_{KGDH} + J_{AAT}  \\
-\frac{d [SCoA]}{dt} &= J_{KGDH} - J_{SL}  \\
-\frac{d [SUC]}{dt} &= J_{SL} - J_{SDH} \\
-\frac{d [FUM]}{dt} &= J_{SDH} - J_{FH}  \\
-\frac{d [MAL]}{dt} &= J_{FH} - J_{MDH}  \\
-\frac{d [OAA]}{dt} & = J_{MDH} - J_{CS} - J_{AAT}  \\
-\Sigma_{CAC} &= \mathrm{[CIT]} + \mathrm{[ISOC]} + \mathrm{[\alpha KG]} + \mathrm{[SCoA]} + \mathrm{[SUC] }+ \mathrm{[FUM]} + \mathrm{[MAL]} + \mathrm{[OAA]} \\
-\Sigma{[N]} &= [NAD] + [NADH]
-\end{align}
-$$
-
-| Parameter      | Value | Unit | Description                    |
-| -------------- | ----- | ---- | ------------------------------ |
-| $\Sigma_{CAC}$ | 1.3   | mM   | Sum of TCA cycle intermediates |
-
-### Citrate synthase (CS)
+The GHK current equation is defined as.
 
 $$
 \begin{align}
-J_{CS} &= k_{cat}^{CS} E_T^{CS} f_{accoa} f_{OAA} \\
-f_{accoa} &= \frac{[AcCoA]}{[AcCoA] + K_m^{AcCoA}} \\
-f_{OAA} &= \frac{[OAA]}{[OAA] + K_m^{OAA}} \\
+\Phi_s(P_s, z_s, V_m, [S]_i, [S]_o) := P_sz^2_s\frac{V_mF^2}{RT}\frac{[S]_i - [S]_o\exp(-z_sV_mF/RT)}{1-\exp(-z_sV_mF/RT)}
 \end{align}
 $$
 
-| Parameter          | Value | Unit | Description                  |
-| :----------------- | ----- | ---- | ---------------------------- |
-| $k_{cat}^{CS}$     | 50    | Hz   | Catalytic constant of CS     |
-| $E_T^{CS}$         | 0.4   | mM   | Enzyme concentration of CS   |
-| $K_m^{AcCoA}$      | 12.6  | μM   | Michaelis constant for AcCoA |
-| $K_m^{OAA}$        | 0.64  | μM   | Michaelis constant for OAA   |
-| $\mathrm{[AcCoA]}$ | 1     | mM   | Acetyl CoA concentration     |
-
-### Aconitase (ACO)
-
-$$
-J_{ACO} = k_f^{ACO} (\mathrm{[CIT]} - \mathrm{[ISOC]} / K_{eq}^{ACO})
-$$
-
-| Parameter      | Value | Unit | Description                  |
-| -------------- | ----- | ---- | ---------------------------- |
-| $k_f^{ACO}$    | 12.5  | Hz   | Forward rate constant of ACO |
-| $K_{eq}^{ACO}$ | 2.22  | -    | Equilibrium constant of ACO  |
-
-### Isocitrate dehydrogenase, NADH-producing (IDH3)
+Differential equations for electrophysiolofy:
 
 $$
 \begin{align}
-J_{IDH3} &= \frac{k_{cat}^{IDH3} E_T^{IDH3} AB}{f_H AB + f_i B + f_a A + f_a f_i} \\
-f_H & = 1 + \frac{[H^+]_m}{K_{H1}^{IDH3}} + \frac{K_{H2}^{IDH3}}{[H^+]_m}  \\
-A &= [NAD] / K_{NAD}^{IDH3} \\
-B &= ([ISOC] / K_{ISOC}^{IDH3})^2  \\
-f_a &= \frac{K_A^{IDH3}}{K_A^{IDH3} + [ADP]_m} \frac{K_{CA}^{IDH3}}{K_{CA}^{IDH3} + [Ca^{2+}]_m}  \\
-f_i &= 1 + \frac{[NADH]}{K_{NADH}^{IDH3}}  \\
+\frac{d[Na^+]_i}{dt} &= -(I_{Na} + 3I_{NaCa} + 3I_{NaK})\frac{A_{cap}}{V_{myo}F} \\
+\frac{d[K^+]_i}{dt} &= -(I_{Ks} + I_{Kr} + I_{K1} + I_{Kp} + I_{Ca,K}-2I_{NaK})\frac{A_{cap}}{V_{myo}F} \\
+C_m\frac{dV_m}{dt} &= -(I_{Na} + I_{CaL} + I_{Kr} + I_{Ks} + I_{K1} + I_{Kp} + I_{NaCa} + I_{NaK} + I_{pCa} + I_{Ca, b} + I_{K_{ATP}} + I_{stim}) \\
+\frac{d[Ca^{2+}]_i}{dt} &= \beta_i(J_{xfer}\frac{V_{ss}}{V_{myo}} - J_{up} - J_{trpn} - (I_{Ca,b} -2I_{NaCa} + I_{pCa})\frac{A_{cap}}{2V_{myo}F} + (V_{NaCa} - V_{uni})\frac{V_{mito}}{V_{myo}}) \\
+\frac{d[Ca^{2+}]_{NSR}}{dt} &= (J_{up}\frac{V_{myo}}{V_{NSR}} - J_{tr}\frac{V_{JSR}}{V_{NSR}}) \\
+\frac{d[Ca^{2+}]_{JSR}}{dt} &= \beta_{SR}(J_{tr} - J_{rel}) \\
+\frac{d[Ca^{2+}]_{SS}}{dt} &= \beta_{SS} (\frac{V_{JSR}J_{rel} - V_{myo}J_{xfer}}{V_{SS}} - \frac{I_{CaL}A_{cap}}{2V_{SS}F} ) \\
+β_i &= \frac{(K_m^{CMDN} + [Ca^{2+}]_i)^2}{ (K_m^{CMDN} + [Ca^{2+}]_i)^2 + K_m^{CMDN}  \cdot  [CMDN]_{tot}} \\
+β_{SR} &= \frac{(K_m^{CSQN} + [Ca^{2+}]_{JSR})^2}{(K_m^{CSQN} + [Ca^{2+}]_{JSR})^2 + K_m^{CSQN}  \cdot  [CSQN]_{tot}} \\
+β_{SS} &= \frac{(K_m^{CMDN} + [Ca^{2+}]_{SS})^2}{(K_m^{CMDN} + [Ca^{2+}]_{SS})^2 + K_m^{CMDN}  \cdot  [CMDN]_{tot}} \\
 \end{align}
 $$
 
-| Parameter         | Value | Unit | Description                       |
-| ----------------- | ----- | ---- | --------------------------------- |
-| $k_{cat}^{IDH3}$  | 50    | Hz   | Rate constant of IDH3             |
-| $E_T^{IDH3}$      | 0.109 | mM   | Concentration of IDH3             |
-| $K_{H1}^{IDH3}$   | 1     | nM   | Ionization constant of IDH3       |
-| $K_{H2}^{IDH3}$   | 900   | nM   | Ionization constant of IDH3       |
-| $K_{NAD}^{IDH3}$  | 0.923 | mM   | Michaelis constant for NAD        |
-| $K_{ISOC}^{IDH3}$ | 1.520 | mM   | Michaelis constant for isocitrate |
-| $K_A^{IDH3}$      | 0.62  | mM   | Activation constant by ADP        |
-| $K_{CA}^{IDH3}$   | 0.5   | μM   | Activation constant for calcium   |
-| $K_{NADH}^{IDH3}$ | 0.19  | mM   | Inhibition constant by NADH       |
-
-### Alpha-ketoglutarate dehydrogenase (KGDH)
-
-$$
-\begin{align}
-J_{KGDH} &= \frac{k_{cat}^{KGDH} E_T^{KGDH} AB}{f_H AB + f_a (A + B)} \\
-f_H & = 1 + \frac{[H^+]_m}{K_{H1}^{KGDH}} + \frac{K_{H2}^{KGDH}}{[H^+]_m}  \\
-A &= [NAD] / K_{NAD}^{KGDH} \\
-B &= ([\alpha KG] / K_{AKG}^{KGDH})^{1.2}  \\
-f_a &= \frac{K_{MG}^{KGDH}}{K_{MG}^{KGDH} + [Mg^{2+}]_m} \frac{K_{CA}^{KGDH}}{K_{CA}^{KGDH} + [Ca^{2+}]_m}  \\
-\end{align}
-$$
-
-| Parameter        | Value | Unit | Description                 |
-| ---------------- | ----- | ---- | --------------------------- |
-| $k_{cat}^{KGDH}$ | 50    | Hz   | Rate constant of KGDH       |
-| $E_T^{KGDH}$     | 0.5   | mM   | Concentration of KGDH       |
-| $K_{H1}^{KGDH}$  | 40    | nM   | Ionization constant of KGDH |
-| $K_{H2}^{KGDH}$  | 70    | nM   | Ionization constant of KGDH |
-| $K_{NAD}^{KGDH}$ | 38.7  | mM   | Michaelis constant for NAD  |
-| $K_{AKG}^{KGDH}$ | 1.94  | mM   | Michaelis constant for αKG  |
-| $n_{KGDH}$       | 1.2   | -    | Hill coefficient for αKG    |
-| $K_{MG}^{KGDH}$  | 30.8  | μM   | Activation constant for Mg  |
-| $K_{CA}^{KGDH}$  | 0.15  | μM   | Activation constant for Ca  |
-
-### Succinate-CoA ligase (SL)
-
-$$
-\begin{align}
-J_{SL} &= k_f^{SL} ([SCoA][ADP]_m[Pi]_m - [SUC][ATP]_m[CoA]/K_{eq}^{SL}) \\
-\end{align}
-$$
-
-| Parameter     | Value | Unit    | Description                 |
-| ------------- | ----- | ------- | --------------------------- |
-| $k_f^{SL}$    | 28    | 1Hz/mM² | Forward rate constant of SL |
-| $K_{eq}^{SL}$ | 3.115 | -       | Equilibrium constant of SL  |
-| [CoA]         | 20    | μM      | Coenzyme A concentration    |
-
-### Succinate dehydrogenase (SDH)
-
-See OXPHOS part: complex II (Succinate dehydrogenase).
-
-### Fumarate hydratase (FH)
-
-$$
-J_{FH} = k_f^{FH} (\mathrm{[FUM]} - \mathrm{[MAL]} / K_{eq}^{FH})
-$$
-
-| Parameter     | Value | Unit | Description           |
-| ------------- | ----- | ---- | --------------------- |
-| $k_f^{FH}$    | 8.3   | Hz   | Forward rate constant |
-| $K_{eq}^{FH}$ | 1.0   | -    | Equilibrium constant  |
-
-### Malate dehydrogenase (MDH)
-
-$$
-\begin{align}
-J_{MDH} &= \frac{k_{cat}^{MDH} E_T^{MDH} f_{mal}f_{nad} f_a f_i}{(1+f_{mal})(1+f_{nad})}  \\
-f_{mal} &= \frac{[MAL]}{K_{MAL}^{MDH}}\frac{K_{OAA}^{MDH}}{K_{OAA}^{MDH} + [OAA]}  \\
-f_{nad} &= [NAD] / K_{NAD}^{MDH}  \\
-f_a &= k_{offset}^{MDH} + \left( 1 + \frac{[H^+]_m}{K_{H1}^{MDH}} (1 + \frac{[H^+]_m}{K_{H2}^{MDH}})    \right)^{-1}  \\
-f_i &= \left( 1 + \frac{K_{H3}^{MDH}}{[H^+]_m} (1 + \frac{K_{H4}^{MDH}}{[H^+]_m})    \right)^{2}  \\
-\end{align}
-$$
-
-| Parameter          | Value  | Units | Description                          |
-| ------------------ | ------ | ----- | ------------------------------------ |
-| $k_{cat}^{MDH}$    | 126    | Hz    | Rate constant                        |
-| $E_T^{MDH}$        | 154    | μM    |                                      |
-| $K_{H1}^{MDH}$     | 11.31  | nM    | Ionization constant                  |
-| $K_{H2}^{MDH}$     | 26.7   | mM    | Ionization constant                  |
-| $K_{H3}^{MDH}$     | 6.68   | pM    | Ionization constant                  |
-| $K_{H4}^{MDH}$     | 5.62   | nM    | Ionization constant                  |
-| $k_{offset}^{MDH}$ | 0.0399 | -     | Offset of MDH pH activation factor   |
-| $K_{NAD}^{MDH}$    | 224.4  | μM    | Michaelis constant for NAD           |
-| $K_{MAL}^{MDH}$    | 1.493  | mM    | Michaelis constant for malate        |
-| $K_{OAA}^{MDH}$    | 31     | μM    | Inhibition constant for oxaloacetate |
-
-### Aspartate aminotransferase (AAT)
-
-$$
-\begin{align}
-J_{AAT} = k_f^{AAT} \mathrm{[OAA]} \mathrm{[GLU]} \frac{k_{ASP}^{AAT} K_{eq}^{AAT}}{k_{ASP}^{AAT} K_{eq}^{AAT} + k_f^{AAT}\mathrm{[\alpha KG]}}
-\end{align}
-$$
-
-| Parameter       | Value  | Units | Description                            |
-| --------------- | ------ | ----- | -------------------------------------- |
-| $k_f^{AAT}$     | 0.644  | Hz/mM | Forward rate constant of AAT           |
-| $k_{ASP}^{AAT}$ | 0.0015 | Hz    | Rate constant of aspartate consumption |
-| $K_{eq}^{AAT}$  | 6.6    | -     | Equilibrium constant of AAT            |
-| [GLU]           | 10     | mM    | Glutamate concentration                |
-
-## Endoplasmic reticulum
-
-
+| Symbol         | Value  | Units | Description                                     |
+| -------------- | ------ | ----- | ----------------------------------------------- |
+| $K_{m}^{CMDN}$ | $2.38$ | μM    | Ca2+ half saturation constant for calmodulin    |
+| $K_{m}^{CSQN}$ | $800$  | μM    | Ca2+ half saturation constant for calsequestrin |
+| $\Sigma[CMDN]$ | $50$   | μM    | Total myoplasmic calmodulin concentration       |
+| $\Sigma[CQSN]$ | $15$   | mM    | Total NSR calsequestrin concentration           |
 
 ### Ryanodine receptor (Jrel)
 
 $$
 \begin{align}
+J_{tr} &= r_{tr} ([Ca^{2+}]_{NSR} - [Ca^{2+}]_{JSR}) \\
+J_{xfer} &= r_{xfer}([Ca^{2+}]_{ss} - [Ca^{2+}]_{i}) \\
+J_{rel} &= r_{ryr} (P_{O1} + P_{O2})([Ca^{2+}]_{JSR} - [Ca^{2+}]_{ss}) \\
 1 &= P_{C1} + P_{O1} - P_{O2} - P_{C2}  \\
 v_{o1c1} &= -k_a^-P_{O1} + k_a^+ [Ca^{2+}]_{ss}^4 P_{C1} \\
 v_{o1o2} &= k_b^+ [Ca^{2+}]_{ss}^3 P_{O1} - k_b^- P_{O2} \\
@@ -218,21 +82,22 @@ v_{o1c2} &= k_c^+ P_{O1} - k_c^- P_{C2} \\
 \dot{P_{O1}}  &= -v_{o1c1} - v_{o1o2} - v_{o1c2}  \\
 \dot{P_{O2}}  &= v_{o1o2}  \\
 \dot{P_{C2}}  &= v_{o1c2}  \\
-J_{rel} &= r_{ryr} (P_{O1} + P_{O2})([Ca^{2+}]_{JSR} - [Ca^{2+}]_{ss}) \\
 \end{align}
 $$
 
-| Parameter | Value   | Units  | Description               |
-| --------- | ------- | ------ | ------------------------- |
-| $r_{RyR}$ | 3600    | Hz     | RyR flux channel constant |
-| $n_{RyR}$ | 4       | -      | Cooperativity parameter   |
-| $m_{RyR}$ | 3       | -      | Cooperativity parameter   |
-| $k_a^+$   | 12.15   | Hz/μM⁴ | RyR rate constant         |
-| $k_a^-$   | 576     | Hz     | RyR rate constant         |
-| $k_b^+$   | 0.00405 | Hz/μM³ | RyR rate constant         |
-| $k_b^-$   | 1930    | Hz     | RyR rate constant         |
-| $k_c^+$   | 100     | Hz     | RyR rate constant         |
-| $k_c^-$   | 0.8     | Hz     | RyR rate constant         |
+| Parameter  | Value   | Units  | Description                                      |
+| ---------- | ------- | ------ | ------------------------------------------------ |
+| $r_{RyR}$  | 3600    | Hz     | RyR flux channel activity                        |
+| $n_{RyR}$  | 4       | -      | Cooperativity parameter                          |
+| $m_{RyR}$  | 3       | -      | Cooperativity parameter                          |
+| $k_a^+$    | 12.15   | Hz/μM⁴ | RyR rate constant                                |
+| $k_a^-$    | 576     | Hz     | RyR rate constant                                |
+| $k_b^+$    | 0.00405 | Hz/μM³ | RyR rate constant                                |
+| $k_b^-$    | 1930    | Hz     | RyR rate constant                                |
+| $k_c^+$    | 100     | Hz     | RyR rate constant                                |
+| $k_c^-$    | 0.8     | Hz     | RyR rate constant                                |
+| $r_{tr}$   | $110$   | Hz     | Calcium transfer rate from from NSR to JSR       |
+| $r_{xfer}$ | $1740$  | Hz     | Calcium transfer rate from subspace to cytoplasm |
 
 ### SERCA (Jup)
 
@@ -257,72 +122,24 @@ $$
 | $K_{i1}^{up}$ | 140     | μM    | ADP first inhibition constant for SERCA        |
 | $K_{i2}^{up}$ | 5.1     | mM    | ADP second  inhibition constant for SERCA      |
 
-## Sarcoplasmic ion currents
-
-Definition of the GHK current equation.
-
-$$
-\begin{align}
-\Phi_s(P_s, z_s, V_m, [S]_i, [S]_o) := P_sz^2_s\frac{V_mF^2}{RT}\frac{[S]_i - [S]_o\exp(-z_sV_mF/RT)}{1-\exp(-z_sV_mF/RT)}
-\end{align}
-$$
-
-Differential equations:
-
-$$
-\begin{align}
-\frac{d[Na^+]_i}{dt} &= -(I_{Na} + 3I_{NaCa} + 3I_{NaK})\frac{A_{cap}}{V_{myo}F} + (V_{NHE} - 3V_{NaCa}) \frac{V_{mito}}{V_{myo}} \\
-\frac{d[K^+]_i}{dt} &= -(I_{Ks} + I_{Kr} + I_{K1} + I_{Kp} + I_{Ca,K}-2I_{NaK})\frac{A_{cap}}{V_{myo}F} \\
-C_m\frac{dV_m}{dt} &= -(I_{Na} + I_{CaL} + I_{Kr} + I_{Ks} + I_{K1} + I_{Kp} + I_{NaCa} + I_{NaK} + I_{pCa} + I_{Ca, b} + I_{K_{ATP}} + I_{stim}) \\
-\frac{d[Ca^{2+}]_i}{dt} &= \beta_i(J_{xfer}\frac{V_{ss}}{V_{myo}} - J_{up} - J_{trpn} - (I_{Ca,b} -2I_{NaCa} + I_{pCa})\frac{A_{cap}}{2V_{myo}F} + (V_{NaCa} - V_{uni})\frac{V_{mito}}{V_{myo}}) \\
-\frac{d[Ca^{2+}]_{NSR}}{dt} &= (J_{up}\frac{V_{myo}}{V_{NSR}} - J_{tr}\frac{V_{JSR}}{V_{NSR}}) \\
-\frac{d[Ca^{2+}]_{JSR}}{dt} &= \beta_{SR}(J_{tr} - J_{rel}) \\
-\frac{d[Ca^{2+}]_{SS}}{dt} &= \beta_{SS} \frac{V_{JSR}J_{rel} - V_{MYO}J_{xfer}}{V_{SS}} - \frac{I_{CaL}A_{cap}}{2V_{SS}F}\\
-β_i &= \frac{(K_m^{CMDN} + [Ca^{2+}]_i)^2}{ (K_m^{CMDN} + [Ca^{2+}]_i)^2 + K_m^{CMDN}  \cdot  [CMDN]_{tot}} \\
-β_{SR} &= \frac{(K_m^{CSQN} + [Ca^{2+}]_{JSR})^2}{(K_m^{CSQN} + [Ca^{2+}]_{JSR})^2 + K_m^{CSQN}  \cdot  [CSQN]_{tot}} \\
-β_{SS} &= \frac{(K_m^{CMDN} + [Ca^{2+}]_{SS})^2}{(K_m^{CMDN} + [Ca^{2+}]_{SS})^2 + K_m^{CMDN}  \cdot  [CMDN]_{tot}} \\
-\end{align}
-$$
-
-| Symbol          | Value                | Units        | Description                                           |
-| --------------- | -------------------- | ------------ | ----------------------------------------------------- |
-| $G_{Na}$        | $12.8$               | $mS/cm^2$    | Maximal Na channel conductance                        |
-| $G_{Kp}$        | $0.00828$            | $mS/cm^2$    | Maximal plateau K channel conductance                 |
-| $G_{K,0}$       | $0.282$              | $mS/cm^2$    | IK conductance                                        |
-| $G_{K1,0}$      | $0.748$              | $mS/cm^2$    | IK1 conductance                                       |
-| $P_{NaK}$       | $0.01833$            |              | Na+ permeability ratio of K+ channel                  |
-| $K_{NaCa}$      | $9000$               | $\mu A/cm^2$ | NCX current                                           |
-| $K_{Na}^{NCX}$  | $87.5$               | mM           | Dissociation constant of sodium for NCX               |
-| $K_{Ca}^{NCX}$  | $1.38$               | mM           | Dissociation constant of calcium for NCX              |
-| $K_{sat}^{NCX}$ | $0.1$                | -            | NCX saturation factor at negative potentials          |
-| $\eta^{NCX}$    | $0.35$               | -            | Voltage dependence of NCX                             |
-| $P_{ns,Na}$     | $1.75 \cdot 10^{-7}$ | cm/s         | Nonspecific channel current Na permeability           |
-| $P_{ns,K}$      | $0$                  | cm/s         | Nonspecific channel current K permeability            |
-| $K_{ca}^{ns}$   | $1.2$                | μM           | Ca2+ half-saturation constant for nonspecific current |
-| $G_{Ca,b}$      | $0.003217$           | $mS/cm^2$    | Maximum background current Ca2+ conductance           |
-| $G_{Na,b}$      | $0.003217$           | $mS/cm^2$    | Maximum background current Na+ conductance            |
-| $\tau_{tr}$     | $574.7$              | Hz           | Time constant for transfer from subspace to myoplasm  |
-| $\tau_{xfer}$   | $9090$               | Hz           | Time constant for transfer from NSR to JSR            |
-| $K_{m}^{CMDN}$  | $2.38$               | μM           | Ca2+ half saturation constant for calmodulin          |
-| $K_{m}^{CSQN}$  | $800$                | μM           | Ca2+ half saturation constant for calsequestrin       |
-| $\Sigma[HTRPN]$ | $140$                | μM           | Total troponin high-affinity sites                    |
-| $\Sigma[LTRPN]$ | $70$                 | μM           | Total troponin low-affinity sites                     |
-| $\Sigma[CMDN]$  | $50$                 | μM           | Total myoplasmic calmodulin concentration             |
-| $\Sigma[CQSN]$  | $15$                 | mM           | Total NSR calsequestrin concentration                 |
-
 ### Time-dependent delayed rectifier potassium current
 
 $$
 \begin{align}
 I_K &= \bar G_K X_1 X_K^2 (V - E_K) \\
 E_K &= \frac{RT}{F} \ln \frac{[K^+]_o + P_{Na,K}[Na^+]_o}{ [K^+]_i + P_{Na,K}[Na^+]_i} \\
-\bar G_K &= 0.282 \frac{mS}{cm^2}\sqrt{[K^+]_o /5.4mM} \\
+\bar G_K &= G_{K,0}\sqrt{[K^+]_o / 5.4mM} \\
 X_1 &= 1 / (1+ e^{(V_m-40)/40}) \\
 \frac{dX_k}{dt} &= \alpha_X - X_k (\alpha_X + \beta_X) \\
 \alpha_X &= \frac{V_m+30}{1 - e^{-0.148(V_m+30)}} * 0.0719Hz \\
 \beta_X &= \frac{V_m+30}{e^{0.0687(V_m+30)} -1} * 0.131Hz \\
 \end{align}
 $$
+
+| Symbol    | Value   | Units     | Description    |
+| --------- | ------- | --------- | -------------- |
+| $G_{K,0}$ | $0.282$ | $mS/cm^2$ | IK conductance |
+| $P_{NaK}$ | 0.01833 | -      | Na+ permeability ratio of K+ channel |
 
 ### Time-independent potassium current
 
@@ -331,12 +148,16 @@ $$
 \Delta V_{k1} &= V_m - E_{K1} \\
 I_{K1} &= \bar G_{K1}K_{1 \infty}\Delta V_{k1} \\
 E_{K1} &= \frac{RT}{F} \ln \frac{[K^+]_o}{[K^+]_i}  \\
-\bar G_{K1} &= 0.748(mS/cm^2)\sqrt{[K^+]_o / 5.4mM}  \\
+\bar G_{K1} &= G_{K1,0} \sqrt{[K^+]_o / 5.4mM}  \\
 K_{1 \infty} &= \frac{\alpha_{K_1}}{\alpha_{K_1} + \beta_{K_1}} \\
 \alpha_{K_1} &= \frac{1.02}{1 + e^{0.2385(\Delta V_{k1} -59.215)}} * \text{kHz}  \\
 \beta_{K_1} &= \frac{0.4912e^{0.28032(\Delta V_{k1} + 5.476)} + e^{0.06175(\Delta V_{k1} -594.31)}}{1 + e^{-0.5143(\Delta V_{k1} + 4.753)}} * \text{kHz}
 \end{align}
 $$
+
+| Symbol     | Value   | Units     | Description     |
+| ---------- | ------- | --------- | --------------- |
+| $G_{K1,0}$ | $0.748$ | $mS/cm^2$ | IK1 conductance |
 
 ### Plateau potassium current
 
@@ -347,11 +168,15 @@ I_{Kp} &= \frac{\bar G_{Kp} (V - E_{Kp})}{1 + e^{(7.488-V_m) / 5.98}} \\
 \end{align}
 $$
 
+| Symbol   | Value     | Units     | Description                           |
+| -------- | --------- | --------- | ------------------------------------- |
+| $G_{Kp}$ | $0.00828$ | $mS/cm^2$ | Maximal plateau K channel conductance |
+
 ### Fast Na current
 
 $$
 \begin{align}
-I_{Na} &= \bar G_{Na} m_{Na}^{3} h_{Na} j_{Na} (V_m-E_{Na}) \\
+I_{Na} &= G_{Na} m_{Na}^{3} h_{Na} j_{Na} (V_m-E_{Na}) \\
 E_{Na} &= \frac{RT}{F} \ln \frac{[Na^{+}]_o}{[Na^{+}]_i} \\
 \frac{dm_{Na}}{dt} &= \alpha_{m} - m_{Na}(\alpha_{m} + \beta_{m}) \\
 \frac{dh_{Na}}{dt} &= \alpha_{h} - h_{Na}(\alpha_{h} + \beta_{h}) \\
@@ -372,6 +197,10 @@ For \ V_m & < -40mV \\
 \end{align}
 $$
 
+| Symbol   | Value  | Units     | Description                    |
+| -------- | ------ | --------- | ------------------------------ |
+| $G_{Na}$ | $12.8$ | $mS/cm^2$ | Maximal Na channel conductance |
+
 ### Sodium-calcium exchanger current
 
 $$
@@ -384,6 +213,14 @@ f_{Cao} &= \frac{[Ca^+]_o}{[Ca^+]_o + K_{M,Ca}^{NaCa}} \\
 \end{align}
 $$
 
+| Symbol          | Value  | Units        | Description                                  |
+| --------------- | ------ | ------------ | -------------------------------------------- |
+| $K_{NaCa}$      | $9000$ | $\mu A/cm^2$ | NCX current                                  |
+| $K_{Na}^{NCX}$  | $87.5$ | mM           | Dissociation constant of sodium for NCX      |
+| $K_{Ca}^{NCX}$  | $1.38$ | mM           | Dissociation constant of calcium for NCX     |
+| $K_{sat}^{NCX}$ | $0.1$  | -            | NCX saturation factor at negative potentials |
+| $\eta^{NCX}$    | $0.35$ | -            | Voltage dependence of NCX                    |
+
 ### Background calcium and sodium currents
 
 $$
@@ -392,6 +229,11 @@ I_{Ca,b} &= \bar G_{Ca,b} (V_m - \frac{RT}{2F} \ln \frac{[Ca^{2+}]_o}{[Ca^{2+}]_
 I_{Na,b} &= \bar G_{Na,b} (V_m - \frac{RT}{F} \ln \frac{[Na^{+}]_o}{[Na^{+}]_i}) \\
 \end{align}
 $$
+
+| Symbol     | Value      | Units     | Description                                 |
+| ---------- | ---------- | --------- | ------------------------------------------- |
+| $G_{Ca,b}$ | $0.003217$ | $mS/cm^2$ | Maximum background current Ca2+ conductance |
+| $G_{Na,b}$ | $0.003217$ | $mS/cm^2$ | Maximum background current Na+ conductance  |
 
 ### Non-specific calcium-activated current
 
@@ -402,6 +244,12 @@ I_{nsNa} &= 0.75  \cdot f_{Ca}  \cdot  \Phi_{Na}(P_{nsNa}, z_{Na}, V_m, [Na^+]_i
 I_{nsK} &= 0.75  \cdot f_{Ca}  \cdot  \Phi_{K}(P_{nsK}, z_{K}, V_m, [K^+]_i, [K^+]_o)  \\
 \end{align}
 $$
+
+| Symbol        | Value                | Units | Description                                           |
+| ------------- | -------------------- | ----- | ----------------------------------------------------- |
+| $P_{ns,Na}$   | $1.75 \cdot 10^{-7}$ | cm/s  | Nonspecific channel current Na permeability           |
+| $P_{ns,K}$    | $0$                  | cm/s  | Nonspecific channel current K permeability            |
+| $K_{ca}^{ns}$ | $1.2$                | μM    | Ca2+ half-saturation constant for nonspecific current |
 
 ### Sodium-potassium ATPase current
 
@@ -418,6 +266,10 @@ f_{ATP} &= \frac{[ATP]_i}{[ATP]_i + K_{M,ATP}^{NaK} / f_{ADP}} \\
 f_{ADP} &= \frac{K_{i,ADP}^{NaK}}{K_{i,ADP}^{NaK} + [ADP]_i} \\
 \end{align}
 $$
+
+| Symbol    | Value     | Units | Description                          |
+| --------- | --------- | ----- | ------------------------------------ |
+
 
 ### L-type Ca current
 
@@ -480,7 +332,7 @@ $$
 | $P_{K}^{LCC}$  | $1.11 \cdot 10^{-11}$ | cm/s             | L-type Ca2+ channel permeability to K+       |
 | $I_{Ca, half}$ | $-0.4583$             | $\mu A / cm^{2}$ | ICa level that reduces equation Pk by half   |
 
-(*): adjusted for proper calcium transients.
+(*): adjusted for proper calcium transients and diastolic cytosolic calcium concentrations.
 
 ### Plasma membrane calcium ATPase (PMCA) current
 
@@ -495,10 +347,10 @@ $$
 | Parameter         | Value   | Units        | Description                                                   |
 | ----------------- | ------- | ------------ | ------------------------------------------------------------- |
 | $I_{max}^{PMCA}$  | $0.575$ | $\mu A/cm^2$ | Maximum sarcolemmal Ca2+ pump current                         |
-| $K_{Ca}^{PMCA}$   | $0.5$   | $uM$         | Ca2+ half-saturation constant for sarcolemmal Ca2+ pump       |
-| $K_{ATP1}^{PMCA}$ | $0.012$ | $mM$         | First ATP half-saturation constant for sarcolemmal Ca2+ pump  |
-| $K_{ATP2}^{PMCA}$ | $0.23$  | $mM$         | Second ATP half-saturation constant for sarcolemmal Ca2+ pump |
-| $K_{ADP}^{PMCA}$  | $1.0$   | $mM$         | ADP inhibition constant for sarcolemmal Ca2+ pump             |
+| $K_{Ca}^{PMCA}$   | $0.5$   | μM           | Ca2+ half-saturation constant for sarcolemmal Ca2+ pump       |
+| $K_{ATP1}^{PMCA}$ | $0.012$ | mM           | First ATP half-saturation constant for sarcolemmal Ca2+ pump  |
+| $K_{ATP2}^{PMCA}$ | $0.23$  | mM           | Second ATP half-saturation constant for sarcolemmal Ca2+ pump |
+| $K_{ADP}^{PMCA}$  | $1.0$   | mM           | ADP inhibition constant for sarcolemmal Ca2+ pump             |
 
 ## Force generation
 
@@ -537,8 +389,8 @@ v_{04} &= k_{pn}^{trop} [P_0] - k_{np}^{trop} [N_0] \\
  [N_0] &= 1 - [P_0] - [P_1] - [P_2] - [P_3] - [N_1]  \\
 v_{15} &= k_{pn}^{trop} [P_1] - k_{np}^{trop} [N_1] \\
 v_{54} &= g_{01,off} [N_1]  \\
- [HTRPN] &=  [HTRPN]_{tot} - [HTRPNCa]  \\
- [LTRPN] &=  [LTRPN]_{tot} - [LTRPNCa]  \\
+ [HTRPN] &=  \Sigma[HTRPN] - [HTRPNCa]  \\
+ [LTRPN] &=  \Sigma[LTRPN] - [LTRPNCa]  \\
 f_{ATP}^{AM} &= \frac{[ATP]_i}{[ATP]_i + K_{m,AM}^{ATP}/f_{ADP}^{AM} } \\
 f_{ADP}^{AM} &= \frac{K_{i,AM}^{ADP}}{[ADP]_i + K_{i,AM}^{ADP}} \\
 V_{AM} &= V_{max}^{AM}  \cdot f_{ATP}^{AM}  \cdot  \frac{f_{01}[P_0] + f_{12}[P_1] + f_{23}[P_2]}{f_{01} + f_{12} + f_{23}} \\
@@ -554,20 +406,191 @@ J_{trpn} &= \frac{d[HTRPNCa]}{dt} + \frac{d[LTRPNCa]}{dt} \\
 $$
 
 
-| Symbol          | Value    | Units           | Description                                                   |
-| --------------- | -------- | --------------- | ------------------------------------------------------------- |
-| $k_{pn}^{trop}$ | $40$     | $\text{Hz}$     | Transition rate from tropomyosin permissive to non-permissive |
-| $\text{SL}$     | $2.15$   | $\mu \text{m}$  | Sarcomere length                                              |
-| $f_{XB}$        | $50$     | $\text{Hz}$     | Transition rate from weak to strong crossbridge               |
-| $g_{XB}^{min}$  | $100$    | $\text{Hz}$     | Minimum transition rate from strong to weak crossbridge       |
-| $\zeta$         | $0.1$    | $\text{N/mm}^2$ | Conversion factor normalizing to physiological force          |
-| $V_{AM}^{max}$  | $7.2$    | $\text{mM/s}$   | Conversion factor normalizing to physiological force          |
-| $K_{ATP}^{AM}$  | $0.03$   | $\text{mM}$     | ATP half-saturation constant of AM ATPase                     |
-| $K_{ADP}^{AM}$  | $0.26$   | $\text{mM}$     | ADP inhibition constant of AM ATPase                          |
-| $h_{trpn}^{+}$  | $100000$ | $\text{Hz/mM}$  | Ca2+ on-rate for troponin high-affinity sites                 |
-| $h_{trpn}^{-}$  | $0.33$   | $\text{Hz}$     | Ca2+ off-rate for troponin high-affinity sites                |
-| $l_{trpn}^{+}$  | $100000$ | $\text{Hz/mM}$  | Ca2+ on-rate for troponin low-affinity sites                  |
-| $l_{trpn}^{-}$  | $40$     | $\text{Hz}$     | Ca2+ off-rate for troponin low-affinity sites                 |
+| Symbol          | Value | Units           | Description                                                   |
+| --------------- | ----- | --------------- | ------------------------------------------------------------- |
+| $k_{pn}^{trop}$ | 40    | Hz              | Transition rate from tropomyosin permissive to non-permissive |
+| $\text{SL}$     | 2.15  | μm              | Sarcomere length                                              |
+| $f_{XB}$        | 50    | Hz              | Transition rate from weak to strong crossbridge               |
+| $g_{XB}^{min}$  | 100   | Hz              | Minimum transition rate from strong to weak crossbridge       |
+| $\zeta$         | 0.1   | $\text{N/mm}^2$ | Conversion factor normalizing to physiological force          |
+| $V_{AM}^{max}$  | 7.2   | Hz * mM         | Conversion factor normalizing to physiological force          |
+| $K_{ATP}^{AM}$  | 0.03  | mM              | ATP half-saturation constant of AM ATPase                     |
+| $K_{ADP}^{AM}$  | 0.26  | mM              | ADP inhibition constant of AM ATPase                          |
+| $h_{trpn}^{+}$  | 100   | Hz/μM           | Ca2+ on-rate for troponin high-affinity sites                 |
+| $h_{trpn}^{-}$  | 0.33  | Hz              | Ca2+ off-rate for troponin high-affinity sites                |
+| $l_{trpn}^{+}$  | 100   | Hz/μM           | Ca2+ on-rate for troponin low-affinity sites                  |
+| $l_{trpn}^{-}$  | 40    | Hz              | Ca2+ off-rate for troponin low-affinity sites                 |
+| $\Sigma[HTRPN]$ | 140   | μM              | Total troponin high-affinity sites                            |
+| $\Sigma[LTRPN]$ | $70$  | μM              | Total troponin low-affinity sites                             |
+
+## Citric acid cycle
+
+ODEs in the citric acid cycle.
+
+$$
+\begin{align}
+\frac{d [ISOC]}{dt} &= J_{ACO} -J_{IDH3} \\
+\frac{d [\alpha KG]}{dt} &= J_{IDH3} - J_{KGDH} + J_{AAT}  \\
+\frac{d [SCoA]}{dt} &= J_{KGDH} - J_{SL}  \\
+\frac{d [SUC]}{dt} &= J_{SL} - J_{SDH} \\
+\frac{d [FUM]}{dt} &= J_{SDH} - J_{FH}  \\
+\frac{d [MAL]}{dt} &= J_{FH} - J_{MDH}  \\
+\frac{d [OAA]}{dt} & = J_{MDH} - J_{CS} - J_{AAT}  \\
+\Sigma_{CAC} &= \mathrm{[CIT]} + \mathrm{[ISOC]} + \mathrm{[\alpha KG]} + \mathrm{[SCoA]} + \mathrm{[SUC] }+ \mathrm{[FUM]} + \mathrm{[MAL]} + \mathrm{[OAA]} \\
+\Sigma{[N]} &= [NAD] + [NADH]
+\end{align}
+$$
+
+| Parameter      | Value | Unit | Description                    |
+| -------------- | ----- | ---- | ------------------------------ |
+| $\Sigma_{CAC}$ | 1.3   | mM   | Sum of TCA cycle intermediates |
+
+### Citrate synthase (CS)
+
+$$
+\begin{align}
+J_{CS} &= k_{cat}^{CS} E_T^{CS} f_{accoa} f_{OAA} \\
+f_{accoa} &= \frac{[AcCoA]}{[AcCoA] + K_m^{AcCoA}} \\
+f_{OAA} &= \frac{[OAA]}{[OAA] + K_m^{OAA}} \\
+\end{align}
+$$
+
+| Parameter          | Value | Unit | Description                  |
+| :----------------- | ----- | ---- | ---------------------------- |
+| $k_{cat}^{CS}$     | 50    | Hz   | Catalytic constant of CS     |
+| $E_T^{CS}$         | 400   | μM   | Enzyme concentration of CS   |
+| $K_m^{AcCoA}$      | 12.6  | μM   | Michaelis constant for AcCoA |
+| $K_m^{OAA}$        | 0.64  | μM   | Michaelis constant for OAA   |
+| $\mathrm{[AcCoA]}$ | 1     | mM   | Acetyl CoA concentration     |
+
+### Aconitase (ACO)
+
+$$
+J_{ACO} = k_f^{ACO} (\mathrm{[CIT]} - \mathrm{[ISOC]} / K_{eq}^{ACO})
+$$
+
+| Parameter      | Value | Unit | Description                  |
+| -------------- | ----- | ---- | ---------------------------- |
+| $k_f^{ACO}$    | 12.5  | Hz   | Forward rate constant of ACO |
+| $K_{eq}^{ACO}$ | 2.22  | -    | Equilibrium constant of ACO  |
+
+### Isocitrate dehydrogenase, NADH-producing (IDH3)
+
+$$
+\begin{align}
+J_{IDH3} &= \frac{k_{cat}^{IDH3} E_T^{IDH3} AB}{f_H AB + f_i B + f_a A + f_a f_i} \\
+f_H & = 1 + \frac{[H^+]_m}{K_{H1}^{IDH3}} + \frac{K_{H2}^{IDH3}}{[H^+]_m}  \\
+A &= [NAD] / K_{NAD}^{IDH3} \\
+B &= ([ISOC] / K_{ISOC}^{IDH3})^2  \\
+f_a &= \frac{K_A^{IDH3}}{K_A^{IDH3} + [ADP]_m} \frac{K_{CA}^{IDH3}}{K_{CA}^{IDH3} + [Ca^{2+}]_m}  \\
+f_i &= 1 + \frac{[NADH]}{K_{NADH}^{IDH3}}  \\
+\end{align}
+$$
+
+| Parameter         | Value | Unit | Description                       |
+| ----------------- | ----- | ---- | --------------------------------- |
+| $k_{cat}^{IDH3}$  | 50    | Hz   | Rate constant of IDH3             |
+| $E_T^{IDH3}$      | 109   | μM   | Concentration of IDH3             |
+| $K_{H1}^{IDH3}$   | 1     | nM   | Ionization constant of IDH3       |
+| $K_{H2}^{IDH3}$   | 900   | nM   | Ionization constant of IDH3       |
+| $K_{NAD}^{IDH3}$  | 923   | μM   | Michaelis constant for NAD        |
+| $K_{ISOC}^{IDH3}$ | 1520  | μM   | Michaelis constant for isocitrate |
+| $K_A^{IDH3}$      | 620   | μM   | Activation constant by ADP        |
+| $K_{CA}^{IDH3}$   | 500   | nM   | Activation constant for calcium   |
+| $K_{NADH}^{IDH3}$ | 190   | μM   | Inhibition constant by NADH       |
+
+### Alpha-ketoglutarate dehydrogenase (KGDH)
+
+$$
+\begin{align}
+J_{KGDH} &= \frac{k_{cat}^{KGDH} E_T^{KGDH} AB}{f_H AB + f_a (A + B)} \\
+f_H & = 1 + \frac{[H^+]_m}{K_{H1}^{KGDH}} + \frac{K_{H2}^{KGDH}}{[H^+]_m}  \\
+A &= [NAD] / K_{NAD}^{KGDH} \\
+B &= ([\alpha KG] / K_{AKG}^{KGDH})^{1.2}  \\
+f_a &= \frac{K_{MG}^{KGDH}}{K_{MG}^{KGDH} + [Mg^{2+}]_m} \frac{K_{CA}^{KGDH}}{K_{CA}^{KGDH} + [Ca^{2+}]_m}  \\
+\end{align}
+$$
+
+| Parameter        | Value | Unit | Description                 |
+| ---------------- | ----- | ---- | --------------------------- |
+| $k_{cat}^{KGDH}$ | 50    | Hz   | Rate constant of KGDH       |
+| $E_T^{KGDH}$     | 0.5   | mM   | Concentration of KGDH       |
+| $K_{H1}^{KGDH}$  | 40    | nM   | Ionization constant of KGDH |
+| $K_{H2}^{KGDH}$  | 70    | nM   | Ionization constant of KGDH |
+| $K_{NAD}^{KGDH}$ | 38.7  | mM   | Michaelis constant for NAD  |
+| $K_{AKG}^{KGDH}$ | 1.94  | mM   | Michaelis constant for αKG  |
+| $n_{KGDH}$       | 1.2   | -    | Hill coefficient for αKG    |
+| $K_{MG}^{KGDH}$  | 30.8  | μM   | Activation constant for Mg  |
+| $K_{CA}^{KGDH}$  | 0.15  | μM   | Activation constant for Ca  |
+
+### Succinate-CoA ligase (SL)
+
+$$
+\begin{align}
+J_{SL} &= k_f^{SL} ([SCoA][ADP]_m[Pi]_m - [SUC][ATP]_m[CoA]/K_{eq}^{SL}) \\
+\end{align}
+$$
+
+| Parameter     | Value | Unit   | Description                 |
+| ------------- | ----- | ------ | --------------------------- |
+| $k_f^{SL}$    | 28    | Hz/mM² | Forward rate constant of SL |
+| $K_{eq}^{SL}$ | 3.115 | -      | Equilibrium constant of SL  |
+| [CoA]         | 20    | μM     | Coenzyme A concentration    |
+
+### Succinate dehydrogenase (SDH)
+
+See OXPHOS part: complex II (Succinate dehydrogenase).
+
+### Fumarate hydratase (FH)
+
+$$
+J_{FH} = k_f^{FH} (\mathrm{[FUM]} - \mathrm{[MAL]} / K_{eq}^{FH})
+$$
+
+| Parameter     | Value | Unit | Description           |
+| ------------- | ----- | ---- | --------------------- |
+| $k_f^{FH}$    | 8.3   | Hz   | Forward rate constant |
+| $K_{eq}^{FH}$ | 1.0   | -    | Equilibrium constant  |
+
+### Malate dehydrogenase (MDH)
+
+$$
+\begin{align}
+J_{MDH} &= \frac{k_{cat}^{MDH} E_T^{MDH} f_{mal}f_{nad} f_a f_i}{(1+f_{mal})(1+f_{nad})}  \\
+f_{mal} &= \frac{[MAL]}{K_{MAL}^{MDH}}\frac{K_{OAA}^{MDH}}{K_{OAA}^{MDH} + [OAA]}  \\
+f_{nad} &= [NAD] / K_{NAD}^{MDH}  \\
+f_a &= k_{offset}^{MDH} + \left( 1 + \frac{[H^+]_m}{K_{H1}^{MDH}} (1 + \frac{[H^+]_m}{K_{H2}^{MDH}})    \right)^{-1}  \\
+f_i &= \left( 1 + \frac{K_{H3}^{MDH}}{[H^+]_m} (1 + \frac{K_{H4}^{MDH}}{[H^+]_m})    \right)^{2}  \\
+\end{align}
+$$
+
+| Parameter          | Value  | Units | Description                          |
+| ------------------ | ------ | ----- | ------------------------------------ |
+| $k_{cat}^{MDH}$    | 126    | Hz    | Rate constant Oof MDH                |
+| $E_T^{MDH}$        | 154    | μM    | Activity of MDH                      |
+| $K_{H1}^{MDH}$     | 11.31  | nM    | Ionization constant                  |
+| $K_{H2}^{MDH}$     | 26.7   | mM    | Ionization constant                  |
+| $K_{H3}^{MDH}$     | 6.68   | pM    | Ionization constant                  |
+| $K_{H4}^{MDH}$     | 5.62   | nM    | Ionization constant                  |
+| $k_{offset}^{MDH}$ | 0.0399 | -     | Offset of MDH pH activation factor   |
+| $K_{NAD}^{MDH}$    | 224.4  | μM    | Michaelis constant for NAD           |
+| $K_{MAL}^{MDH}$    | 1.493  | mM    | Michaelis constant for malate        |
+| $K_{OAA}^{MDH}$    | 31     | μM    | Inhibition constant for oxaloacetate |
+
+### Aspartate aminotransferase (AAT)
+
+$$
+\begin{align}
+J_{AAT} = k_f^{AAT} \mathrm{[OAA]} \mathrm{[GLU]} \frac{k_{ASP}^{AAT} K_{eq}^{AAT}}{k_{ASP}^{AAT} K_{eq}^{AAT} + k_f^{AAT}\mathrm{[\alpha KG]}}
+\end{align}
+$$
+
+| Parameter       | Value  | Units | Description                            |
+| --------------- | ------ | ----- | -------------------------------------- |
+| $k_f^{AAT}$     | 0.644  | Hz/mM | Forward rate constant of AAT           |
+| $k_{ASP}^{AAT}$ | 0.0015 | Hz    | Rate constant of aspartate consumption |
+| $K_{eq}^{AAT}$  | 6.6    | -     | Equilibrium constant of AAT            |
+| [GLU]           | 10     | mM    | Glutamate concentration                |
 
 ## Oxidative phosphorylation (OXPHOS)
 
