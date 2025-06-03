@@ -31,8 +31,8 @@
 | $\Sigma{[N]}$   | 3                     | mM                 | Sum of mitochondrial NAD and NADH        |
 | $\Sigma[A]_m$   | 1.5                   | mM                 | Sum of mitochondrial ATP and ADP         |
 | $\Sigma[A]_i$   | 8                     | mM                 | Sum of cytosolic ATP and ADP             |
-| $[H^+]_i$       | 1$\cdot 10^{-7}$      | M                  | Cytosolic proton (pH = 7)                |
-| $[H^+]_m$       | 2.512$\cdot 10^{-8}$  | M                  | Mitochondrial proton (pH = 7.6)          |
+| $[H^+]_i$       | 100                   | nM                 | Cytosolic proton (pH = 7)                |
+| $[H^+]_m$       | 25.12                 | nM                 | Mitochondrial proton (pH = 7.6)          |
 
 ## Citric acid cycle
 
@@ -54,7 +54,7 @@ $$
 
 | Parameter      | Value | Unit | Description                    |
 | -------------- | ----- | ---- | ------------------------------ |
-| $\Sigma_{CAC}$ | 1.400 | mM   | Sum of TCA cycle intermediates |
+| $\Sigma_{CAC}$ | 1.3   | mM   | Sum of TCA cycle intermediates |
 
 ### Citrate synthase (CS)
 
