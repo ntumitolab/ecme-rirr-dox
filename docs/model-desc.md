@@ -8,7 +8,7 @@
 | T               | 310                    | K                     | Absolute temperature                     |
 | R               | 8.314                  | J/molK                | Universal gas constant                   |
 | $V_T$           | 26.71                  | mV                    | Thermal voltage (=${RT}/{F}$)            |
-| $C_m$           | 1.0                    | $\text{μF/cm}^2$      | Plasma membrane capacitance              |
+| $C_m$           | 1.0                    | $\mathrm{μF/cm^2}$      | Plasma membrane capacitance              |
 | $C_{mito}$      | 1.812                  | mM/V                  | Mitochondrial inner membrane capacitance |
 | $\delta_{Ca}$   | 0.0003                 | -                     | Mitochondrial free calcium fraction      |
 | $\delta_H$      | 1E-5                   | -                     | Mitochondrial proton buffering factor    |
