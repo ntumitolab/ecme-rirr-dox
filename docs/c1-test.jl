@@ -427,7 +427,7 @@ end
 @parameters begin
     Q_n = 1.8mM
     QH2_n = 0.2mM
-    nad = 500μM
+    nad = 2500μM
     nadh = 500μM
     dpsi = 150mV
 end
@@ -448,9 +448,6 @@ prob_m = SteadyStateProblem(markevich, [
 prob_g = SteadyStateProblem(gauthier, [])
 alg = DynamicSS(Rodas5P())
 ealg = EnsembleThreads()
-
-#---
-observed(gauthier)
 
 # ## Varying MMP
 dpsirange = 100mV:5mV:200mV
@@ -501,10 +498,10 @@ ys_q = extract(sim_q, qsys.vROSC1) .* 1000
 plot(xs, [ys_g ys_m ys_q], xlabel="MMP (mV)", ylabel="ROS production (μM/s)", label=["Gauthier" "Markevich" "IQ"])
 
 # ## Varying NADH
-nadhrange = 10μM:10μM:990μM
+nadhrange = 10μM:10μM:2990μM
 alter_nadh = (prob, i, repeat) -> begin
     prob.ps[nadh] = nadhrange[i]
-    prob.ps[nad] = 1000μM - prob.ps[nadh]
+    prob.ps[nad] = 3000μM - prob.ps[nadh]
     prob
 end
 
@@ -584,5 +581,5 @@ plot(xs, ys, xlabel="QH2 (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "
 
 #---
 @unpack C1_1, C1_2, C1_3, C1_4, C1_5, C1_6, C1_7 = gauthier
-ys = stack(extract.(Ref(sim_g), [C1_3, C1_4, C1_6]), dims=2)
-plot(xs, ys, xlabel="QH2 (μM)", ylabel="Conc (μM)", label=["C1_3" "C1_4" "C1_6"], legend=:right, lw=1.5)
+ys = stack(extract.(Ref(sim_g), [C1_3, C1_4]), dims=2)
+plot(xs, ys, xlabel="QH2 (μM)", ylabel="Conc (μM)", label=["C1_3" "C1_4"], legend=:right, lw=1.5)
