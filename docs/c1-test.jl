@@ -36,6 +36,7 @@ function c1_gauthier(; name=:c1gauthier,
         K42_C1 = 6.0318Hz / mM
         Em_O2_SOX = -160mV         ## O2/Superoxide redox potential
         Em_FMNH2_FMNH = -375mV     ## FMNH/FMNH2 redox potential
+        rKEQ_ROS_C1 = exp(iVT * (Em_FMNH2_FMNH - Em_O2_SOX))
     end
 
     @variables begin
@@ -77,7 +78,7 @@ function c1_gauthier(; name=:c1gauthier,
     a57 = C1_INHIB * K57_C1 * NaNMath.sqrt(QH2_n)
     a75 = K75_C1
     a42 = K42_C1 * O2
-    a24 = K42_C1 * exp(iVT * (Em_FMNH2_FMNH - Em_O2_SOX)) * sox_m
+    a24 = K42_C1 * rKEQ_ROS_C1 * sox_m
 
     ## KA pattern
     w1 = a21 * a32 * a42 * a56 * a61 * a74 + a21 * a32 * a42 * a56 * a61 * a75 + a21 * a32 * a42 * a57 * a61 * a74 + a21 * a32 * a42 * a57 * a65 * a74 + a21 * a32 * a43 * a56 * a61 * a74 + a21 * a32 * a43 * a56 * a61 * a75 + a21 * a32 * a43 * a57 * a61 * a74 + a21 * a32 * a43 * a57 * a65 * a74 + a21 * a32 * a47 * a56 * a61 * a75 + a21 * a34 * a42 * a56 * a61 * a74 + a21 * a34 * a42 * a56 * a61 * a75 + a21 * a34 * a42 * a57 * a61 * a74 + a21 * a34 * a42 * a57 * a65 * a74 + a21 * a34 * a47 * a56 * a61 * a75 + a23 * a34 * a47 * a56 * a61 * a75 + a24 * a32 * a47 * a56 * a61 * a75 + a24 * a34 * a47 * a56 * a61 * a75
@@ -504,10 +505,10 @@ plot(pl1, pl2)
 
 # MMP vs ROS production
 xs = dpsirange
-ys_g = extract(sim_g, gauthier.vROSC1) .* 1000
-ys_m = extract(sim_m, markevich.vROSC1) .* 1000
-ys_q = extract(sim_q, qsys.vROSC1) .* 1000
-plot(xs, [ys_g ys_m ys_q], xlabel="MMP (mV)", ylabel="ROS production (μM/s)", label=["Gauthier" "Markevich" "IQ"])
+ys_g = extract(sim_g, gauthier.vROSC1)
+ys_m = extract(sim_m, markevich.vROSC1)
+ys_q = extract(sim_q, qsys.vROSC1)
+plot(xs, [ys_g ys_m ys_q], xlabel="MMP (mV)", ylabel="ROS production (μM/ms)", label=["Gauthier" "Markevich" "IQ"])
 
 # ## Varying NADH
 nadhrange = 10μM:10μM:2990μM
