@@ -11,7 +11,7 @@ using ECMEDox: mM, μM, nM, iVT, mV, Molar, Hz, ms
 
 # Gauthier 2012 7-state QSSA model
 function c1_gauthier(; name=:c1gauthier,
-    Q_n=3.0mM, QH2_n=0.3mM, nad=500μM, nadh=500μM,
+    Q_n=1800μM, QH2_n=200μM, nad=500μM, nadh=500μM,
     dpsi=150mV, O2=6μM, sox_m=0.001μM,
     h_i=exp10(-7) * Molar, h_m=exp10(-7.6) * Molar,
     C1_INHIB=1)
@@ -452,13 +452,15 @@ gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> mtkcompile
 
 prob_q = SteadyStateProblem(qsys, [
     qsys.ET_C1 => 1μM,
+    qsys.kf16_C1 => 40Hz / μM,
+    qsys.kf17_C1 => 0.8Hz / μM,
 ])
 prob_m = SteadyStateProblem(markevich, [
     markevich.ET_C1 => 17μM,
-    markevich.kf16_C1 => 0.001Hz / μM,
-    markevich.kf17_C1 => 0.001Hz / μM / 20,
+    markevich.kf16_C1 => 2Hz / μM,
+    markevich.kf17_C1 => 0.04Hz / μM,
 ])
-prob_g = SteadyStateProblem(gauthier, [])
+prob_g = SteadyStateProblem(gauthier, [gauthier.K42_C1 => 6.0318E3Hz / mM])
 alg = DynamicSS(Rodas5P())
 ealg = EnsembleThreads()
 
@@ -485,11 +487,6 @@ ys = hcat(extract(sim_g, gauthier.vNADHC1), extract(sim_m, markevich.vNADHC1), e
 
 plot(xs, ys, xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", label=["Gauthier" "Markevich" "IQ"])
 
-# Turnover rate (Hz)
-extract(sim_q, qsys.TNC1) .* 1000
-
-# IF redox potential (mV)
-extract(sim_q, -80 + 26.7 * log(qsys.N2_C1 / qsys.N2r_C1))
 #---
 ys = stack(extract.(Ref(sim_q), [qsys.Q_C1, qsys.SQ_C1, qsys.QH2_C1]), dims=2)
 plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1"], legend=:left)
