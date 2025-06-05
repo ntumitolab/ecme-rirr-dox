@@ -1,9 +1,10 @@
 # # Enzyme steady-state flux
+# Quasi-steady state solutions of enzyme states from transition rates.
 using Symbolics
 using Groebner
 
 # ## SOD model
-# Based on (McAdam, 1977)
+# Based on the `McAdam, 1977` model
 @variables k1 k3 k5 EA EB EC sox
 
 eqs = let
@@ -50,5 +51,61 @@ end
 
 # Weights of all 7 states
 for k in (I1, I2, I3, I4, I5, I6, I7)
-    println(numerator(sol[k]))
+    println(k, " = ", numerator(sol[k]))
+end
+
+# ## Complex I simplified Markevich model
+@variables a12 a21 a23 a32 a34 a43 a45 a54 a51 a15
+@variables FMN FMN_NADH FMNH_NAD FMNH FMNsq
+
+eqs = let
+    v12 = FMN * a12 - FMN_NADH * a21
+    v23 = FMN_NADH * a23 - FMNH_NAD * a32
+    v34 = FMNH_NAD * a34 - FMNH * a43
+    v45 = FMNH * a45 - FMNsq * a54
+    v51 = FMNsq * a51 - FMN * a15
+
+    d1 = -v12 + v51
+    d2 = v12 - v23
+    d3 = v23 - v34
+    d4 = v34 - v45
+    d5 = v45 - v51
+
+    @assert isequal(sum([d1, d2, d3, d4, d5]), 0)
+
+    [d1, d2, d3, d4, sum([FMN, FMN_NADH, FMNH_NAD, FMNH, FMNsq]) - 1]
+end
+
+@time sol = Symbolics.symbolic_solve(eqs, [FMN, FMN_NADH, FMNH_NAD, FMNH, FMNsq])[1]
+
+# Weights of all 7 states
+for k in [FMN, FMN_NADH, FMNH_NAD, FMNH, FMNsq]
+    println(k, " = ", numerator(sol[k]))
+end
+
+#---
+@variables b12 b21 b23 b32 b34 b43 b41 b14
+@variables C1 C1_Q C1_SQ C1_QH2
+
+eqs = let
+    v12 = C1 * b12 - C1_Q * b21
+    v23 = C1_Q * b23 - C1_SQ * b32
+    v34 = C1_SQ * b34 - C1_QH2 * b43
+    v41 = C1_QH2 * b41 - C1 * b14
+
+    d1 = -v12 + v41
+    d2 = v12 - v23
+    d3 = v23 - v34
+    d4 = v34 - v41
+
+    @assert isequal(sum([d1, d2, d3, d4]), 0)
+
+    [d1, d2, d3, d4, sum([C1, C1_Q, C1_SQ, C1_QH2]) - 1]
+end
+
+@time sol = Symbolics.symbolic_solve(eqs, [C1, C1_Q, C1_SQ, C1_QH2])[1]
+
+# Weights of all 7 states
+for k in [C1, C1_Q, C1_SQ, C1_QH2]
+    println(k, " = ", numerator(sol[k]))
 end
