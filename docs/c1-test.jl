@@ -462,6 +462,7 @@ markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> mtkcompile
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> mtkcompile
 
 # The parameter for ROS generation is adjusted to be comparable to ROS generation from complex III
+# The rate is increased by 10000 times
 prob_s = SteadyStateProblem(sys, [
     sys.ET_C1 => 17μM,
     sys.kf16_C1 => 20Hz / μM,
@@ -586,7 +587,7 @@ ys = [extract(sim_g, gauthier.vNADHC1) extract(sim_m, markevich.vNADHC1) extract
 plot(xs, ys, xlabel="QH2 (μM)", ylabel="NADH rate (mM/s)", label=["Gauthier" "Markevich" "Simp"])
 
 # QH2 vs ROS production
-# Gauthier model produces a lot of SOX on high QH2
+# Gauthier model is sensitive to high QH2 because of slow NAD binding
 xs = qh2range
 ys = [extract(sim_g, gauthier.vROSC1) extract(sim_m, markevich.vROSC1) extract(sim_s, sys.vROSC1)]
 plot(xs, ys, xlabel="QH2 (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "Simp"])
