@@ -11,16 +11,14 @@
 | $C_m$           | 1.0                   | $\mathrm{μF/cm^2}$ | Plasma membrane capacitance              |
 | $C_{mito}$      | 1.812                 | mM/V               | Mitochondrial inner membrane capacitance |
 | $\delta_{Ca}$   | 0.0003                | -                  | Mitochondrial free calcium fraction      |
-| $\delta_H$      | 1$\cdot 10^{-5}$      | -                  | Mitochondrial proton buffering factor    |
 | $V_{myo}$       | $25.84$               | pL                 | Cytosolic volume                         |
 | $V_{mito}$      | $15.89$               | pL                 | Mitochondrial volume                     |
 | $V_{NSR}$       | $1.4$                 | pL                 | Network SR volume                        |
 | $V_{JSR}$       | $0.16$                | pL                 | Junctional SR volume                     |
-| $V_{SS}$        | $0.000495$            | pL                 | Subspace volume                          |
+| $V_{SS}$        | 4.95$\cdot 10^{-4}$   | pL                 | Subspace volume                          |
 | $A_{cap}$       | 1.534 $\cdot 10^{-4}$ | cm²                | Cell capacitance area                    |
-| $g_{H}$         | 1$\cdot 10^{-8}$      | mM/msmV            | Mitochondrial Inner membrane conductance |
-| $pH_i$          | 7                     | -                  | Cytosolic pH                             |
-| $pH_m$          | 7.6                   | -                  | Mitochondrial pH                         |
+| $\mathrm{pH}_i$ | 7                     | -                  | Cytosolic pH                             |
+| $\mathrm{pH}_m$ | 7.6                   | -                  | Mitochondrial pH                         |
 | $[O_2]$         | 0.006                 | mM                 | Tissue oxygen concentration              |
 | $[Mg^{2+}]_i$   | 1.0                   | mM                 | Cytosolic magnesium concentration        |
 | $[Mg^{2+}]_m$   | 0.4                   | mM                 | Mitochondrial magnesium concentration    |
@@ -28,7 +26,7 @@
 | $[K^+]_{o}$     | $5.4$                 | mM                 | Extracellular potassium                  |
 | $[Na^+]_{o}$    | $140$                 | mM                 | Extracellular sodium                     |
 | $[Ca^{2+}]_{o}$ | $2$                   | mM                 | Extracellular calcium                    |
-| $\Sigma{[N]}$   | 3                     | mM                 | Sum of mitochondrial NAD and NADH        |
+| $\Sigma[N]$     | 3                     | mM                 | Sum of mitochondrial NAD and NADH        |
 | $\Sigma[A]_m$   | 1.5                   | mM                 | Sum of mitochondrial ATP and ADP         |
 | $\Sigma[A]_i$   | 8                     | mM                 | Sum of cytosolic ATP and ADP             |
 | $[H^+]_i$       | 100                   | nM                 | Cytosolic proton (pH = 7)                |
@@ -138,7 +136,7 @@ $$
 
 | Symbol    | Value   | Units     | Description                          |
 | --------- | ------- | --------- | ------------------------------------ |
-| $G_{K,0}$ | $0.282$ | $mS/cm^2$ | IK conductance                       |
+| $G_{K,0}$ | 0.282   | $mS/cm^2$ | Maximal IK conductance               |
 | $P_{NaK}$ | 0.01833 | -         | Na+ permeability ratio of K+ channel |
 
 ### Time-independent potassium current
@@ -150,21 +148,21 @@ I_{K1} &= \bar G_{K1}K_{1 \infty}\Delta V_{k1} \\
 E_{K1} &= \frac{RT}{F} \ln \frac{[K^+]_o}{[K^+]_i}  \\
 \bar G_{K1} &= G_{K1,0} \sqrt{[K^+]_o / 5.4mM}  \\
 K_{1 \infty} &= \frac{\alpha_{K_1}}{\alpha_{K_1} + \beta_{K_1}} \\
-\alpha_{K_1} &= \frac{1.02}{1 + e^{0.2385(\Delta V_{k1} -59.215)}} * \text{kHz}  \\
-\beta_{K_1} &= \frac{0.4912e^{0.28032(\Delta V_{k1} + 5.476)} + e^{0.06175(\Delta V_{k1} -594.31)}}{1 + e^{-0.5143(\Delta V_{k1} + 4.753)}} * \text{kHz}
+\alpha_{K_1} &= \frac{1.02}{1 + e^{0.2385(\Delta V_{k1} -59.215)}} \times \text{kHz}  \\
+\beta_{K_1} &= \frac{0.4912e^{0.28032(\Delta V_{k1} + 5.476)} + e^{0.06175(\Delta V_{k1} -594.31)}}{1 + e^{-0.5143(\Delta V_{k1} + 4.753)}} \times \text{kHz}
 \end{align}
 $$
 
-| Symbol     | Value   | Units     | Description     |
-| ---------- | ------- | --------- | --------------- |
-| $G_{K1,0}$ | $0.748$ | $mS/cm^2$ | IK1 conductance |
+| Symbol     | Value   | Units     | Description             |
+| ---------- | ------- | --------- | ----------------------- |
+| $G_{K1,0}$ | $0.748$ | $mS/cm^2$ | Maximal IK1 conductance |
 
 ### Plateau potassium current
 
 $$
 \begin{align}
 E_{Kp} &= \frac{RT}{F} \ln \frac{[K^+]_o}{[K^+]_i} \\
-I_{Kp} &= \frac{\bar G_{Kp} (V - E_{Kp})}{1 + e^{(7.488-V_m) / 5.98}} \\
+I_{Kp} &= \frac{\bar G_{Kp} (V - E_{Kp})}{1 + \exp((7.488-V_m) / 5.98)} \\
 \end{align}
 $$
 
@@ -181,25 +179,25 @@ E_{Na} &= \frac{RT}{F} \ln \frac{[Na^{+}]_o}{[Na^{+}]_i} \\
 \frac{dm_{Na}}{dt} &= \alpha_{m} - m_{Na}(\alpha_{m} + \beta_{m}) \\
 \frac{dh_{Na}}{dt} &= \alpha_{h} - h_{Na}(\alpha_{h} + \beta_{h}) \\
 \frac{dj_{Na}}{dt} &= \alpha_{j} - m_{Na}(\alpha_{j} + \beta_{j}) \\
-\alpha_{m} &= 0.32kHz \frac{V_m + 47.13}{1 - e^{-0.1(V_m+47.13)}} \\
-\beta_{m} &= 0.08kHz \times e^{-V_m / 11} \\
+\alpha_{m} &= 0.32 \frac{V_m + 47.13}{1 - \exp(-0.1(V_m+47.13))} \times \text{kHz} \\
+\beta_{m} &= 0.08 \exp(-V_m / 11) \times \text{kHz}\\
 \\
 For \ V_m & \ge -40mV \\
 \alpha_{h} &= \alpha_{j} = 0 \\
-\beta_{h} &= (0.13 ms (1+e^{-(V_m+10.66)/11.1}))^{-1} \\
-\beta_{j} &= 0.3kHz\frac{e^{-2.535 \times 10^{-7}V_m}}{1 + e^{-0.1(V_m + 32)}} \\
+\beta_{h} &= (0.13 \text{ms} (1+e^{-(V_m+10.66)/11.1}))^{-1} \\
+\beta_{j} &= 0.3 \frac{e^{-2.535 \times 10^{-7}V_m}}{1 + e^{-0.1(V_m + 32)}} \times \text{kHz} \\
 \\
 For \ V_m & < -40mV \\
-\alpha_{h} &= 0.135kHz * e^{-(V_m+80)/6.8} \\
-\alpha_{j} &= (-127140e^{0.2444 V_m}-3.474 \times 10^{-5}e^{-0.04391 V_m})\frac{V_m + 37.78}{1+e^{0.311( V_m +79.23)}} \times \text{kHz} \\
-\beta_{h} &= (3.56e^{0.079 V_m} + 3.1 \times 10^{5}e^{0.35 V_m}) \times \text{kHz} \\
-\beta_{j} &= \frac{0.1212e^{-0.01052 V_m}}{1+e^{-0.1378(V_m + 40.14)}} \times \text{kHz} \\
+\alpha_{h} &= 0.135 \times \exp(-(V_m + 80)/6.8) \times \text{kHz} \\
+\alpha_{j} &= (-127140\exp(0.2444 V_m)-3.474 \times 10^{-5}\exp(-0.04391 V_m))\frac{(V_m + 37.78) }{1+ \exp(0.311( V_m +79.23))} \frac{\text{kHz}}{\text{mV}} \\
+\beta_{h} &= (3.56\exp(0.079 V_m) + 3.1 \times 10^{5}\exp(0.35 V_m)) \times \text{kHz} \\
+\beta_{j} &= \frac{0.1212 \exp(-0.01052 V_m)}{1+\exp(-0.1378(V_m + 40.14))} \times \text{kHz} \\
 \end{align}
 $$
 
-| Symbol   | Value  | Units     | Description                    |
-| -------- | ------ | --------- | ------------------------------ |
-| $G_{Na}$ | $12.8$ | $mS/cm^2$ | Maximal Na channel conductance |
+| Symbol   | Value | Units     | Description                    |
+| -------- | ----- | --------- | ------------------------------ |
+| $G_{Na}$ | 12.8  | $mS/cm^2$ | Maximal Na channel conductance |
 
 ### Sodium-calcium exchanger current
 
@@ -245,10 +243,10 @@ I_{nsK} &= 0.75  \cdot f_{Ca}  \cdot  \Phi_{K}(P_{nsK}, z_{K}, V_m, [K^+]_i, [K^
 \end{align}
 $$
 
-| Symbol        | Value                | Units | Description                                           |
-| ------------- | -------------------- | ----- | ----------------------------------------------------- |
-| $P_{ns,Na}$   | $1.75 \cdot 10^{-7}$ | cm/s  | Nonspecific channel current Na permeability           |
-| $P_{ns,K}$    | 0                    | cm/s  | Nonspecific channel current K permeability            |
+| Symbol         | Value                | Units | Description                                           |
+| -------------- | -------------------- | ----- | ----------------------------------------------------- |
+| $P_{ns,Na}$    | $1.75 \cdot 10^{-7}$ | cm/s  | Nonspecific channel current Na permeability           |
+| $P_{ns,K}$     | 0                    | cm/s  | Nonspecific channel current K permeability            |
 | $K_{m}^{nsCa}$ | 1.2                  | μM    | Ca2+ half-saturation constant for nonspecific current |
 
 ### Sodium-potassium ATPase (NKA) current
@@ -571,7 +569,7 @@ $$
 
 | Parameter          | Value  | Units | Description                          |
 | ------------------ | ------ | ----- | ------------------------------------ |
-| $k_{cat}^{MDH}$    | 126    | Hz    | Rate constant Oof MDH                |
+| $k_{cat}^{MDH}$    | 126    | Hz    | Rate constant of MDH                 |
 | $E_T^{MDH}$        | 154    | μM    | Activity of MDH                      |
 | $K_{H1}^{MDH}$     | 11.31  | nM    | Ionization constant                  |
 | $K_{H2}^{MDH}$     | 26.7   | mM    | Ionization constant                  |
@@ -794,29 +792,32 @@ $$
 
 ### Complex II (Succinate dehydrogenase, SDH)
 
-Succinate dehydrogenase uses a new, reversible formulation.
+New, reversible formulation.
 
 $$
 \begin{align}
 i_{OAA} &= \frac{K_{i, OAA}}{K_{i, OAA} + [OAA]} \\
 J_{SDH} &= k_{SDH} C2_{inhib} i_{OAA} ([SUC][Q]_n - [FUM][QH_2]_n / K_{eq}^{C2} )   \\
+K_{eq}^{C2} &= \exp(2(E_{m, Q}^{C2} - E_{m, SUC})/V_T)
 \end{align}
 $$
 
-| Parameter     | Value | Units             | Desc.                                |
-| ------------- | ----- | ----------------- | ------------------------------------ |
-| $k_{SDH}$     | 250   | 1 / (mM * minute) | Maximum rate of SDH                  |
-| $K_{i, OAA}$  | 0.150 | mM                | Inhibition constant for oxaloacetate |
-| $K_{eq}^{C2}$ | 89.51 | -                 | Equilibrium constant of complex II   |
+| Parameter       | Value | Units             | Desc.                                          |
+| --------------- | ----- | ----------------- | ---------------------------------------------- |
+| $k_{SDH}$       | 250   | 1 / (mM * minute) | Activity of SDH                                |
+| $K_{i, OAA}$    | 0.150 | mM                | Inhibition constant for oxaloacetate           |
+| $E_{m, Q}^{C2}$ | 100   | mV                | Midpoint potential of ubiquinone in complex II |
+| $E_{m, SUC}$    | 40    | mV                | Midpoint potential of succinate/fumarate pair  |
 
-### Complex III
+### Complex III (bc1 complex)
 
+Updated to semireverse mechanism.
 
 $$
 \begin{align}
 f_{hi} & = [H^+]_{i}  / 10^{-7}M   \\
 f_{hm} & = [H^+]_{m}   / 10^{-7}M  \\
-v_{1} &= v_{Q}^{C1} + J_{SDH}    \\
+v_{1} &= v_{QH_2}^{C1} + J_{SDH}    \\
 v_2 &= k_d([QH_2]_{n} - [QH_2]_{p})  \\
 k_{3} &= k_{03}K_{eq3}f_{hi} \\
 k_{-3} &= k_{03} \\
@@ -887,8 +888,6 @@ $$
 \end{align}
 $$
 
-
-
 | Parameter    | Value    | Unit  | Desc.                                                    |
 | ------------ | -------- | ----- | -------------------------------------------------------- |
 | $k_{03}$     | 1,666.63 | Hz/mM | Reverse rate constant for reaction 3                     |
@@ -950,7 +949,6 @@ v_{35} &= \rho_{C4}^\prime Yr  \cdot a_{23}  \\
 v_{36} &= \rho_{C4}^\prime (YO  \cdot a_{34} - YOH  \cdot a_{43})  \\
 v_{37} &= \rho_{C4}^\prime (YOH  \cdot a_{41} - Y  \cdot a_{14})  \\
 \rho_{C4}^\prime &= \rho_{C4} \cdot mt_{prot} \\
-V_e &= 3v_{34} + v_{35}  \\
 J_{O_2} &= v_{35}  \\
 J_{hRes}^{C4}  &= 8J_{O_2}  \\
 J_{hRes} &= J_{hRes}^{C1} + J_{hRes}^{C3} + J_{hRes}^{C4} \\
@@ -1031,7 +1029,7 @@ $$
 | ------------- | ----- | --------- | ------------------------------------- |
 | $k_1^{SOD}$   | 1200  | 1/(mM*ms) | Rate constant for EA -> EB            |
 | $k_3^{SOD}$   | 24    | 1/(mM*ms) | Rate constant for EB -> EC            |
-| $k_5^{SOD}$   | 0.24  | 1/s       | Rate constant for EC -> EA            |
+| $k_5^{SOD}$   | 0.24  | Hz        | Rate constant for EC -> EA            |
 | $K_{i}^{SOD}$ | 500   | μM        | Inhibition constant for H2O2          |
 | $E_{T}^{SOD}$ | 3     | μM        | Concentration of Cu,ZnSOD (cytosolic) |
 
@@ -1048,8 +1046,8 @@ $$
 | Parameter | Value | Unit | Desc.               |
 | --------- | ----- | ---- | ------------------- |
 | $E_T$     | 10    | μM   | GPX content         |
-| $\Phi_1$  | 5     | mM/s | Dalziel coefficient |
-| $\Phi_2$  | 75    | mM/s | Dalziel coefficient |
+| $\Phi_1$  | 5000  | μM/s | Dalziel coefficient |
+| $\Phi_2$  | 75000 | μM/s | Dalziel coefficient |
 
 ### Glutathione reductase (GR)
 
@@ -1068,7 +1066,7 @@ $$
 | $k_1^{GR}$     | 5     | Hz   | Catalytic constant of GR     |
 | $K_{GSSG}$     | 60    | μM   | Michaelis constant for GSSG  |
 | $K_{NADPH}$    | 15    | μM   | Michaelis constant for NADPH |
-| $\Sigma [GSH]$ | 1     | mM   | Cytosolic GSH pool           |
+| $\Sigma [GSH]$ | 1000  | μM   | Cytosolic GSH pool           |
 
 ### Inner mitochondrial anion channel (IMAC)
 
@@ -1080,16 +1078,16 @@ J_{tr}^{ROS} &= j \cdot g_{IMAC} \left( \Delta\Psi_m + V_T ln \left( \frac{[O_2^
 \end{align}
 $$
 
-| Parameter        | Value  | Unit         | Desc.                             |
-| ---------------- | ------ | ------------ | --------------------------------- |
-| a                | 0.001  | -            | Basal IMAC conductance            |
-| b                | 10000  | -            | Activation factor by superoxide   |
-| $K_{CC}$         | 10     | μM           | Activation constant by superoxide |
-| $G_L$            | 0.035  | μM * Hz / mV | Integral conductance for IMAC     |
-| $G_{max}$        | 3.9085 | μM * Hz / mV | Leak conductance of IMAC          |
-| $\kappa$         | -0.07  | 1/mV         | Steepness factor                  |
-| $\Delta\Psi_m^b$ | 4      | mV           | Potential at half saturation      |
-| j                | 0.5    | -            | Fraction of IMAC conductance      |
+| Parameter        | Value  | Unit          | Desc.                             |
+| ---------------- | ------ | ------------- | --------------------------------- |
+| a                | 0.001  | -             | Basal IMAC conductance            |
+| b                | 10000  | -             | Activation factor by superoxide   |
+| $K_{CC}$         | 10     | μM            | Activation constant by superoxide |
+| $G_L$            | 0.035  | μM / (mV * s) | Integral conductance for IMAC     |
+| $G_{max}$        | 3.9085 | μM / (mV * s) | Leak conductance of IMAC          |
+| $\kappa$         | -0.07  | 1/mV          | Steepness factor                  |
+| $\Delta\Psi_m^b$ | 4      | mV            | Potential at half saturation      |
+| j                | 0.5    | -             | Fraction of IMAC conductance      |
 
 ### ODEs for ROS transport and scavenging
 
@@ -1127,7 +1125,7 @@ $$
 
 | Parameter       | Value | Unit | Desc.               |
 | --------------- | ----- | ---- | ------------------- |
-| $V_{max}^{ANT}$ | 5     | mM/s | Maximal rate of ANT |
+| $V_{max}^{ANT}$ | 5000  | μM/s | Maximal rate of ANT |
 | $h_{ANT}$       | 0.5   | -    | Fraction of MMP     |
 
 ### Mitochondrial calcium uniporter (MCU)
@@ -1143,7 +1141,7 @@ $$
 
 | Parameter       | Value | Unit | Desc.                              |
 | --------------- | ----- | ---- | ---------------------------------- |
-| $V_{max}^{Uni}$ | 4.46  | mM/s | Maximal rate                       |
+| $V_{max}^{Uni}$ | 4460  | μM/s | Maximal rate                       |
 | $\Delta\Psi_0$  | 91    | mV   | Offset potential                   |
 | $K_{act}$       | 0.38  | μM   | Activation constant for calcium    |
 | $K_{trans}$     | 19    | μM   | Dissociation constant for calcium  |
@@ -1161,13 +1159,13 @@ f_{ca} &= \frac{[Ca^{2+}]_m}{[Ca^{2+}]_m + K_{Ca}^{NCLX}} \\
 \end{align}
 $$
 
-| Parameter        | Value   | Unit | Desc.                             |
-| ---------------- | ------- | ---- | --------------------------------- |
-| $V_{max}^{NCLX}$ | 0.04665 | mM/s | Maximal rate of NCLX              |
-| b                | 0.5     | -    | Fraction of MMP                   |
-| $K_{Na}^{NCLX}$  | 9.4     | mM   | Dissociation constant for sodium  |
-| $K_{Ca}^{NCLX}$  | 0.375   | μM   | Dissociation constant for calcium |
-| $n$              | 3       | -    | Cooperativity of NCLX                     |
+| Parameter        | Value | Unit | Desc.                             |
+| ---------------- | ----- | ---- | --------------------------------- |
+| $V_{max}^{NCLX}$ | 46.65 | μM/s | Maximal rate of NCLX              |
+| b                | 0.5   | -    | Fraction of MMP                   |
+| $K_{Na}^{NCLX}$  | 9400  | μM   | Dissociation constant for sodium  |
+| $K_{Ca}^{NCLX}$  | 0.375 | μM   | Dissociation constant for calcium |
+| $n$              | 3     | -    | Cooperativity of NCLX             |
 
 ### Mitochondrial proton leak
 
@@ -1179,4 +1177,4 @@ $$
 
 | Parameter | Value | Unit            | Desc.                                                 |
 | --------- | ----- | --------------- | ----------------------------------------------------- |
-| $g_{H}$   | 2     | mM / (Volt * s) | Ionic conductance of the inner mitochondrial membrane |
+| $g_{H}$   | 2     | μM / (mV * s) | Ionic conductance of the inner mitochondrial membrane |
