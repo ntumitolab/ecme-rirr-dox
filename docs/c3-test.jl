@@ -367,7 +367,7 @@ plot(xs, ys, xlabel="MMP (mV)", ylabel="Resp. Rate (mM/s)", label=["G" "R"])
 ys = [extract(sim_g, gsys.fracbLrd) extract(sim_r, rsys.fracbLrd) extract(sim_g, gsys.fracbHrd) extract(sim_r, rsys.fracbHrd)]
 plot(xs, ys, xlabel="MMP (mV)", ylabel="Reduced fraction", label=["G (bL)" "R (bL)" "G (bH)" "R (bH)"], line=[:solid :dash :solid :dash])
 
-#---
+# ROS generation rate: 0.01 ~ 0.025 mM/s
 ys = [extract(sim_g, gsys.vROSC3) extract(sim_r, rsys.vROSC3)]
 plot(xs, ys, xlabel="MMP (mV)", ylabel="ROS Rate (mM/s)", label=["G" "R"])
 

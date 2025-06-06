@@ -12,7 +12,7 @@ function c1_gauthier(; name=:c1gauthier,
         ET_C1 = 8.85mM      ## Activity of complex I
         dpsi_B_C1 = 50mV    ## Phase boundary potential
         ## Transition rates
-        K12_C1 = 6339.6Hz ## pH = 7
+        K12_C1 = 6.3396e11Hz/mM^2
         K21_C1 = 5Hz
         K56_C1 = 100Hz
         K65_C1 = 251190Hz ## pH = 7
