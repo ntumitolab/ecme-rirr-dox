@@ -461,17 +461,18 @@ sys = c1_markevich_s(; Q_n, QH2_n, nad, nadh, dpsi) |> mtkcompile
 markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi) |> mtkcompile
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi) |> mtkcompile
 
+# The parameter for ROS generation is adjusted to be comparable to ROS generation from complex III
 prob_s = SteadyStateProblem(sys, [
     sys.ET_C1 => 17μM,
-    sys.kf16_C1 => 2Hz / μM,
-    sys.kf17_C1 => 0.04Hz / μM,
+    sys.kf16_C1 => 20Hz / μM,
+    sys.kf17_C1 => 0.4Hz / μM,
 ])
 prob_m = SteadyStateProblem(markevich, [
     markevich.ET_C1 => 17μM,
-    markevich.kf16_C1 => 2Hz / μM,
-    markevich.kf17_C1 => 0.04Hz / μM,
+    markevich.kf16_C1 => 20Hz / μM,
+    markevich.kf17_C1 => 0.4Hz / μM,
 ])
-prob_g = SteadyStateProblem(gauthier, [gauthier.K42_C1 => 6.0318Hz / mM * 1000])
+prob_g = SteadyStateProblem(gauthier, [gauthier.K42_C1 => 6.0318Hz / mM * 10000])
 alg = DynamicSS(Rodas5P())
 ealg = EnsembleThreads()
 
