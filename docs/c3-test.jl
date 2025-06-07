@@ -14,7 +14,7 @@ function c3_gauthier(
     dpsi;
     MT_PROT=1,
     O2=6μM,
-    sox_m=0.001μM,
+    sox_m=0.1μM,
     h_i=exp10(-7) * Molar,
     h_m=exp10(-7.6) * Molar,
     ANTIMYCIN_BLOCK=0,
@@ -158,7 +158,7 @@ end
 function c3_semireverse(dpsi;
     MT_PROT=1,
     O2=6μM,
-    sox_m=0.001μM,
+    sox_m=0.1μM,
     h_i=exp10(-7) * Molar,
     h_m=exp10(-7.6) * Molar,
     ANTIMYCIN_BLOCK=0,

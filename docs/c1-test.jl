@@ -12,7 +12,7 @@ using ECMEDox: mM, μM, nM, iVT, mV, Molar, Hz, ms
 # Gauthier 2012 7-state QSSA model
 function c1_gauthier(; name=:c1gauthier,
     Q_n=1800μM, QH2_n=200μM, nad=500μM, nadh=500μM,
-    dpsi=150mV, O2=6μM, sox_m=0.001μM,
+    dpsi=150mV, O2=6μM, sox_m=0.1μM,
     h_i=exp10(-7) * Molar, h_m=exp10(-7.6) * Molar,
     C1_INHIB=1)
     @parameters begin
@@ -124,7 +124,7 @@ end
 function c1_markevich_full(; name=:c1markevich_full,
     Q_n=1.8mM, QH2_n=0.2mM,
     nad=500μM, nadh=500μM,
-    dpsi=150mV, O2=6μM, sox_m=0.001μM,
+    dpsi=150mV, O2=6μM, sox_m=0.1μM,
     h_i=exp10(-7) * Molar, h_m=exp10(-7.6) * Molar,
     DOX=0μM, ROTENONE_BLOCK=0)
     @parameters begin
@@ -280,7 +280,7 @@ end
 function c1_markevich_s(; name=:c1s,
     Q_n=1800μM, QH2_n=200μM,
     nad=2500μM, nadh=500μM,
-    dpsi=150mV, O2=6μM, sox_m=0.001μM,
+    dpsi=150mV, O2=6μM, sox_m=0.1μM,
     h_i=exp10(-7) * Molar, h_m=exp10(-7.6) * Molar,
     DOX=0μM, ROTENONE_BLOCK=0, MT_PROT=1)
 
@@ -559,11 +559,12 @@ plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" 
 
 #---
 ys = stack(extract.(Ref(sim_m), [markevich.FMN, markevich.FMNsq, markevich.FMNH, markevich.FMN_NAD, markevich.FMNH_NADH]), dims=2)
-plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH"], legend=:topleft, title="M model")
+pl1 = plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH"], legend=:topleft, title="M model")
 
-#---
 ys = stack(extract.(Ref(sim_s), [sys.FMN, sys.FMNsq, sys.FMNH, sys.FMN_NAD, sys.FMNH_NADH]), dims=2)
-plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH"] , title="Simp model")
+pl2 = plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH"] , title="Simp model")
+
+plot(pl1, pl2)
 
 # ## Varying Q
 qh2range = 10μM:10μM:1990μM
@@ -597,6 +598,6 @@ ys = stack(extract.(Ref(sim_s), [sys.Q_C1, sys.SQ_C1, sys.QH2_C1]), dims=2)
 plot(xs, ys, xlabel="QH2 (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1"], legend=:left)
 
 #---
-@unpack C1_1, C1_2, C1_3, C1_4, C1_5, C1_6, C1_7 = gauthier
+@unpack C1_1, C1_3, C1_4, C1_5, C1_6, C1_7 = gauthier
 ys = stack(extract.(Ref(sim_g), [C1_3, C1_4]), dims=2)
-plot(xs, ys, xlabel="QH2 (μM)", ylabel="Conc (μM)", label=["C1_3" "C1_4"], legend=:right, lw=1.5)
+plot(xs, ys, xlabel="QH2 (μM)", ylabel="Conc (μM)", label=["C1_3" "C1_4"], lw=1.5)
