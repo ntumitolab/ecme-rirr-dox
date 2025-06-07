@@ -15,6 +15,7 @@ u0 = build_u0(sys)
 sts = unknowns(sys)
 alg = KenCarp47()
 prob = ODEProblem(sys, u0, tend)
+
 cb = build_stim_callbacks(sys.iStim, tend)
 @time sol = solve(prob, alg; reltol=1e-6, abstol=1e-6, progress=true, callback=cb)
 
