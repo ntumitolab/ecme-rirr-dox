@@ -119,7 +119,7 @@ function c1_gauthier(; name=:c1gauthier,
     return System(eqs, t; name)
 end
 
-# Markevich 2015 mass action model
+# Markevich 2015 mass action law model
 # https://pmc.ncbi.nlm.nih.gov/articles/PMC4426091/
 function c1_markevich_full(; name=:c1markevich_full,
     Q_n=1.8mM, QH2_n=0.2mM,
@@ -277,7 +277,7 @@ function c1_markevich_full(; name=:c1markevich_full,
 end
 
 # Simplified Markevich complex I model
-function c1_markevich_s(; name=:c1q,
+function c1_markevich_s(; name=:c1s,
     Q_n=1800μM, QH2_n=200μM,
     nad=2500μM, nadh=500μM,
     dpsi=150mV, O2=6μM, sox_m=0.001μM,

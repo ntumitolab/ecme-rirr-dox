@@ -25,6 +25,7 @@ for i in sts
 end
 
 # Citric acid cycle metabolites
+# Dominated by citrate and isocitrate
 @unpack cit, isoc, oaa, akg, scoa, suc, fum, mal = sys
 plot(sol, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal], legend=:right, title="CAC metabolites") |> PNG
 
@@ -33,4 +34,17 @@ plot(sol, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal], legend=:right, title=
 pl_q = plot(sol, idxs=[Q_n + Q_p, SQn, QH2_n + QH2_p], title="Q cycle", legend=:left, xlabel="Time (ms)", ylabel="Conc. (μM)") |> PNG
 
 #---
+pl_q = plot(sol, idxs=[fes_ox, fes_rd, cytc_ox, cytc_rd], title="Q cycle (downstream)", legend=:left, xlabel="Time (ms)", ylabel="Conc. (μM)") |> PNG
+
+#---
 plot(sol, idxs = [sys.vHresC1, sys.vHresC3, sys.vHresC4])
+
+#---
+plot(sol, idxs = [sys.sox_i, sys.sox_m])
+
+# complex III
+plot(sol, idxs = [sys.vROSC1, sys.vROSC3])
+
+plot(sol, idxs=100 * sys.vROS / (sys.vO2 + sys.vROS), title="Shunt")
+
+plot(sol, idxs = [sys.dpsi])

@@ -298,7 +298,7 @@ function c3_semireverse(dpsi;
     ## bL- + O2 + Qp = bL + O2- + Qp
     k10ox = K010_C3 * KEQ10_OX_C3 * er4
     k10rd = K010_C3 * KEQ10_RD_C3 * er4
-    km10 = K010_C3 * el4
+    km10 = K010_C3 * el4 * 0 ## Disable reverse reaction
     fq = UQ / Q_T
     v10ox = fq * (k10ox * O2 * blr_bho - km10 * sox_m * blo_bho)
     v10rd = fq * (k10rd * O2 * blr_bhr - km10 * sox_m * blo_bhr)
