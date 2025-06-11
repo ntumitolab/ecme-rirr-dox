@@ -350,8 +350,7 @@ gsys = c3_gauthier(;dpsi, cytc_ox, cytc_rd, UQ, UQH2, sox_m) |> mtkcompile
 rsys = c3_semireverse(;dpsi, cytc_ox, cytc_rd, UQ, UQH2, sox_m) |> mtkcompile
 #---
 prob_g = SteadyStateProblem(gsys, [])
-prob_r = SteadyStateProblem(rsys, [rsys.K010_C3 => 28.33Hz / mM, rsys.K010_C3 => 100Hz / mM, rsys.K04_C3 => 60Hz / mM])
-
+prob_r = SteadyStateProblem(rsys, [rsys.K010_C3 => 4Hz / mM, rsys.K011_C3 => 100Hz / mM, rsys.K04_C3 => 50Hz / mM])
 alg = DynamicSS(Rodas5P())
 ealg = EnsembleThreads()
 extract(sim, k) = map(s -> s[k], sim)
@@ -377,8 +376,11 @@ ys = [extract(sim_g, gsys.fracbLrd) extract(sim_r, rsys.fracbLrd) extract(sim_g,
 plot(xs, ys, xlabel="MMP (mV)", ylabel="Reduced fraction", label=["G (bL)" "R (bL)" "G (bH)" "R (bH)"], line=[:solid :dash :solid :dash])
 
 # ROS generation rate: 0.005 ~ 0.020 mM/s
-ys = [extract(sim_g, gsys.vROSC3) extract(sim_r, rsys.vROSC3) extract(sim_b, bsys.vROSC3)]
-plot(xs, ys, xlabel="MMP (mV)", ylabel="ROS Rate (mM/s)", label=["G" "R" "B"])
+ys = [extract(sim_g, gsys.vROSC3) extract(sim_r, rsys.vROSC3)]
+plot(xs, ys, xlabel="MMP (mV)", ylabel="ROS Rate (mM/s)", label=["G" "R"])
+
+#---
+[extract(sim_g, gsys.SQp) extract(sim_r, rsys.SQp)]
 
 # ## Varying UQH2
 qh2range = 10μM:10μM:3990μM
@@ -390,22 +392,21 @@ end
 
 eprob_g = EnsembleProblem(prob_g; prob_func=alter_qh2)
 eprob_r = EnsembleProblem(prob_r; prob_func=alter_qh2)
-eprob_b = EnsembleProblem(prob_b; prob_func=alter_qh2)
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
 @time sim_r = solve(eprob_r, alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
-@time sim_b = solve(eprob_b, alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
 
 #---
 xs = qh2range ./ 4000μM .* 100
-ys = [extract(sim_g, gsys.vHresC3) extract(sim_r, rsys.vHresC3) extract(sim_b, bsys.vHresC3)]
-plot(xs, ys, xlabel="QH2 (%)", ylabel="Resp. Rate (mM/s)", label=["G" "R" "B"])
+ys = [extract(sim_g, gsys.vHresC3) extract(sim_r, rsys.vHresC3)]
+plot(xs, ys, xlabel="QH2 (%)", ylabel="Resp. Rate (mM/s)", label=["G" "R"])
 
 #---
 ys = [extract(sim_g, gsys.fracbLrd) extract(sim_r, rsys.fracbLrd) extract(sim_g, gsys.fracbHrd) extract(sim_r, rsys.fracbHrd)]
 plot(xs, ys, xlabel="QH2 (%)", ylabel="Reduced fraction", label=["G (bL)" "R (bL)" "G (bH)" "R (bH)"], line=[:solid :dash :solid :dash])
 
 #---
-ys = [extract(sim_g, gsys.vROSC3) extract(sim_r, rsys.vROSC3) extract(sim_b, bsys.vROSC3)]
-plot(xs, ys, xlabel="QH2 (%)", ylabel="ROS Rate (mM/s)", label=["G" "R" "B"])
+ys = [extract(sim_g, gsys.vROSC3) extract(sim_r, rsys.vROSC3)]
+plot(xs, ys, xlabel="QH2 (%)", ylabel="ROS Rate (mM/s)", label=["G" "R"])
 
-ys = [extract(sim_g, gsys.SQp) extract(sim_b, bsys.SQp)]
+#---
+ys = [extract(sim_g, gsys.SQp) extract(sim_r, rsys.SQp)]
