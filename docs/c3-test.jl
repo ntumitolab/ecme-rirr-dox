@@ -256,17 +256,15 @@ function c3_semireverse(;
 
     ## QH2 + FeS + bL = Q + FeS- + bL- + 2Ho+
     ## Lumped v3 and v4
-    qh2p = QH2_p
-    qp = Q_p
-    FeS = fes_ox / (fes_ox + fes_rd) * (1 - MYXOTHIAZOLE_BLOCK)
-    FeSm = fes_rd / (fes_ox + fes_rd) * (1 - MYXOTHIAZOLE_BLOCK)
+    FeS = fes_ox / C3_CONC * (1 - MYXOTHIAZOLE_BLOCK)
+    FeSm = fes_rd / C3_CONC * (1 - MYXOTHIAZOLE_BLOCK)
     el4 = exp(-iVT * α_C3 * δ₁_C3 * dpsi)
     er4 = exp(iVT * α_C3 * (1 - δ₁_C3) * dpsi)
     k4ox = K04_C3 * KEQ4_OX_C3 * el4
     k4rd = K04_C3 * KEQ4_RD_C3 * el4
     km4 = K04_C3 * er4 * fHi^2
-    v4ox = k4ox * qh2p * FeS * blo_bho - km4 * qp * FeSm * blr_bho
-    v4rd = k4rd * qh2p * FeS * blo_bhr - km4 * qp * FeSm * blr_bhr
+    v4ox = k4ox * QH2_p * FeS * blo_bho - km4 * Q_p * FeSm * blr_bho
+    v4rd = k4rd * QH2_p * FeS * blo_bhr - km4 * Q_p * FeSm * blr_bhr
 
     ## bL- + bH = bL + bH-
     el6 = exp(-iVT * β_C3 * δ₂_C3 * dpsi)
