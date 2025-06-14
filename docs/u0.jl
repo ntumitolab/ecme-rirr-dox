@@ -14,7 +14,7 @@ bcl = 1.0second
 u0 = build_u0(sys)
 sts = unknowns(sys)
 alg = KenCarp47()
-prob = ODEProblem(sys, u0, tend)
+prob = ODEProblem(sys, u0, tend, [sys.kf17_C1 => 0.02Hz / μM, sys.K010_C3 => 5Hz / mM, sys.K011_C3 => 22000Hz / mM, sys.KCAT_IDH => 43Hz])
 
 cb = build_stim_callbacks(sys.iStim, tend)
 @time sol = solve(prob, alg; reltol=1e-6, abstol=1e-6, progress=true, callback=cb)
@@ -40,18 +40,13 @@ pl_q = plot(sol, idxs=[fes_ox, fes_rd, cytc_ox, cytc_rd], title="Q cycle (downst
 plot(sol, idxs = [sys.vHresC1, sys.vHresC3, sys.vHresC4], ylims=(0, 3))
 
 #---
-plot(sol, idxs = [sys.sox_i, sys.sox_m])
+plot(sol, idxs = [sys.sox_i, sys.sox_m], tspan=(900e3, 910e3))
 
 # ROS
-plot(sol, idxs = [sys.vROSC1, sys.vROSC3])
+plot(sol, idxs = [sys.vROSIf, sys.vROSIq, sys.vROSC3])
 
 # O2 Shunt
 plot(sol, idxs=100 * sys.vROS / (sys.vO2 + sys.vROS), title="O2 Shunt")
 
 #---
 plot(sol, idxs = [sys.dpsi])
-
-#---
-plot(sol, idxs=sys.sox_i)
-
-sol[sys.ΔVROS]

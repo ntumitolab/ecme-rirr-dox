@@ -55,7 +55,7 @@ function get_ros_sys(; dpsi, sox_m, nadph_i=75μM, V_MITO_V_MYO=0.615, name=:ros
         G_MAX_IMAC = GL_IMAC * 100      # Maximal conductance of IMAC (Zhou, 2009)
         k_IMAC = 0.07 / mV             # Steepness factor of IMAC (some papers say it's +0.07/mV)
         DPSI_OFFSET_IMAC = 4mV          # Potential at half saturation
-        J_IMAC = 0.1                    # Fraction of superoxide in IMAC conductance
+        J_IMAC = 0.5                    # Fraction of superoxide in IMAC conductance
     end
 
     @variables begin

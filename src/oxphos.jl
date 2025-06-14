@@ -80,7 +80,7 @@ function get_etc_sys(;
         kf16_C1 = 2Hz / μM          ## SOX production rate from If site
         rKEQ16_C1 = exp(-iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
         kb16_C1 = kf16_C1 * rKEQ16_C1
-        kf17_C1 = 0.04Hz / μM       ## SOX production rate from Iq site
+        kf17_C1 = 0.02Hz / μM       ## SOX production rate from Iq site
         rKEQ17_C1 = exp(-iVT * (Em_O2_SOX - Em_Q_SQ_C1))
         kb17_C1 = kf17_C1 * rKEQ17_C1
     end
@@ -291,8 +291,8 @@ function get_etc_sys(;
         KI_DOX_C3 = 185μM  ## DOX inhibition concentration (IC50) on complex III
         Q_T = 4mM        ## Total CoQ pool
         EmQ_C3 = +60mV   ## Ubiquinone redox potential at complex III Qo
-        EmSQp_QH2p = +290mV
-        EmQp_SQp = -170mV
+        EmSQp_QH2p = +340mV
+        EmQp_SQp = -220mV ## Guillaud 2014
         EmQn_SQn = +50mV
         EmSQn_QH2n = +150mV
         EmbL_bHo = -40mV
@@ -311,7 +311,7 @@ function get_etc_sys(;
         KD_Q = 22000Hz
         ## bL- + bH = bL + bH-
         K06_C3 = 166.67Hz
-        KEQ6_C3 = exp(iVT * (EmbH_bLo - EmbL_bHo)) ## +70mV
+        KEQ6_C3 = exp(iVT * (EmbH_bLo - EmbL_bHo)) ## +60mV
         ## bH- + Q = bH + Q-
         K07_OX_C3 = 13.33Hz / mM
         K07_RD_C3 = 1.67Hz / mM
@@ -326,11 +326,11 @@ function get_etc_sys(;
         K09_C3 = 832.48Hz / mM
         KEQ9_C3 = exp(iVT * (Emcytc1 - EmFeS))  ## -40mV
         ## bL- + Q = bL + Q-
-        K010_C3 = 28.33Hz / mM
+        K010_C3 = 5Hz / mM ## Adjusted from 28.33Hz / mM
         KEQ10_OX_C3 = exp(iVT * (EmQp_SQp - EmbL_bHo)) ## -130mV
         KEQ10_RD_C3 = exp(iVT * (EmQp_SQp - EmbL_bHr)) ## -70mV
         ## Q- + O2 = Q + O2-
-        K011_C3 = 100Hz / mM
+        K011_C3 = 22000Hz / mM  ## Guillaud 2014
         ## c1_2+ + c_3+ = c1_3+ + c_2+
         K33_C3 = 2469.13Hz / mM
         KEQ33_C3 = exp(iVT * (Emcytc - Emcytc1)) ## +20mV
