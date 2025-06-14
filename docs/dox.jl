@@ -21,8 +21,8 @@ stim = build_stim_callbacks(sys.iStim, tend)
 opts = (; reltol=1e-6, abstol=1e-6, progress=true, callback=stim)
 prob = ODEProblem(sys, u0, tend)
 
-# The collapse of MMP is between 261uM and 263uM of DOX
-doxrange = 260μM:1μM:270μM
+# The collapse of MMP is between 290uM and 300uM of DOX
+doxrange = 290μM:1μM:300μM
 prob_func = (prob, i, repeat) -> begin
     prob.ps[DOX] = doxrange[i]
     prob
@@ -78,8 +78,7 @@ plot!(fig, ylabel="Percentage (%)", xlabel="Time (s)", legend=:right) |> PNG
 plot(sim[end], idxs=[Q_n + Q_p, SQn, QH2_n+QH2_p], title="Q cycle ", legend=:right) |> PNG
 
 #---
-@unpack cit, isoc, oaa, akg, scoa, suc, fum, mal = sys
-plot(sim[end], idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal], title="TCA cycle ", legend=:right) |> PNG
-
+plot(sim[end], idxs=[fes_ox, fes_rd, cytc_ox, cytc_rd], title="Q cycle (downstream)", legend=:right) |> PNG
 #---
-plot(sim[end], idxs=[sys.nadh_m], legend=:right) |> PNG
+@unpack cit, isoc, oaa, akg, scoa, suc, fum, mal, nadh_m = sys
+plot(sim[end], idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal, nadh_m], title="TCA cycle ", legend=:right) |> PNG

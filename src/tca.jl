@@ -77,9 +77,9 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m=exp10(-7.6) * Molar, ca_
         rKEQ_ACO = inv(2.22)
 
         ## IDH3 (Isocitrate dehydrogenase, NADH-producing)
-        KI_NADH_IDH = 190μM
-        KCAT_IDH = 50Hz
+        KCAT_IDH = 43Hz ## 50Hz
         ET_IDH = 109μM
+        KI_NADH_IDH = 190μM
         KH1_IDH = 10nM
         KH2_IDH = 900nM
         KM_ISOC_IDH = 1520μM
@@ -115,7 +115,7 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m=exp10(-7.6) * Molar, ca_
         KH2_MDH = 26.7mM
         KH3_MDH = 6.68E-3nM
         KH4_MDH = 5.62nM
-        K_OFFSET_MDH = 3.99E-2
+        K_OFFSET_MDH = 0.0399
         KM_MAL_MDH = 1493μM
         KI_OAA_MDH = 3.1μM
         KM_NAD_MDH = 224.4μM

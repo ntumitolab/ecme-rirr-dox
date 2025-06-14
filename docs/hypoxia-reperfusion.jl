@@ -53,3 +53,6 @@ plot(sol, idxs=sys.nadh_m, title="NADH (mito)")
 
 #---
 plot(sol, idxs=[sys.vROSC1, sys.vROSC3])
+
+#---
+plot(sol, idxs=[sys.sox_m, sys.sox_i])

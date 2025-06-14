@@ -22,7 +22,7 @@ include("oxphos.jl")
 include("transmito.jl")
 include("u0.jl")
 
-function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80μAcm⁻², tstart=0second, tend=10second, duty=0.5ms)
+function build_model(; name=:ecmesys, use_mg=false, simplify=true, bcl=1second, istim=-80μAcm⁻², tstart=0second, tend=10second, duty=0.5ms)
     @parameters begin
         iStim(t) = 0μAcm⁻²          # Stimulation current
         DOX(t) = 0mM                # Doxorubicin concentration
@@ -153,4 +153,4 @@ function build_model(; name, use_mg=false, simplify=true, bcl=1second, istim=-80
     return sys
 end # build_model()
 
-end # Module
+end # module ECMEDox
