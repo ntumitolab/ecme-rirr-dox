@@ -10,8 +10,8 @@ using ECMEDox: mM, μM, iVT, mV, Molar, Hz, ms, minute
 
 ## complex III and the Q cycle from Gauthier, 2013
 ## Adapted from Demin, 2001
-function c3_gauthier(
-    dpsi;
+function c3_gauthier(;
+    dpsi=150mV,
     MT_PROT=1,
     O2=6μM,
     sox_m=0.001μM,
@@ -155,7 +155,8 @@ function c3_gauthier(
 end
 
 ## Semireverse bc1 complex model adapted from Gauthier, 2013
-function c3_semireverse(dpsi;
+function c3_semireverse(;
+    dpsi=150mV,
     MT_PROT=1,
     O2=6μM,
     sox_m=0.001μM,
@@ -172,19 +173,19 @@ function c3_semireverse(dpsi;
     @parameters begin
         rhoC3 = 325μM    ## Complex III activity
         Q_T = 4mM        ## Total CoQ pool
-        EmQ_C3 = +100mV  ## Ubiquinone redox potential at complex III
+        EmQ_C3 = +60mV   ## Ubiquinone redox potential at complex III Qo
         EmSQp_QH2p = +290mV
         EmQp_SQp = -170mV
-        EmQn_SQn = +70mV
-        EmSQn_QH2n = +170mV
-        EmbL_bHo = -30mV
+        EmQn_SQn = +50mV
+        EmSQn_QH2n = +150mV
+        EmbL_bHo = -40mV
         EmbL_bHr = EmbL_bHo - 60mV
-        EmbH_bLo = +40mV
+        EmbH_bLo = +20mV
         EmbH_bLr = EmbH_bLo - 60mV
         EmFeS = +280mV
-        Emcytc1 = +240mV
+        Emcytc1 = +245mV
         EmO2 = -160mV
-        Emcytc = +260mV
+        Emcytc = +255mV
         ## QH2 + FeS + bL = Q + FeS- + bL- + 2Ho+
         K04_C3 = 50.67Hz / mM
         KEQ4_OX_C3 = exp(iVT * (EmFeS + EmbL_bHo - 2EmQ_C3))
@@ -205,10 +206,12 @@ function c3_semireverse(dpsi;
         ## FeS- + c1_3+ = FeS + c1_2+
         K09_C3 = 832.48Hz / mM
         KEQ9_C3 = exp(iVT * (Emcytc1 - EmFeS))  ## -40mV
-        ## bL- + O2 + Q = bL + O2- + Q
+        ## bL- + Q = bL + Q-
         K010_C3 = 28.33Hz / mM
-        KEQ10_OX_C3 = exp(iVT * (EmO2 - EmbL_bHo)) ## -130mV
-        KEQ10_RD_C3 = exp(iVT * (EmO2 - EmbL_bHr)) ## -70mV
+        KEQ10_OX_C3 = exp(iVT * (EmQp_SQp - EmbL_bHo)) ## -130mV
+        KEQ10_RD_C3 = exp(iVT * (EmQp_SQp - EmbL_bHr)) ## -70mV
+        ## Q- + O2 = Q + O2-
+        K011_C3 = 100Hz / mM
         ## c1_2+ + c_3+ = c1_3+ + c_2+
         K33_C3 = 2469.13Hz / mM
         KEQ33_C3 = exp(iVT * (Emcytc - Emcytc1)) ## +20mV
@@ -224,6 +227,7 @@ function c3_semireverse(dpsi;
         QH2_p(t)
         Q_p(t)
         SQn(t) = 0
+        SQp(t) = 0
         fes_ox(t) = C3_CONC
         fes_rd(t) ## Conserved
         cytc1_ox(t) = C3_CONC
@@ -251,17 +255,16 @@ function c3_semireverse(dpsi;
     fHm = h_m * inv(1E-7Molar)
 
     ## QH2 + FeS + bL = Q + FeS- + bL- + 2Ho+
-    qh2p = QH2_p * (1 - MYXOTHIAZOLE_BLOCK)
-    qp = Q_p * (1 - MYXOTHIAZOLE_BLOCK)
-    FeS = fes_ox / (fes_ox + fes_rd)
-    FeSm = fes_rd / (fes_ox + fes_rd)
+    ## Lumped v3 and v4
+    FeS = fes_ox / C3_CONC * (1 - MYXOTHIAZOLE_BLOCK)
+    FeSm = fes_rd / C3_CONC * (1 - MYXOTHIAZOLE_BLOCK)
     el4 = exp(-iVT * α_C3 * δ₁_C3 * dpsi)
     er4 = exp(iVT * α_C3 * (1 - δ₁_C3) * dpsi)
     k4ox = K04_C3 * KEQ4_OX_C3 * el4
     k4rd = K04_C3 * KEQ4_RD_C3 * el4
     km4 = K04_C3 * er4 * fHi^2
-    v4ox = k4ox * qh2p * FeS * blo_bho - km4 * qp * FeSm * blr_bho
-    v4rd = k4rd * qh2p * FeS * blo_bhr - km4 * qp * FeSm * blr_bhr
+    v4ox = k4ox * QH2_p * FeS * blo_bho - km4 * Q_p * FeSm * blr_bho
+    v4rd = k4rd * QH2_p * FeS * blo_bhr - km4 * Q_p * FeSm * blr_bhr
 
     ## bL- + bH = bL + bH-
     el6 = exp(-iVT * β_C3 * δ₂_C3 * dpsi)
@@ -295,13 +298,15 @@ function c3_semireverse(dpsi;
     ## cytc1_2+  + cytc_3+ = cytc1_3+  + cytc_2+
     v33 = K33_C3 * (KEQ33_C3 * cytc1_rd * cytc_ox - cytc1_ox * cytc_rd)
 
-    ## bL- + O2 + Qp = bL + O2- + Qp
+    ## bL- + Qp = bL + Qp-
     k10ox = K010_C3 * KEQ10_OX_C3 * er4
     k10rd = K010_C3 * KEQ10_RD_C3 * er4
     km10 = K010_C3 * el4
-    fq = UQ / Q_T
-    v10ox = fq * (k10ox * O2 * blr_bho - km10 * sox_m * blo_bho)
-    v10rd = fq * (k10rd * O2 * blr_bhr - km10 * sox_m * blo_bhr)
+    v10ox = k10ox * Q_p * blr_bho - km10 * SQp * blo_bho
+    v10rd = k10rd * Q_p * blr_bhr - km10 * SQp * blo_bhr
+
+    ## Qp- + O2 = Qp + O2-
+    v11 = K011_C3 * SQp * O2
 
     eqs = [
         C3_CONC ~ blo_bho + blr_bho + blo_bhr + blr_bhr,
@@ -315,14 +320,15 @@ function c3_semireverse(dpsi;
         fracbHrd ~ (blo_bhr + blr_bhr) / C3_CONC,
         ## D(UQH2) ~ dQH2n + dQH2p,
         D(SQn) ~ v7ox + v7rd - v8ox - v8rd,
-        D(blo_bho) ~ v7ox + v8ox - v4ox,
-        D(blr_bho) ~ v4ox + v7rd + v8rd - v6,
-        D(blo_bhr) ~ v6 - v4rd - v7ox - v8ox,
-        ## D(blr_bhr) = v4rd - v7rd - v8rd
+        D(SQp) ~ v10ox + v10rd - v11,
+        D(blo_bho) ~ v7ox + v8ox - v4ox + v10ox,
+        D(blr_bho) ~ v4ox + v7rd + v8rd - v6 - v10ox,
+        D(blo_bhr) ~ v6 - v4rd - v7ox - v8ox + v10rd,
+        ## D(blr_bhr) = v4rd - v7rd - v8rd - v10rd
         D(fes_ox) ~ v9 - v4ox - v4rd,
         D(cytc1_ox) ~ v33 - v9,
         vHresC3 ~ v4ox + v4rd,
-        vROSC3 ~ v10ox + v10rd,
+        vROSC3 ~ v11,
     ]
     return System(eqs, t; name)
 end
@@ -334,15 +340,15 @@ end
     dpsi = 150mV
     cytc_ox = 208μM
     cytc_rd = 325μM - cytc_ox
+    sox_m = 0.1μM
 end
 
 #---
-gsys = c3_gauthier(dpsi; cytc_ox, cytc_rd, UQ, UQH2) |> mtkcompile
-rsys = c3_semireverse(dpsi; cytc_ox, cytc_rd, UQ, UQH2) |> mtkcompile
+gsys = c3_gauthier(;dpsi, cytc_ox, cytc_rd, UQ, UQH2, sox_m) |> mtkcompile
+rsys = c3_semireverse(;dpsi, cytc_ox, cytc_rd, UQ, UQH2, sox_m) |> mtkcompile
 #---
 prob_g = SteadyStateProblem(gsys, [])
-prob_r = SteadyStateProblem(rsys, [rsys.K010_C3 => 1400Hz / mM, rsys.EmQ_C3 => 73mV, rsys.K04_C3 => 70Hz / mM])
-
+prob_r = SteadyStateProblem(rsys, [rsys.K010_C3 => 4Hz / mM, rsys.K011_C3 => 100Hz / mM, rsys.K04_C3 => 50Hz / mM])
 alg = DynamicSS(Rodas5P())
 ealg = EnsembleThreads()
 extract(sim, k) = map(s -> s[k], sim)
@@ -367,9 +373,12 @@ plot(xs, ys, xlabel="MMP (mV)", ylabel="Resp. Rate (mM/s)", label=["G" "R"])
 ys = [extract(sim_g, gsys.fracbLrd) extract(sim_r, rsys.fracbLrd) extract(sim_g, gsys.fracbHrd) extract(sim_r, rsys.fracbHrd)]
 plot(xs, ys, xlabel="MMP (mV)", ylabel="Reduced fraction", label=["G (bL)" "R (bL)" "G (bH)" "R (bH)"], line=[:solid :dash :solid :dash])
 
-# ROS generation rate: 0.01 ~ 0.025 mM/s
+# ROS generation rate: 0.005 ~ 0.020 mM/s
 ys = [extract(sim_g, gsys.vROSC3) extract(sim_r, rsys.vROSC3)]
 plot(xs, ys, xlabel="MMP (mV)", ylabel="ROS Rate (mM/s)", label=["G" "R"])
+
+#---
+[extract(sim_g, gsys.SQp) extract(sim_r, rsys.SQp)]
 
 # ## Varying UQH2
 qh2range = 10μM:10μM:3990μM
@@ -380,9 +389,8 @@ alter_qh2 = (prob, i, repeat) -> begin
 end
 
 eprob_g = EnsembleProblem(prob_g; prob_func=alter_qh2)
-@time sim_g = solve(eprob_g, alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
-
 eprob_r = EnsembleProblem(prob_r; prob_func=alter_qh2)
+@time sim_g = solve(eprob_g, alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
 @time sim_r = solve(eprob_r, alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
 
 #---
@@ -397,3 +405,6 @@ plot(xs, ys, xlabel="QH2 (%)", ylabel="Reduced fraction", label=["G (bL)" "R (bL
 #---
 ys = [extract(sim_g, gsys.vROSC3) extract(sim_r, rsys.vROSC3)]
 plot(xs, ys, xlabel="QH2 (%)", ylabel="ROS Rate (mM/s)", label=["G" "R"])
+
+#---
+ys = [extract(sim_g, gsys.SQp) extract(sim_r, rsys.SQp)]

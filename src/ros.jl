@@ -53,7 +53,7 @@ function get_ros_sys(; dpsi, sox_m, nadph_i=75μM, V_MITO_V_MYO=0.615, name=:ros
         KCC_SOX_IMAC = 10μM             # Activation constant by cytoplasmic superoxide of IMAC
         GL_IMAC = 3.5E-8mM / ms / mV    # Leak conductance of IMAC (Zhou, 2009)
         G_MAX_IMAC = GL_IMAC * 100      # Maximal conductance of IMAC (Zhou, 2009)
-        k_IMAC = -0.07 / mV             # Steepness factor of IMAC (some papers say it's +0.07/mV)
+        k_IMAC = 0.07 / mV             # Steepness factor of IMAC (some papers say it's +0.07/mV)
         DPSI_OFFSET_IMAC = 4mV          # Potential at half saturation
         J_IMAC = 0.5                    # Fraction of superoxide in IMAC conductance
     end
@@ -84,7 +84,7 @@ function get_ros_sys(; dpsi, sox_m, nadph_i=75μM, V_MITO_V_MYO=0.615, name=:ros
         vTrROS ~ J_IMAC * gIMAC * (dpsi + ΔVROS),
         vIMAC ~ gIMAC * dpsi,
         gIMAC ~ fvIMAC * faIMAC,
-        fvIMAC ~ GL_IMAC + G_MAX_IMAC / (1 + exp(k_IMAC * (DPSI_OFFSET_IMAC - dpsi))),
+        fvIMAC ~ GL_IMAC + G_MAX_IMAC / (1 + exp(k_IMAC * (DPSI_OFFSET_IMAC + dpsi))),
         faIMAC ~ A_IMAC + B_IMAC * hil(sox_i, KCC_SOX_IMAC),
         vGR_i ~ ET_GR * K1_GR * hil(nadph_i, KM_NADPH_GR) * hil(gssg_i, KM_GSSG_GR),
         vGPX_i ~ ET_GPX * h2o2_i * gsh_i / (𝚽1_GPX * gsh_i + 𝚽2_GPX * h2o2_i),
