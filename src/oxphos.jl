@@ -204,19 +204,30 @@ function get_etc_sys(;
         ]
     end
 
-    # Reversible complex II (SDH)
+    # Reversible ping-pong complex II (SDH)
     @parameters begin
-        KI_DOX_C2 = 2000μM # DOX inhibition concentration (IC50) on complex II
-        K_C2 = 250 / (minute * mM)  # Reaction rate constant of SDH (complex II)
+        KI_DOX_C2 = 2000μM      ## DOX inhibition concentration (IC50) on complex II
+        VF_C2 = 250mM / minute  ## Reaction rate constant of SDH (complex II)
         KI_OAA_C2 = 150μM           # Inhibition constant for OAA
+        KM_SUC_C2 = 30μM
+        KM_Q_C2 =  0.3μM
+        KM_FUM_C2 = 25μM
+        KM_QH2_C2 = 1.5μM
         Em_FUM_SUC = 40mV           # midpoint potential of FUM -> SUC
         Em_Q_QH2 = 100mV            # midpoint potential of Q -> QH2
-        rKEQ_C2 = exp(-2iVT * (Em_Q_QH2 - Em_FUM_SUC)) # (Reverse) equlibrium constant of SDH
+        KEQ_C2 = exp(2iVT * (Em_Q_QH2 - Em_FUM_SUC)) # (Reverse) equlibrium constant of SDH
+        VR_C2 = VF_C2 * KM_FUM_C2 * KM_QH2_C2 / (KEQ_C2 * KM_SUC_C2 * KM_Q_C2)
     end
 
     @variables vSDH(t)
-    kc2 = K_C2 * hil(KI_OAA_C2, oaa) * hil(KI_DOX_C2, DOX, 3)
-    c2eqs = [vSDH ~ kc2 * (Q_n * suc - QH2_n * fum * rKEQ_C2)]
+    c2eqs = let
+        C2_INHIB = hil(KI_OAA_C2, oaa) * hil(KI_DOX_C2, DOX, 3)
+        A = suc / KM_SUC_C2
+        B = Q_n / KM_Q_C2
+        P = fum / KM_FUM_C2
+        Q = QH2_n / KM_QH2_C2
+        [vSDH ~ C2_INHIB * (VF_C2 * A * B - VR_C2 * P * Q) / (1 + A + B + P + Q)]
+    end
 
     # complex IV (CCO)
     @parameters begin
