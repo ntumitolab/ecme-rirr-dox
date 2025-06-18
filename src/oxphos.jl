@@ -337,7 +337,7 @@ function get_etc_sys(;
         K09_C3 = 832.48Hz / mM
         KEQ9_C3 = exp(iVT * (Emcytc1 - EmFeS))  ## -40mV
         ## bL- + Q = bL + Q-
-        K010_C3 = 5Hz / mM ## Adjusted from 28.33Hz / mM
+        K010_C3 = 3Hz / mM ## Adjusted from 28.33Hz / mM to keep o2 shunt < 2%
         KEQ10_OX_C3 = exp(iVT * (EmQp_SQp - EmbL_bHo)) ## -130mV
         KEQ10_RD_C3 = exp(iVT * (EmQp_SQp - EmbL_bHr)) ## -70mV
         ## Q- + O2 = Q + O2-
@@ -479,8 +479,8 @@ function get_c5_sys(; dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=
         PB_C5 = 3.373E-7Hz
         PC1_C5 = 9.651E-14Hz
         PC2_C5 = 4.585E-19Hz        # Magnus model
-        # Equilibrium constant of ATP synthase (ΔG=-30kJ/mol)
-        # 1.71E6mM in Magnus model was inconsistent to Caplan's model (1.71E6 Molar)
+        # Equilibrium constant of ATP synthase (ΔG ~ -30kJ/mol)
+        # 1.71E6 * mM in Magnus model was different from Caplan's model (1.71E6 Molar)
         KEQ_C5 = 2E5Molar
         G_H_MITO = 2E-6mM / ms / mV # Proton leak rate constant
         VMAX_ANT = 5E-3mM / ms      # Max rate of ANT, (Wei, 2011)
