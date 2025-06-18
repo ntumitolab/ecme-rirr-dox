@@ -39,7 +39,7 @@ pl_vm = vline!(pl_vm, [50.0second], lines=(:dash, :black), lab=false)
 pl_atp = plot(sol, idxs=atp_i/1000, lab=false, title="(C) ATP", xlabel="", ylabel="Conc. (mM)")
 pl_atp = vline!(pl_atp, [50.0second], lines=(:dash, :black), lab=false)
 @unpack cit, isoc, oaa, akg, scoa, suc, fum, mal = sys
-pl_cac = plot(sol, idxs=sys.suc, legend=false, title="(D) Succinate", xlabel="Time (ms)", ylabel="Conc. (μM)")
+pl_cac = plot(sol, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal], legend=:right, title="(D) CAC intermediates", xlabel="Time (ms)", ylabel="Conc. (μM)")
 pl_cac = vline!(pl_cac, [50.0second], lines=(:dash, :black), lab=false)
 @unpack Q_n, SQn, QH2_n, QH2_p, Q_p, fes_ox, fes_rd, cytc_ox, cytc_rd = sys
 pl_q = plot(sol, idxs=[Q_n, Q_p, SQn, QH2_n, QH2_p], title="(E) Q cycle", legend=:left, xlabel="Time (ms)", ylabel="Conc. (μM)")
@@ -56,3 +56,6 @@ plot(sol, idxs=[sys.vROSC1, sys.vROSIf, sys.vROSIq, sys.vROSC3], ylims=(0.0, 0.0
 
 #---
 plot(sol, idxs=[sys.sox_m, sys.sox_i])
+
+#---
+plot(sol, idxs=[sys.vSDH])
