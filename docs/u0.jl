@@ -8,8 +8,6 @@ using ECMEDox: second, mM, Hz, μM, build_stim_callbacks
 using Plots
 using DisplayAs: PNG
 
-
-[u0; sys.kf16_C1 => 2Hz / μM; sys.kf17_C1 => 0.02Hz / μM; sys.K010_C3 => 3Hz / mM; sys.KCAT_IDH => 43Hz]
 tend = 1000.0second
 bcl = 1.0second
 @named sys = build_model(; tend, bcl=0)
