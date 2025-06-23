@@ -366,9 +366,9 @@ function c3_repulsion(;
         EmbH_bLo = +20mV
         EmbH_bLr = EmbH_bLo - 60mV
         EmFeS = +280mV
-        Emcytc1 = +240mV
+        Emcytc1 = +245mV
         EmO2 = -160mV
-        Emcytc = +260mV
+        Emcytc = +265mV
         K03_C3 = 1666.63Hz / mM
         KEQ3_C3 = exp(iVT * (EmFeS - EmSQp_QH2p))
         K04_C3 = 50.67Hz / mM
@@ -499,7 +499,7 @@ nsys = c3_repulsion(;dpsi, cytc_ox, cytc_rd, UQ, UQH2, sox_m) |> mtkcompile
 rsys = c3_semireverse(;dpsi, cytc_ox, cytc_rd, UQ, UQH2, sox_m) |> mtkcompile
 #---
 prob_g = SteadyStateProblem(gsys, [])
-prob_n = SteadyStateProblem(nsys, [nsys.K03_C3 => 1666.63Hz / mM, nsys.])
+prob_n = SteadyStateProblem(nsys, [nsys.K03_C3 => 1E5Hz / mM, nsys.EmSQp_QH2p => +400mV])
 prob_r = SteadyStateProblem(rsys, [rsys.K010_C3 => 4Hz / mM, rsys.K011_C3 => 100Hz / mM, rsys.K04_C3 => 50Hz / mM])
 alg = DynamicSS(Rodas5P())
 ealg = EnsembleThreads()
@@ -527,24 +527,23 @@ plot(xs, ys, xlabel="MMP (mV)", ylabel="Resp. Rate (mM/s)", label=["G" "R" "New"
 plot(xs, extract(sim_n, nsys.b_00), label="bL(ox)-bH(ox)", title="New model")
 plot!(xs, extract(sim_n, nsys.b_10), label="bL(rd)-bH(ox)")
 plot!(xs, extract(sim_n, nsys.b_01), label="bL(ox)-bH(rd)")
-pl1 = plot!(xs, extract(sim_n, nsys.b_11), label="bL(rd)-bH(rd)")
+pl1 = plot!(xs, extract(sim_n, nsys.b_11), label="bL(rd)-bH(rd)", ylim=(0, 160))
 
 #---
-plot(xs, extract(sim_g, gsys.cytb_1), label="bL(ox)-bH(ox)", title = "G model")
-plot!(xs, extract(sim_g, gsys.cytb_2), label="bL(rd)-bH(ox)")
-plot!(xs, extract(sim_g, gsys.cytb_3), label="bL(ox)-bH(rd)")
-pl2 = plot!(xs, extract(sim_g, gsys.cytb_4), label="bL(rd)-bH(rd)")
+plot(xs, extract(sim_r, rsys.blo_bho), label="bL(ox)-bH(ox)", title = "R model")
+plot!(xs, extract(sim_r, rsys.blr_bho), label="bL(rd)-bH(ox)")
+plot!(xs, extract(sim_r, rsys.blo_bhr), label="bL(ox)-bH(rd)")
+pl2 = plot!(xs, extract(sim_r, rsys.blr_bhr), label="bL(rd)-bH(rd)", ylim=(0, 160))
 
 #---
 plot(pl1, pl2)
 
-
-ys = [extract(sim_n, gsys.vHresC3) extract(sim_n, rsys.vHresC3) extract(sim_n, nsys.vHresC3)]
-
+#---
+extract(sim_n, nsys.SQp)
 
 #---
 ys = [extract(sim_g, gsys.fracbLrd) extract(sim_n, nsys.fracbLrd) extract(sim_g, gsys.fracbHrd) extract(sim_n, nsys.fracbHrd)]
-plot(xs, ys, xlabel="MMP (mV)", ylabel="Reduced fraction", label=["G (bL)" "F (bL)" "G (bH)" "F (bH)"], line=[:solid :dash :solid :dash])
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Reduced fraction", label=["G (bL)" "N (bL)" "G (bH)" "N (bH)"], line=[:solid :dash :solid :dash])
 
 # ROS generation rate: 0.005 ~ 0.020 mM/s
 ys = [extract(sim_g, gsys.vROSC3) extract(sim_r, rsys.vROSC3) extract(sim_n, nsys.vROSC3)]
@@ -568,15 +567,15 @@ eprob_r = EnsembleProblem(prob_r; prob_func=alter_qh2)
 #---
 xs = qh2range ./ 4000μM .* 100
 ys = [extract(sim_g, gsys.vHresC3) extract(sim_r, rsys.vHresC3) extract(sim_n, nsys.vHresC3)]
-plot(xs, ys, xlabel="QH2 (%)", ylabel="Resp. Rate (mM/s)", label=["G" "R" "F"])
+plot(xs, ys, xlabel="QH2 (%)", ylabel="Resp. Rate (mM/s)", label=["G" "R" "N"])
 
 #---
 ys = [extract(sim_g, gsys.fracbLrd) extract(sim_n, nsys.fracbLrd) extract(sim_g, gsys.fracbHrd) extract(sim_n, nsys.fracbHrd)]
-plot(xs, ys, xlabel="QH2 (%)", ylabel="Reduced fraction", label=["G (bL)" "F (bL)" "G (bH)" "F (bH)"], line=[:solid :dash :solid :dash])
+plot(xs, ys, xlabel="QH2 (%)", ylabel="Reduced fraction", label=["G (bL)" "N (bL)" "G (bH)" "N (bH)"], line=[:solid :dash :solid :dash])
 
 #---
 ys = [extract(sim_g, gsys.vROSC3) extract(sim_r, rsys.vROSC3) extract(sim_n, nsys.vROSC3)]
-plot(xs, ys, xlabel="QH2 (%)", ylabel="ROS Rate (mM/s)", label=["G" "R" "F"])
+plot(xs, ys, xlabel="QH2 (%)", ylabel="ROS Rate (mM/s)", label=["G" "R" "N"])
 
 #---
-ys = [extract(sim_g, gsys.SQp) extract(sim_r, rsys.SQp)]
+ys = [extract(sim_g, gsys.SQp) extract(sim_n, nsys.SQp)]
