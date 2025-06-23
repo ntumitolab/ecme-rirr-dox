@@ -33,15 +33,16 @@ function c3_gauthier(;
         Q_T = 4mM        ## Total CoQ pool
         EmSQp_QH2p = +290mV
         EmQp_SQp = -170mV
-        EmQn_SQn = +70mV
-        EmSQn_QH2n = +170mV
+        EmQn_SQn = +50mV
+        EmSQn_QH2n = +150mV
         EmbL_bHo = -40mV
         EmbL_bHr = EmbL_bHo - 60mV
-        EmbH_bLo = +40mV
+        EmbH_bLo = +20mV
         EmbH_bLr = EmbH_bLo - 60mV
         EmFeS = +280mV
         Emcytc1 = +245mV
-        Emcytc = +255mV
+        Emcytc = +265mV
+        EmO2 = -160mV
         K03_C3 = 1666.63Hz / mM
         KEQ3_C3 = exp(iVT * (EmFeS - EmSQp_QH2p)) ## -10mV
         K04_C3 = 50.67Hz / mM
@@ -49,21 +50,21 @@ function c3_gauthier(;
         KEQ4_RD_C3 = exp(iVT * (EmbL_bHr - EmQp_SQp)) ## +70mV
         KD_Q = 22000Hz
         K06_C3 = 166.67Hz
-        KEQ6_C3 = 9.4546 ## +60mV
+        KEQ6_C3 = exp(iVT * (EmbH_bLo - EmbL_bHo)) ## +60mV
         K07_OX_C3 = 13.33Hz / mM
         K07_RD_C3 = 1.67Hz / mM
-        KEQ7_OX_C3 = 3.0748 ## +30mV
-        KEQ7_RD_C3 = 29.0714 ## +90mV
+        KEQ7_OX_C3 = exp(iVT * (EmQn_SQn - EmbH_bLo)) ## +30mV
+        KEQ7_RD_C3 = exp(iVT * (EmQn_SQn - EmbH_bLr)) ## +90mV
         K08_OX_C3 = 83.33Hz / mM
         K08_RD_C3 = 8.33Hz / mM
-        KEQ8_OX_C3 = 129.9853 ## +130mV
+        KEQ8_OX_C3 = exp(iVT * (EmSQn_QH2n - EmbH_bLo)) ## +130mV
         KEQ8_RD_C3 = 9.4546   ## +60mV??? should be +190mV?
         K09_C3 = 832.48Hz / mM
         KEQ9_C3 = exp(iVT * (Emcytc1 - EmFeS))  ## -35mV
         K010_C3 = 28.33Hz / mM
-        KEQ10_C3 = 1.4541 ## +10mV
+        KEQ10_C3 = exp(iVT * (EmO2 - EmQp_SQp)) ## +10mV
         K33_C3 = 2469.13Hz / mM
-        KEQ33_C3 = 2.1145 ## +20mV
+        KEQ33_C3 = exp(iVT * (Emcytc - Emcytc1)) ## +20mV
     end
 
     ## complex III inhibition by DOX and antimycin
