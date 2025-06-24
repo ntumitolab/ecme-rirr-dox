@@ -107,8 +107,8 @@ function c3_gauthier(;
     ## v4: QH + bL = Qp + bL- + H+
     el4 = exp(-iVT * α_C3 * δ₁_C3 * dpsi)
     er4 = exp(iVT * α_C3 * (1 - δ₁_C3) * dpsi)
-    v4_ox = K04_C3 * (KEQ4_OX_C3 * SQp * el4 * cytb_1 - Q_p * er4 * cytb_2 * fHi)
-    v4_rd = K04_C3 * (KEQ4_RD_C3 * SQp * el4 * cytb_3 - Q_p * er4 * cytb_4 * fHi)
+    v4ox = K04_C3 * (KEQ4_OX_C3 * SQp * el4 * cytb_1 - Q_p * er4 * cytb_2 * fHi)
+    v4rd = K04_C3 * (KEQ4_RD_C3 * SQp * el4 * cytb_3 - Q_p * er4 * cytb_4 * fHi)
     ## v5 = Q diffusion (p-side -> n-side)
     v5 = KD_Q * (Q_p - Q_n)
     ## v6 = bL to bH
@@ -119,10 +119,10 @@ function c3_gauthier(;
     er7 = exp(iVT * γ_C3 * (1 - δ₃_C3) * dpsi)
     qn = Q_n * Qi_avail
     qh2n = QH2_n * Qi_avail
-    v7_ox = K07_OX_C3 *  (KEQ7_OX_C3 * cytb_3 * qn * el7 - cytb_1 * SQn * er7)
-    v7_rd = K07_RD_C3 * (KEQ7_RD_C3 * cytb_4 * qn * el7 - cytb_2 * SQn * er7)
-    v8_ox = K08_OX_C3 * (KEQ8_OX_C3 * cytb_3 * SQn * fHm^2 * el7 - cytb_1 * qh2n * er7)
-    v8_rd = K08_RD_C3 * (KEQ8_RD_C3 * cytb_4 * SQn * fHm^2 * el7 - cytb_2 * qh2n * er7)
+    v7ox = K07_OX_C3 *  (KEQ7_OX_C3 * cytb_3 * qn * el7 - cytb_1 * SQn * er7)
+    v7rd = K07_RD_C3 * (KEQ7_RD_C3 * cytb_4 * qn * el7 - cytb_2 * SQn * er7)
+    v8ox = K08_OX_C3 * (KEQ8_OX_C3 * cytb_3 * SQn * fHm^2 * el7 - cytb_1 * qh2n * er7)
+    v8rd = K08_RD_C3 * (KEQ8_RD_C3 * cytb_4 * SQn * fHm^2 * el7 - cytb_2 * qh2n * er7)
     ## v9 = fes -> cytc1
     v9 = K09_C3 * (KEQ9_C3 * fes_rd * cytc1_ox - fes_ox * cytc1_rd)
     ## v10: SQp + O2 -> O2- + Q
@@ -141,12 +141,12 @@ function c3_gauthier(;
         fracbLrd ~ (cytb_2 + cytb_4) / C3_CONC,
         fracbHrd ~ (cytb_3 + cytb_4) / C3_CONC,
         ## D(UQH2) ~ dQH2n + dQH2p,
-        D(SQn) ~ v7_ox + v7_rd - v8_ox - v8_rd,
-        D(SQp) ~ v3 - v10 - v4_ox - v4_rd,
-        D(cytb_1) ~ v7_ox + v8_ox - v4_ox,
-        D(cytb_2) ~ v4_ox + v7_rd + v8_rd - v6,
-        D(cytb_3) ~ v6 - v4_rd - v7_ox - v8_ox,
-        ## D(cytb_4) = v4_rd - v7_rd - v8_rd
+        D(SQn) ~ v7ox + v7rd - v8ox - v8rd,
+        D(SQp) ~ v3 - v10 - v4ox - v4rd,
+        D(cytb_1) ~ v7ox + v8ox - v4ox,
+        D(cytb_2) ~ v4ox + v7rd + v8rd - v6,
+        D(cytb_3) ~ v6 - v4rd - v7ox - v8ox,
+        ## D(cytb_4) = v4rd - v7rd - v8rd
         D(fes_ox) ~ v9 - v3,
         D(cytc1_ox) ~ v33 - v9,
         vHresC3 ~ v3,
@@ -335,8 +335,8 @@ function c3_semireverse(;
 end
 
 ## Complex III repulsion model
-## Reduced heme bL stops QH2 oxidation at Qo site
-## Unstable SQp (-300mV)
+## Reduced heme bL blocks QH2 oxidation at Qo site due to repulsion of bL- and Q-
+## SQp is unstable (Em(Q/SQ) = -300mV)
 function c3_repulsion(;
     dpsi=150mV,
     MT_PROT=1,
@@ -357,7 +357,7 @@ function c3_repulsion(;
         rhoC3 = 325μM    ## Complex III activity
         Q_T = 4mM        ## Total CoQ pool
         EmQp = +60mV
-        EmSQp_QH2p = +290mV
+        EmSQp_QH2p = +400mV
         EmQp_SQp = 2EmQp - EmSQp_QH2p
         EmQn_SQn = +50mV
         EmSQn_QH2n = +150mV
@@ -369,13 +369,13 @@ function c3_repulsion(;
         Emcytc1 = +245mV
         EmO2 = -160mV
         Emcytc = +265mV
-        K03_C3 = 1666.63Hz / mM
-        KEQ3_C3 = exp(iVT * (EmFeS - EmSQp_QH2p))
+        K03_C3 = 2E5Hz / mM ## 1666.63Hz / mM
+        KEQ3_C3 = exp(iVT * (EmFeS - EmSQp_QH2p)) ## ~ 0.01
         K04_C3 = 50.67Hz / mM
         KEQ4_OX_C3 = exp(iVT * (EmbL_bHo - EmQp_SQp))
         KEQ4_RD_C3 = exp(iVT * (EmbL_bHr - EmQp_SQp))
         KD_Q = 22000Hz
-        K06_C3 = 10000Hz # from 166.67Hz
+        K06_C3 = 10000Hz ## from 166.67Hz
         KEQ6_C3 = exp(iVT * (EmbH_bLo - EmbL_bHo))
         K07_OX_C3 = 13.33Hz / mM
         K07_RD_C3 = 1.67Hz / mM
@@ -407,10 +407,10 @@ function c3_repulsion(;
         fes_rd(t) ## Conserved
         cytc1_ox(t) = C3_CONC
         cytc1_rd(t) ## Conserved
-        b_00(t) = C3_CONC
-        b_10(t) = 0
-        b_01(t) = 0
-        b_11(t) ## Conserved
+        blo_bho(t) = C3_CONC
+        blo_bhr(t) = 0
+        blr_bho(t) = 0
+        blr_bhr(t) ## Conserved
         fracbLrd(t)
         fracbHrd(t)
         vROSC3(t)
@@ -430,51 +430,51 @@ function c3_repulsion(;
     ## QH2 + FeS = Q- + FeS- + H+
     Qo_avail = (C3_CONC - SQp) / C3_CONC * (1 - fracbLrd) * (1 - MYXOTHIAZOLE_BLOCK)
     v3 = K03_C3 * (KEQ3_C3 * Qo_avail * fes_ox * QH2_p - fes_rd * SQp * fHi^2)
-    ## v4: Q- + bL = Qp + bL- + H+
+    ## Q- + bL = Qp + bL-
     el4 = exp(-iVT * α_C3 * δ₁_C3 * dpsi)
     er4 = exp(iVT * α_C3 * (1 - δ₁_C3) * dpsi)
-    v4_ox = K04_C3 * (KEQ4_OX_C3 * SQp * el4 * b_00 - Q_p * er4 * b_10)
-    v4_rd = K04_C3 * (KEQ4_RD_C3 * SQp * el4 * b_01 - Q_p * er4 * b_11)
+    v4ox = K04_C3 * (KEQ4_OX_C3 * SQp * el4 * blo_bho - Q_p * er4 * blr_bho)
+    v4rd = K04_C3 * (KEQ4_RD_C3 * SQp * el4 * blo_bhr - Q_p * er4 * blr_bhr)
     ## v5 = Q diffusion (p-side -> n-side)
     v5 = KD_Q * (Q_p - Q_n)
     ## v6 = bL to bH
     el6 = exp(-iVT * β_C3 * δ₂_C3 * dpsi)
     er6 = exp(iVT * β_C3 * (1 - δ₂_C3) * dpsi)
-    v6 = K06_C3 * (KEQ6_C3 * b_10 * el6 - b_01 * er6)
+    v6 = K06_C3 * (KEQ6_C3 * blr_bho * el6 - blo_bhr * er6)
     ## v7 = bH to Qn; v8: bH to SQn
     Qi_avail = (C3_CONC - SQn) / C3_CONC * (1 - ANTIMYCIN_BLOCK)
     el7 = exp(-iVT * γ_C3 * δ₃_C3 * dpsi)
     er7 = exp(iVT * γ_C3 * (1 - δ₃_C3) * dpsi)
     qn = Q_n * Qi_avail
     qh2n = QH2_n * Qi_avail
-    v7_ox = K07_OX_C3 * (KEQ7_OX_C3 * b_01 * qn * el7 - b_00 * SQn * er7)
-    v7_rd = K07_RD_C3 * (KEQ7_RD_C3 * b_11 * qn * el7 - b_10 * SQn * er7)
-    v8_ox = K08_OX_C3 * (KEQ8_OX_C3 * b_01 * SQn * fHm^2 * el7 - b_00 * qh2n * er7)
-    v8_rd = K08_RD_C3 * (KEQ8_RD_C3 * b_11 * SQn * fHm^2 * el7 - b_10 * qh2n * er7)
+    v7ox = K07_OX_C3 * (KEQ7_OX_C3 * blo_bhr * qn * el7 - blo_bho * SQn * er7)
+    v7rd = K07_RD_C3 * (KEQ7_RD_C3 * blr_bhr * qn * el7 - blr_bho * SQn * er7)
+    v8ox = K08_OX_C3 * (KEQ8_OX_C3 * blo_bhr * SQn * fHm^2 * el7 - blo_bho * qh2n * er7)
+    v8rd = K08_RD_C3 * (KEQ8_RD_C3 * blr_bhr * SQn * fHm^2 * el7 - blr_bho * qh2n * er7)
     ## v9 = fes -> cytc1
     v9 = K09_C3 * (KEQ9_C3 * fes_rd * cytc1_ox - fes_ox * cytc1_rd)
-    ## v10: SQp + O2 -> O2- + Q
+    ## SQp + O2 -> O2- + Q
     v10 = K010_C3 * (KEQ10_C3 * O2 * SQp - sox_m * Q_p)
     ## cytc1_2+  + cytc_3+ = cytc1_3+  + cytc_2+
     v33 = K33_C3 * (KEQ33_C3 * cytc1_rd * cytc_ox - cytc1_ox * cytc_rd)
 
     eqs = [
-        C3_CONC ~ b_00 + b_01 + b_10 + b_11,
+        C3_CONC ~ blo_bho + blr_bho + blo_bhr + blr_bhr,
         C3_CONC ~ fes_ox + fes_rd,
         C3_CONC ~ cytc1_ox + cytc1_rd,
         Q_n ~ 0.5 * UQ,
         Q_p ~ 0.5 * UQ,
         QH2_n ~ 0.5 * UQH2,
         QH2_p ~ 0.5 * UQH2,
-        fracbLrd ~ (b_10 + b_11) / C3_CONC,
-        fracbHrd ~ (b_01 + b_11) / C3_CONC,
+        fracbLrd ~ (blr_bho + blr_bhr) / C3_CONC,
+        fracbHrd ~ (blo_bhr + blr_bhr) / C3_CONC,
         ## D(UQH2) ~ dQH2n + dQH2p,
-        D(SQn) ~ v7_ox + v7_rd - v8_ox - v8_rd,
-        D(SQp) ~ v3 - v10 - v4_ox - v4_rd,
-        D(b_00) ~ v7_ox + v8_ox - v4_ox,
-        D(b_10) ~ v4_ox + v7_rd + v8_rd - v6,
-        D(b_01) ~ v6 - v4_rd - v7_ox - v8_ox,
-        ## D(b_11) = v4_rd - v7_rd - v8_rd
+        D(SQn) ~ v7ox + v7rd - v8ox - v8rd,
+        D(SQp) ~ v3 - v10 - v4ox - v4rd,
+        D(blo_bho) ~ v7ox + v8ox - v4ox,
+        D(blr_bho) ~ v4ox + v7rd + v8rd - v6,
+        D(blo_bhr) ~ v6 - v4rd - v7ox - v8ox,
+        ## D(blr_bhr) = v4rd - v7rd - v8rd
         D(fes_ox) ~ v9 - v3,
         D(cytc1_ox) ~ v33 - v9,
         vHresC3 ~ v6,
@@ -499,7 +499,7 @@ nsys = c3_repulsion(;dpsi, cytc_ox, cytc_rd, UQ, UQH2, sox_m) |> mtkcompile
 rsys = c3_semireverse(;dpsi, cytc_ox, cytc_rd, UQ, UQH2, sox_m) |> mtkcompile
 #---
 prob_g = SteadyStateProblem(gsys, [])
-prob_n = SteadyStateProblem(nsys, [nsys.K03_C3 => 1E5Hz / mM, nsys.EmSQp_QH2p => +400mV])
+prob_n = SteadyStateProblem(nsys, [nsys.EmSQp_QH2p => +400mV, nsys.EmQp => 60mV, nsys.K010_C3 => 33Hz / mM])
 prob_r = SteadyStateProblem(rsys, [rsys.K010_C3 => 4Hz / mM, rsys.K011_C3 => 100Hz / mM, rsys.K04_C3 => 50Hz / mM])
 alg = DynamicSS(Rodas5P())
 ealg = EnsembleThreads()
@@ -524,22 +524,21 @@ ys = [extract(sim_g, gsys.vHresC3) extract(sim_r, rsys.vHresC3) extract(sim_n, n
 plot(xs, ys, xlabel="MMP (mV)", ylabel="Resp. Rate (mM/s)", label=["G" "R" "New"])
 
 #---
-plot(xs, extract(sim_n, nsys.b_00), label="bL(ox)-bH(ox)", title="New model")
-plot!(xs, extract(sim_n, nsys.b_10), label="bL(rd)-bH(ox)")
-plot!(xs, extract(sim_n, nsys.b_01), label="bL(ox)-bH(rd)")
-pl1 = plot!(xs, extract(sim_n, nsys.b_11), label="bL(rd)-bH(rd)", ylim=(0, 160))
-
-#---
+plot(xs, extract(sim_n, nsys.blo_bho), label="bL(ox)-bH(ox)", title="New model")
+plot!(xs, extract(sim_n, nsys.blo_bhr), label="bL(rd)-bH(ox)")
+plot!(xs, extract(sim_n, nsys.blr_bho), label="bL(ox)-bH(rd)")
+pl1 = plot!(xs, extract(sim_n, nsys.blr_bhr), label="bL(rd)-bH(rd)", ylim=(0, 160))
 plot(xs, extract(sim_r, rsys.blo_bho), label="bL(ox)-bH(ox)", title = "R model")
 plot!(xs, extract(sim_r, rsys.blr_bho), label="bL(rd)-bH(ox)")
 plot!(xs, extract(sim_r, rsys.blo_bhr), label="bL(ox)-bH(rd)")
 pl2 = plot!(xs, extract(sim_r, rsys.blr_bhr), label="bL(rd)-bH(rd)", ylim=(0, 160))
-
-#---
 plot(pl1, pl2)
 
 #---
-extract(sim_n, nsys.SQp)
+plot(dpsirange, extract(sim_n, nsys.SQp), label="SQp", title="New model", xlabel="mV", ylabel="μM")
+
+#---
+plot(dpsirange, extract(sim_n, nsys.SQn), label="SQn", title="New model", xlabel="mV", ylabel="μM")
 
 #---
 ys = [extract(sim_g, gsys.fracbLrd) extract(sim_n, nsys.fracbLrd) extract(sim_g, gsys.fracbHrd) extract(sim_n, nsys.fracbHrd)]
@@ -547,7 +546,7 @@ plot(xs, ys, xlabel="MMP (mV)", ylabel="Reduced fraction", label=["G (bL)" "N (b
 
 # ROS generation rate: 0.005 ~ 0.020 mM/s
 ys = [extract(sim_g, gsys.vROSC3) extract(sim_r, rsys.vROSC3) extract(sim_n, nsys.vROSC3)]
-plot(xs, ys, xlabel="MMP (mV)", ylabel="ROS Rate (mM/s)", label=["G" "R" "F"])
+plot(xs, ys, xlabel="MMP (mV)", ylabel="ROS Rate (mM/s)", label=["G" "R" "N"])
 
 # ## Varying UQH2
 qh2range = 10μM:10μM:3990μM
@@ -578,4 +577,4 @@ ys = [extract(sim_g, gsys.vROSC3) extract(sim_r, rsys.vROSC3) extract(sim_n, nsy
 plot(xs, ys, xlabel="QH2 (%)", ylabel="ROS Rate (mM/s)", label=["G" "R" "N"])
 
 #---
-ys = [extract(sim_g, gsys.SQp) extract(sim_n, nsys.SQp)]
+ys = [extract(sim_g, gsys.SQp) extract(sim_r, rsys.SQp) extract(sim_n, nsys.SQp)]

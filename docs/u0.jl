@@ -14,7 +14,7 @@ bcl = 1.0second
 u0 = build_u0(sys)
 sts = unknowns(sys)
 alg = KenCarp47()
-prob = ODEProblem(sys, [u0; sys.kf16_C1 => 2Hz / μM; sys.kf17_C1 => 0.02Hz / μM; sys.K010_C3 => 3Hz / mM; sys.KCAT_IDH => 43Hz], tend)
+prob = ODEProblem(sys, [u0; sys.KCAT_IDH => 43Hz], tend)
 
 @time sol = solve(prob, alg; reltol=1e-6, abstol=1e-6, progress=true)
 
@@ -45,10 +45,10 @@ plot(sol, idxs = [sys.vHresC1, sys.vHresC3, sys.vHresC4], ylims=(0, 3))
 plot(sol, idxs = [sys.sox_i, sys.sox_m], tspan=(900e3, 910e3))
 
 # ROS
-plot(sol, idxs = [sys.vROSIf, sys.vROSIq, sys.vROSC1, sys.vROSC3])
+plot(sol, idxs = [sys.vROSIf, sys.vROSIq, sys.vROSC1, sys.vROSC3], tspan=(900e3, 910e3))
 
 # O2 Shunt
-plot(sol, idxs=100 * sys.vROS / (sys.vO2 + sys.vROS), title="O2 Shunt")
+plot(sol, idxs=100 * sys.vROS / (sys.vO2 + sys.vROS), title="O2 Shunt", tspan=(900e3, 910e3))
 
 #---
 plot(sol, idxs = [sys.dpsi], tspan=(900e3, 910e3))
