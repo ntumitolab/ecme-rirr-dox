@@ -12,20 +12,19 @@ Plots.default(lw=1.5)
 #---
 tend = 100.0second
 bcl = 1.0second
-@named sys = build_model(; bcl=0, tend)
+@named sys = build_model(; bcl, tend)
 u0 = build_u0(sys)
 sts = unknowns(sys)
 alg = KenCarp47()
 @unpack O2 = sys
 prob = ODEProblem(sys, [u0;  O2 => 6nM], tend)
 
-stim = build_stim_callbacks(sys.iStim, tend)
 reoxygen! = (integrator) -> begin
     integrator.ps[sys.O2] = 6μM
     set_proposed_dt!(integrator, 1e-6)
 end
 
-cbs = CallbackSet(PresetTimeCallback(50.0second, reoxygen!), stim)
+cbs = PresetTimeCallback(50.0second, reoxygen!)
 
 #---
 @time sol = solve(prob, alg; reltol=1e-6, abstol=1e-6, progress=true, dt=1e-6, callback=cbs)
