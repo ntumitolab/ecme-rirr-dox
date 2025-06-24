@@ -134,10 +134,12 @@ function build_model(; name=:ecmesys, use_mg=false, simplify=true, bcl=1second, 
         ΣNAD_m ~ nad_m + nadh_m,
     ]
 
-    if bcl > 0
-        ts = tstart:bcl:tend
-        discrete_events = [collect(ts) => [iStim ~ istim], collect(ts .+ duty) => [iStim ~ 0]]
-        sys = System(eqs, t; name, discrete_events)
+    if bcl > 0 && duty > 0 && istim != 0
+        ts0 = collect(tstart:bcl:tend)
+        ts1 = ts0 .+ duty
+        sstart = ModelingToolkit.SymbolicDiscreteCallback(ts0 => [iStim ~ istim], discrete_parameters = iStim, iv = t)
+        send = ModelingToolkit.SymbolicDiscreteCallback(ts1 => [iStim ~ 0], discrete_parameters = iStim, iv = t)
+        sys = System(eqs, t; name, discrete_events = [sstart, send])
     else
         sys = System(eqs, t; name)
     end
