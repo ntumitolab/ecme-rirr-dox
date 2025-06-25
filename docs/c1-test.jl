@@ -477,24 +477,27 @@ function c1_dianion(; name=:c1d,
         KEQ_NADH_FMN = exp(2iVT * (Em_FMN_FMNH - Em_NAD))
         ## 2FMNsq = (ISC) = FMN + FMNH- + H+
         rKEQ_FMNsq_Dis = exp(-iVT * (Em_FMNsq_FMNH - Em_FMN_FMNsq))
-        ## FMNH- + N2 = FMNsq + N2-
+        ## FMNH- + N3 = FMNsq + N3-
         KEQ_FMNH_N2 = exp(iVT * (Em_N2 - Em_FMNsq_FMNH))
-        kaQ_C1 = inv(10μM)
+        kf8_C1 = 10Hz / μM
+        KEQ8_C1 = inv(10μM)
+        kb8_C1 = kf8_C1 / KEQ8_C1
         kf9_C1 = 10000Hz
-        rKEQ9_C1 = exp(-iVT * (Em_Q_SQ_C1 - Em_N2))
-        kb9_C1 = kf9_C1 * rKEQ9_C1
+        KEQ9_C1 = exp(iVT * (Em_Q_SQ_C1 - Em_N2))
+        kb9_C1 = kf9_C1 * KEQ9_C1
         kf10_C1 = 10000Hz
-        rKEQ10_C1 = exp(-iVT * (Em_SQ_Q2_C1 - Em_N2))
-        kb10_C1 = kf10_C1 * rKEQ10_C1
+        KEQ10_C1 = exp(iVT * (Em_SQ_Q2_C1 - Em_N2))
+        kb10_C1 = kf10_C1 * KEQ10_C1
         kf13_C1 = 2.7e6Hz
-        kf14_C1 = 10Hz
-        kaQH2_C1 = inv(20μM)
+        kf14_C1 = 1000Hz
+        rKEQ14_C1 = inv(20μM)
+        kb14_C1 = kf14_C1 * rKEQ14_C1
         kf16_C1 = 2Hz / μM          ## SOX production rate from If site
-        rKEQ16_C1 = exp(-iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
-        kb16_C1 = kf16_C1 * rKEQ16_C1
+        KEQ16_C1 = exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
+        kb16_C1 = kf16_C1 / KEQ16_C1
         kf17_C1 = 0.04Hz / μM       ## SOX production rate from Iq site
-        rKEQ17_C1 = exp(-iVT * (Em_O2_SOX - Em_Q_SQ_C1))
-        kb17_C1 = kf17_C1 * rKEQ17_C1
+        KEQ17_C1 = exp(iVT * (Em_O2_SOX - Em_Q_SQ_C1))
+        kb17_C1 = kf17_C1 * KEQ17_C1
     end
 
     C1_CONC = ET_C1 * MT_PROT
@@ -512,10 +515,11 @@ function c1_dianion(; name=:c1d,
         N2_C1(t)
         N2r_C1(t)
         ## Quinone site
-        Q_C1(t) = C1_CONC
+        I_C1(t) = C1_CONC
+        Q_C1(t) = 0
         SQ_C1(t) = 0
         Q2_C1(t) = 0
-        QH2_C1(t) ## conserved
+        QH2_C1(t) ## Conserved
         rKEQ_Q2_QH2(t)
         ## Reaction rates
         vQC1(t)
@@ -551,10 +555,11 @@ function c1_dianion(; name=:c1d,
     v17 = kf17_C1 * SQ_C1 * O2 - kb17_C1 * Q_C1 * sox_m
 
     ## Quinone site state transitions
-    vq12 = kf9_C1 * Q_C1 * N2r_C1 - kb9_C1 * SQ_C1 * N2_C1
-    vq23 = kf10_C1 * SQ_C1 * N2r_C1 - kb10_C1 * Q2_C1 * N2_C1
-    vq34 = kf13_C1 * (Q2_C1 * fhm^2 - QH2_C1 * rKEQ_Q2_QH2)
-    vq41 = kf14_C1 * C1_INHIB * (QH2_C1 * Q_n * kaQ_C1 - Q_C1 * QH2_n * kaQH2_C1)
+    q12 = kf8_C1 * I_C1 * Q_n - kb8_C1 * Q_C1
+    q23 = kf9_C1 * Q_C1 * N2r_C1 - kb9_C1 * SQ_C1 * N2_C1
+    q34 = kf10_C1 * SQ_C1 * N2r_C1 - kb10_C1 * Q2_C1 * N2_C1
+    q45 = kf13_C1 * (Q2_C1 * fhm^2 - QH2_C1 * rKEQ_Q2_QH2)
+    q51 = kf14_C1 * QH2_C1 - kb14_C1 * QH2_n * I_C1
 
     eqs = [
         rKEQ_Q2_QH2 ~ exp(-iVT * (Em_Q2_QH2_C1 - 4dpsi)) * (h_i / h_m)^4,
@@ -566,17 +571,18 @@ function c1_dianion(; name=:c1d,
         FMN_NADH ~ wFMN_NADH * fC1,
         FMNH_NAD ~ wFMNH_NAD * fC1,
         N2_C1 ~ FMNsq / (FMNsq + FMNH * KEQ_FMNH_N2),
-        1 ~ N2_C1 + N2r_C1,
-        C1_CONC ~ Q_C1 + SQ_C1 + Q2_C1 + QH2_C1,
-        D(Q_C1) ~ -vq12 + vq41 + v17,
-        D(SQ_C1) ~ vq12 - vq23 - v17,
-        D(Q2_C1) ~ vq23 - vq34,
-        vNADHC1 ~ -0.5 * (vq12 + vq23 + v16),
+        N2r_C1 ~ 1 - N2_C1,
+        QH2_C1 ~ C1_CONC - (I_C1 + Q_C1 + SQ_C1 + Q2_C1),
+        D(I_C1) ~ -q12 + q51,
+        D(Q_C1) ~ q12 - q23 + v17,
+        D(SQ_C1) ~ q23 - q34 - v17,
+        D(Q2_C1) ~ q34 - q45,
+        vNADHC1 ~ -0.5 * (q23 + q34 + v16),
         vROSIf ~ v16,
         vROSIq ~ v17,
         vROSC1 ~ vROSIf + vROSIq,
-        vQH2C1 ~ vq41,
-        vHresC1 ~ 4 * vq34,
+        vQH2C1 ~ q51,
+        vHresC1 ~ 4 * q45,
         vNADC1 ~ -vNADHC1,
         TNC1 ~ vNADC1 / C1_CONC,
     ]
@@ -636,6 +642,13 @@ xs = dpsirange
 ys = hcat(extract(sim_g, gauthier.vNADHC1), extract(sim_m, markevich.vNADHC1), extract(sim_d, sys.vNADHC1))
 
 plot(xs, ys, xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", label=["Gauthier" "Markevich" "Dianion"])
+#---
+plot(xs, extract(sim_d, sys.vNADHC1), xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", label=["Dianion"])
+
+#---
+ys = stack(extract.(Ref(sim_d), [sys.I_C1, sys.Q_C1, sys.SQ_C1, sys.Q2_C1, sys.QH2_C1]), dims=2)
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["I_C1" "Q_C1" "SQ_C1" "Q2_C1" "QH2_C1"])
+
 
 # Flavin site
 ys = stack(extract.(Ref(sim_d), [sys.FMN, sys.FMNsq, sys.FMNH, sys.FMN_NAD, sys.FMNH_NADH, sys.FMN_NADH, sys.FMNH_NAD]), dims=2)
@@ -645,10 +658,6 @@ ys = stack(extract.(Ref(sim_m), [markevich.FMN, markevich.FMNsq, markevich.FMNH,
 pl2 = plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH" "FMN_NADH" "FMNH_NAD"], title="M model", legend=:right)
 
 plot(pl1, pl2)
-
-#---
-ys = stack(extract.(Ref(sim_d), [sys.Q_C1, sys.SQ_C1, sys.Q2_C1, sys.QH2_C1]), dims=2)
-plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "Q2_C1" "QH2_C1"])
 
 # MMP vs ROS production
 xs = dpsirange
