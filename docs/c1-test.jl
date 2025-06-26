@@ -447,9 +447,9 @@ function c1_markevich_s(; name=:c1s,
     return System(eqs, t; name)
 end
 
-# Quinone dianion complex I model
+# N2-Quinone complex I model
 # Adapted from the simplified Markevich complex I model
-function c1_dianion(; name=:c1d,
+function c1_n2q(; name=:c1d,
     Q_n=1800μM, QH2_n=200μM,
     nad=2500μM, nadh=500μM,
     dpsi=150mV, O2=6μM, sox_m=0.01μM,
@@ -467,8 +467,7 @@ function c1_dianion(; name=:c1d,
         Em_N3 = -250mV
         Em_N2 = -150mV            ## B. taurus ISC N2 redox potential
         Em_Q_SQ_C1 = -300mV       ## -213mV in Markevich, 2015
-        Em_SQ_Q2_C1 = -300mV      ## Second reduction potential
-        Em_Q2_QH2_C1 = +800mV     ## Protonation
+        Em_SQ_QH2_C1 = +500mV
         KI_NADH_C1 = 50μM
         KD_NADH_C1 = 100μM
         KI_NAD_C1 = 1000μM
@@ -478,20 +477,20 @@ function c1_dianion(; name=:c1d,
         ## 2FMNsq = (ISC) = FMN + FMNH- + H+
         rKEQ_FMNsq_Dis = exp(-iVT * (Em_FMNsq_FMNH - Em_FMN_FMNsq))
         ## FMNH- + N3 = FMNsq + N3-
-        KEQ_FMNH_N2 = exp(iVT * (Em_N2 - Em_FMNsq_FMNH))
+        KEQ_FMNH_N3 = exp(iVT * (Em_N3 - Em_FMNsq_FMNH))
+        kf7_C1 = 10000Hz
+        KEQ7_C1 = exp(iVT * (Em_N2 - Em_N3))
+        kb7_C1 = kf7_C1 / KEQ7_C1
         kf8_C1 = 10Hz / μM
         KEQ8_C1 = inv(10μM)
         kb8_C1 = kf8_C1 / KEQ8_C1
-        kf9_C1 = 10000Hz
+        kf9_C1 = 4E5Hz
         KEQ9_C1 = exp(iVT * (Em_Q_SQ_C1 - Em_N2))
-        kb9_C1 = kf9_C1 * KEQ9_C1
-        kf10_C1 = 10000Hz
-        KEQ10_C1 = exp(iVT * (Em_SQ_Q2_C1 - Em_N2))
-        kb10_C1 = kf10_C1 * KEQ10_C1
+        kb9_C1 = kf9_C1 / KEQ9_C1
         kf13_C1 = 2.7e6Hz
         kf14_C1 = 1000Hz
-        rKEQ14_C1 = inv(20μM)
-        kb14_C1 = kf14_C1 * rKEQ14_C1
+        KEQ14_C1 = 20μM
+        kb14_C1 = kf14_C1 / KEQ14_C1
         kf16_C1 = 2Hz / μM          ## SOX production rate from If site
         KEQ16_C1 = exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
         kb16_C1 = kf16_C1 / KEQ16_C1
@@ -511,16 +510,15 @@ function c1_dianion(; name=:c1d,
         FMNH_NADH(t)
         FMN_NADH(t)
         FMNH_NAD(t)
-        ## FeS cluster
-        N2_C1(t)
-        N2r_C1(t)
+        N3_C1(t)
+        N3r_C1(t)
         ## Quinone site
-        I_C1(t) = C1_CONC
-        Q_C1(t) = 0
-        SQ_C1(t) = 0
-        Q2_C1(t) = 0
-        QH2_C1(t) ## Conserved
-        rKEQ_Q2_QH2(t)
+        N2Q(t) = C1_CONC
+        N2rQ(t) = 0
+        N2SQ(t) = 0
+        N2rSQ(t) = 0
+        N2QH2(t) ## Conserved
+        rKEQ_N2r_SQ(t)
         ## Reaction rates
         vQC1(t)
         vQH2C1(t)
@@ -552,17 +550,23 @@ function c1_dianion(; name=:c1d,
     ## Flavin site ROS production
     v16 = kf16_C1 * FMNH * O2 - kb16_C1 * FMNsq * sox_m
     ## Quinone site ROS production
-    v17 = kf17_C1 * SQ_C1 * O2 - kb17_C1 * Q_C1 * sox_m
+    v17 = kf17_C1 * N2SQ * O2 - kb17_C1 * N2Q * sox_m
+    v17b = kf17_C1 * N2rSQ * O2 - kb17_C1 * N2rQ * sox_m
 
     ## Quinone site state transitions
-    q12 = kf8_C1 * I_C1 * Q_n - kb8_C1 * Q_C1
-    q23 = kf9_C1 * Q_C1 * N2r_C1 - kb9_C1 * SQ_C1 * N2_C1
-    q34 = kf10_C1 * SQ_C1 * N2r_C1 - kb10_C1 * Q2_C1 * N2_C1
-    q45 = kf13_C1 * (Q2_C1 * fhm^2 - QH2_C1 * rKEQ_Q2_QH2)
-    q51 = kf14_C1 * QH2_C1 - kb14_C1 * QH2_n * I_C1
+    q12 = kf7_C1 * N2Q * N3r_C1 - kb7_C1 * N2rQ * N3_C1
+    q23 = kf9_C1 * N2rQ - kb9_C1 * N2SQ
+    q34 = kf7_C1 * N2SQ * N3r_C1 - kb7_C1 * N2rSQ * N3_C1
+    q45 = kf13_C1 * (N2rSQ * fhm^2 - N2QH2 * rKEQ_N2r_SQ)
+
+    ## N2QH2 <-> N2 <-> N2Q
+    ## QSSA for N2 (low fraction)
+    qh2 = QH2_n * kb14_C1
+    q = Q_n * kf8_C1
+    q51 =  kf14_C1 * N2QH2 * q / (q + qh2) - kb8_C1 * N2Q * qh2 / (q + qh2)
 
     eqs = [
-        rKEQ_Q2_QH2 ~ exp(-iVT * (Em_Q2_QH2_C1 - 4dpsi)) * (h_i / h_m)^4,
+        rKEQ_N2r_SQ ~ exp(-iVT * (Em_SQ_QH2_C1 - Em_N2 - 4dpsi)) * (h_i / h_m)^4,
         FMN ~ wFMN * fC1,
         FMN_NAD ~ wFMN_NAD * fC1,
         FMNH ~ wFMNH * fC1,
@@ -570,16 +574,17 @@ function c1_dianion(; name=:c1d,
         FMNH_NADH ~ wFMNH_NADH * fC1,
         FMN_NADH ~ wFMN_NADH * fC1,
         FMNH_NAD ~ wFMNH_NAD * fC1,
-        N2_C1 ~ FMNsq / (FMNsq + FMNH * KEQ_FMNH_N2),
-        N2r_C1 ~ 1 - N2_C1,
-        QH2_C1 ~ C1_CONC - (I_C1 + Q_C1 + SQ_C1 + Q2_C1),
-        D(I_C1) ~ -q12 + q51,
-        D(Q_C1) ~ q12 - q23 + v17,
-        D(SQ_C1) ~ q23 - q34 - v17,
-        D(Q2_C1) ~ q34 - q45,
-        vNADHC1 ~ -0.5 * (q23 + q34 + v16),
+        N3_C1 ~ FMNsq / (FMNsq + FMNH * KEQ_FMNH_N3),
+        N3r_C1 ~ 1 - N3_C1,
+        N2QH2 ~ C1_CONC - (N2Q + N2rQ + N2SQ + N2rSQ),
+        D(N2Q) ~ -q12 + q51 + v17,
+        D(N2rQ) ~ q12 - q23 + v17b,
+        D(N2SQ) ~ q23 - q34 - v17,
+        D(N2rSQ) ~ q34 - q45 - v17b,
+        ## D(N2QH2) ~ q45 - q51,
+        vNADHC1 ~ -0.5 * (q12 + q34 + v16),
         vROSIf ~ v16,
-        vROSIq ~ v17,
+        vROSIq ~ v17 + v17b,
         vROSC1 ~ vROSIf + vROSIq,
         vQH2C1 ~ q51,
         vHresC1 ~ 4 * q45,
@@ -600,7 +605,7 @@ end
 end
 
 #---
-sys = c1_dianion(; Q_n, QH2_n, nad, nadh, dpsi, sox_m) |> mtkcompile
+sys = c1_n2q(; Q_n, QH2_n, nad, nadh, dpsi, sox_m) |> mtkcompile
 markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi, sox_m) |> mtkcompile
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi, sox_m) |> mtkcompile
 
@@ -641,18 +646,17 @@ extract(sim, k) = map(s -> s[k], sim)
 xs = dpsirange
 ys = hcat(extract(sim_g, gauthier.vNADHC1), extract(sim_m, markevich.vNADHC1), extract(sim_d, sys.vNADHC1))
 
-plot(xs, ys, xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", label=["Gauthier" "Markevich" "Dianion"])
+plot(xs, ys, xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", label=["Gauthier" "Markevich" "Q site"])
 #---
-plot(xs, extract(sim_d, sys.vNADHC1), xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", label=["Dianion"])
+plot(xs, extract(sim_d, sys.vNADHC1), xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", label="Q site")
 
 #---
-ys = stack(extract.(Ref(sim_d), [sys.I_C1, sys.Q_C1, sys.SQ_C1, sys.Q2_C1, sys.QH2_C1]), dims=2)
-plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["I_C1" "Q_C1" "SQ_C1" "Q2_C1" "QH2_C1"])
-
+ys = stack(extract.(Ref(sim_d), [sys.N2Q, sys.N2rQ, sys.N2SQ, sys.N2rSQ, sys.N2QH2]), dims=2)
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["N2Q" "N2rQ" "N2SQ" "N2rSQ" "N2QH2"])
 
 # Flavin site
 ys = stack(extract.(Ref(sim_d), [sys.FMN, sys.FMNsq, sys.FMNH, sys.FMN_NAD, sys.FMNH_NADH, sys.FMN_NADH, sys.FMNH_NAD]), dims=2)
-pl1 = plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH" "FMN_NADH" "FMNH_NAD"], title="Dianion model", legend=:right)
+pl1 = plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH" "FMN_NADH" "FMNH_NAD"], title="Q site model", legend=:right)
 
 ys = stack(extract.(Ref(sim_m), [markevich.FMN, markevich.FMNsq, markevich.FMNH, markevich.FMN_NAD, markevich.FMNH_NADH, markevich.FMN_NADH, markevich.FMNH_NAD]), dims=2)
 pl2 = plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH" "FMN_NADH" "FMNH_NAD"], title="M model", legend=:right)
@@ -664,7 +668,7 @@ xs = dpsirange
 ys_g = extract(sim_g, gauthier.vROSC1)
 ys_m = extract(sim_m, markevich.vROSC1)
 ys_d = extract(sim_d, sys.vROSC1)
-plot(xs, [ys_g ys_m ys_d], xlabel="MMP (mV)", ylabel="ROS production (μM/ms)", label=["Gauthier" "Markevich" "Dianion"])
+plot(xs, [ys_g ys_m ys_d], xlabel="MMP (mV)", ylabel="ROS production (μM/ms)", label=["Gauthier" "Markevich" "Q site"])
 
 # ## Varying NADH
 nadhrange = 10μM:10μM:2990μM
@@ -687,28 +691,28 @@ ys_g = extract(sim_g, gauthier.vNADHC1)
 ys_m = extract(sim_m, markevich.vNADHC1)
 ys_d = extract(sim_d, sys.vNADHC1)
 
-plot(xs, [ys_g ys_m ys_d], xlabel="NADH (μM)", ylabel="NADH consumption (μM/ms)", label=["Gauthier" "Markevich" "Dianion"])
+plot(xs, [ys_g ys_m ys_d], xlabel="NADH (μM)", ylabel="NADH consumption (μM/ms)", label=["Gauthier" "Markevich" "Q site"])
 
 # NADH vs ROS production
 xs = nadhrange
 ys = [extract(sim_g, gauthier.vROSC1) extract(sim_m, markevich.vROSC1) extract(sim_d, sys.vROSC1)]
 
-plot(xs, ys, xlabel="NADH (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "Dianion"])
+plot(xs, ys, xlabel="NADH (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "Q site"])
 
 #---
 ys = stack(extract.(Ref(sim_m), [markevich.Q_C1, markevich.SQ_C1, markevich.QH2_C1]), dims=2)
 plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1"], title="M model")
 
 #---
-ys = stack(extract.(Ref(sim_d), [sys.Q_C1, sys.SQ_C1, sys.Q2_C1, sys.QH2_C1]), dims=2)
-plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "Q2_C1" "QH2_C1"], title="Dianion model")
+ys = stack(extract.(Ref(sim_d), [sys.N2Q, sys.N2rQ, sys.N2SQ, sys.N2rSQ, sys.N2QH2]), dims=2)
+plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["N2Q" "N2rQ" "N2SQ" "N2rSQ" "N2QH2"], title="Q site model")
 
 #---
 ys = stack(extract.(Ref(sim_m), [markevich.FMN, markevich.FMNsq, markevich.FMNH, markevich.FMN_NAD, markevich.FMNH_NADH]), dims=2)
 pl1 = plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH"], legend=:topleft, title="M model")
 
 ys = stack(extract.(Ref(sim_d), [sys.FMN, sys.FMNsq, sys.FMNH, sys.FMN_NAD, sys.FMNH_NADH]), dims=2)
-pl2 = plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH"], title="Dianion model")
+pl2 = plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH"], title="Q site model")
 
 plot(pl1, pl2, layout=(2, 1), size=(600, 800))
 
@@ -731,17 +735,18 @@ eprob_m = EnsembleProblem(prob_m; prob_func=alter_qh2)
 xs = qh2range
 ys = [extract(sim_g, gauthier.vNADHC1) extract(sim_m, markevich.vNADHC1) extract(sim_d, sys.vNADHC1)]
 
-plot(xs, ys, xlabel="QH2 (μM)", ylabel="NADH rate (mM/s)", label=["Gauthier" "Markevich" "Dianion"])
+plot(xs, ys, xlabel="QH2 (μM)", ylabel="NADH rate (mM/s)", label=["Gauthier" "Markevich" "Q site"])
 
 # QH2 vs ROS production
 # Gauthier model is sensitive to high QH2 because of slow NAD binding
 xs = qh2range
 ys = [extract(sim_g, gauthier.vROSC1) extract(sim_m, markevich.vROSC1) extract(sim_d, sys.vROSC1)]
-plot(xs, ys, xlabel="QH2 (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "Dianion"])
+plot(xs, ys, xlabel="QH2 (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "Q site"])
 
 #---
-ys = stack(extract.(Ref(sim_d), [sys.Q_C1, sys.SQ_C1, sys.Q2_C1, sys.QH2_C1]), dims=2)
-plot(xs, ys, xlabel="QH2 (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "Q2_C1" "QH2_C1"], legend=:left, title="Dianion model")
+ys = stack(extract.(Ref(sim_d), [sys.N2Q, sys.N2rQ, sys.N2SQ, sys.N2rSQ, sys.N2QH2]), dims=2)
+plot(xs, ys, xlabel="QH2 (μM)", ylabel="Concentration", label=["N2Q" "N2rQ" "N2SQ" "N2rSQ" "N2QH2"], title="Q site model")
+
 
 #---
 @unpack C1_1, C1_3, C1_4, C1_5, C1_6, C1_7 = gauthier
