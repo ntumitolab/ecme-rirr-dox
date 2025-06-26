@@ -447,9 +447,9 @@ function c1_markevich_s(; name=:c1s,
     return System(eqs, t; name)
 end
 
-# N2-Quinone complex I model
+# Quinone site complex I model
 # Adapted from the simplified Markevich complex I model
-function c1_n2q(; name=:c1d,
+function c1_q(; name=:c1q,
     Q_n=1800μM, QH2_n=200μM,
     nad=2500μM, nadh=500μM,
     dpsi=150mV, O2=6μM, sox_m=0.01μM,
@@ -477,14 +477,11 @@ function c1_n2q(; name=:c1d,
         ## 2FMNsq = (ISC) = FMN + FMNH- + H+
         rKEQ_FMNsq_Dis = exp(-iVT * (Em_FMNsq_FMNH - Em_FMN_FMNsq))
         ## FMNH- + N3 = FMNsq + N3-
-        KEQ_FMNH_N3 = exp(iVT * (Em_N3 - Em_FMNsq_FMNH))
-        kf7_C1 = 10000Hz
-        KEQ7_C1 = exp(iVT * (Em_N2 - Em_N3))
-        kb7_C1 = kf7_C1 / KEQ7_C1
+        KEQ_FMNH_N2 = exp(iVT * (Em_N2 - Em_FMNsq_FMNH))
         kf8_C1 = 10Hz / μM
         KEQ8_C1 = inv(10μM)
         kb8_C1 = kf8_C1 / KEQ8_C1
-        kf9_C1 = 4E5Hz
+        kf9_C1 = 10000Hz
         KEQ9_C1 = exp(iVT * (Em_Q_SQ_C1 - Em_N2))
         kb9_C1 = kf9_C1 / KEQ9_C1
         kf13_C1 = 2.7e6Hz
@@ -510,14 +507,12 @@ function c1_n2q(; name=:c1d,
         FMNH_NADH(t)
         FMN_NADH(t)
         FMNH_NAD(t)
-        N3_C1(t)
-        N3r_C1(t)
+        N2_C1(t)
+        N2r_C1(t)
         ## Quinone site
-        N2Q(t) = C1_CONC
-        N2rQ(t) = 0
-        N2SQ(t) = 0
-        N2rSQ(t) = 0
-        N2QH2(t) ## Conserved
+        Q_C1(t) = C1_CONC
+        SQ_C1(t) = 0
+        QH2_C1(t)
         rKEQ_N2r_SQ(t)
         ## Reaction rates
         vQC1(t)
@@ -550,20 +545,16 @@ function c1_n2q(; name=:c1d,
     ## Flavin site ROS production
     v16 = kf16_C1 * FMNH * O2 - kb16_C1 * FMNsq * sox_m
     ## Quinone site ROS production
-    v17 = kf17_C1 * N2SQ * O2 - kb17_C1 * N2Q * sox_m
-    v17b = kf17_C1 * N2rSQ * O2 - kb17_C1 * N2rQ * sox_m
+    v17 = kf17_C1 * SQ_C1 * O2 - kb17_C1 * Q_C1 * sox_m
 
     ## Quinone site state transitions
-    q12 = kf7_C1 * N2Q * N3r_C1 - kb7_C1 * N2rQ * N3_C1
-    q23 = kf9_C1 * N2rQ - kb9_C1 * N2SQ
-    q34 = kf7_C1 * N2SQ * N3r_C1 - kb7_C1 * N2rSQ * N3_C1
-    q45 = kf13_C1 * (N2rSQ * fhm^2 - N2QH2 * rKEQ_N2r_SQ)
+    q12 = kf9_C1 * N2r_C1 * Q_C1 - kb9_C1 * N2_C1 * SQ_C1
+    q23 = kf13_C1 * (N2r_C1 * SQ_C1 - rKEQ_N2r_SQ * N2_C1 * QH2_C1)
 
-    ## N2QH2 <-> N2 <-> N2Q
-    ## QSSA for N2 (low fraction)
+    ## QH2_C1 <-> C1 <-> Q_C1; QSSA for unbound C1
     qh2 = QH2_n * kb14_C1
     q = Q_n * kf8_C1
-    q51 =  kf14_C1 * N2QH2 * q / (q + qh2) - kb8_C1 * N2Q * qh2 / (q + qh2)
+    q31 = kf14_C1 * QH2_C1 * q / (q + qh2) - kb8_C1 * Q_C1 * qh2 / (q + qh2)
 
     eqs = [
         rKEQ_N2r_SQ ~ exp(-iVT * (Em_SQ_QH2_C1 - Em_N2 - 4dpsi)) * (h_i / h_m)^4,
@@ -574,20 +565,18 @@ function c1_n2q(; name=:c1d,
         FMNH_NADH ~ wFMNH_NADH * fC1,
         FMN_NADH ~ wFMN_NADH * fC1,
         FMNH_NAD ~ wFMNH_NAD * fC1,
-        N3_C1 ~ FMNsq / (FMNsq + FMNH * KEQ_FMNH_N3),
-        N3r_C1 ~ 1 - N3_C1,
-        N2QH2 ~ C1_CONC - (N2Q + N2rQ + N2SQ + N2rSQ),
-        D(N2Q) ~ -q12 + q51 + v17,
-        D(N2rQ) ~ q12 - q23 + v17b,
-        D(N2SQ) ~ q23 - q34 - v17,
-        D(N2rSQ) ~ q34 - q45 - v17b,
-        ## D(N2QH2) ~ q45 - q51,
-        vNADHC1 ~ -0.5 * (q12 + q34 + v16),
+        N2_C1 ~ FMNsq / (FMNsq + FMNH * KEQ_FMNH_N2),
+        N2r_C1 ~ 1 - N2_C1,
+        QH2_C1 ~ C1_CONC - (Q_C1 + SQ_C1),
+        D(Q_C1) ~ -q12 + q31 + v17,
+        D(SQ_C1) ~ q12 - q23 - v17,
+        vNADHC1 ~ -0.5 * (q12 + q23 + v16),
         vROSIf ~ v16,
-        vROSIq ~ v17 + v17b,
+        vROSIq ~ v17,
         vROSC1 ~ vROSIf + vROSIq,
-        vQH2C1 ~ q51,
-        vHresC1 ~ 4 * q45,
+        vQH2C1 ~ q31,
+        vQC1 ~ -vQH2C1,
+        vHresC1 ~ 4 * q23,
         vNADC1 ~ -vNADHC1,
         TNC1 ~ vNADC1 / C1_CONC,
     ]
@@ -605,13 +594,13 @@ end
 end
 
 #---
-sys = c1_n2q(; Q_n, QH2_n, nad, nadh, dpsi, sox_m) |> mtkcompile
+sys = c1_q(; Q_n, QH2_n, nad, nadh, dpsi, sox_m) |> mtkcompile
 markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi, sox_m) |> mtkcompile
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi, sox_m) |> mtkcompile
 
 # The parameter for ROS generation is adjusted to be comparable to ROS generation from complex III
 # The rate is increased by 10000 times
-prob_d = SteadyStateProblem(sys, [
+prob_q = SteadyStateProblem(sys, [
     sys.ET_C1 => 17μM,
     sys.kf16_C1 => 20Hz / μM,
     sys.kf17_C1 => 0.4Hz / μM,
@@ -632,10 +621,10 @@ alter_dpsi = (prob, i, repeat) -> begin
     prob
 end
 
-eprob_d = EnsembleProblem(prob_d; prob_func=alter_dpsi)
+eprob_q = EnsembleProblem(prob_q; prob_func=alter_dpsi)
 eprob_m = EnsembleProblem(prob_m; prob_func=alter_dpsi)
 eprob_g = EnsembleProblem(prob_g; prob_func=alter_dpsi)
-@time sim_d = solve(eprob_d, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
+@time sim_q = solve(eprob_q, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
 
@@ -644,18 +633,16 @@ extract(sim, k) = map(s -> s[k], sim)
 # MMP vs NADH turnover
 # markevich model has a steeper dependence
 xs = dpsirange
-ys = hcat(extract(sim_g, gauthier.vNADHC1), extract(sim_m, markevich.vNADHC1), extract(sim_d, sys.vNADHC1))
+ys = hcat(extract(sim_g, gauthier.vNADHC1), extract(sim_m, markevich.vNADHC1), extract(sim_q, sys.vNADHC1))
 
 plot(xs, ys, xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", label=["Gauthier" "Markevich" "Q site"])
-#---
-plot(xs, extract(sim_d, sys.vNADHC1), xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", label="Q site")
 
 #---
-ys = stack(extract.(Ref(sim_d), [sys.N2Q, sys.N2rQ, sys.N2SQ, sys.N2rSQ, sys.N2QH2]), dims=2)
-plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["N2Q" "N2rQ" "N2SQ" "N2rSQ" "N2QH2"])
+ys = stack(extract.(Ref(sim_q), [sys.Q_C1, sys.SQ_C1, sys.QH2_C1]), dims=2)
+plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1"])
 
 # Flavin site
-ys = stack(extract.(Ref(sim_d), [sys.FMN, sys.FMNsq, sys.FMNH, sys.FMN_NAD, sys.FMNH_NADH, sys.FMN_NADH, sys.FMNH_NAD]), dims=2)
+ys = stack(extract.(Ref(sim_q), [sys.FMN, sys.FMNsq, sys.FMNH, sys.FMN_NAD, sys.FMNH_NADH, sys.FMN_NADH, sys.FMNH_NAD]), dims=2)
 pl1 = plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH" "FMN_NADH" "FMNH_NAD"], title="Q site model", legend=:right)
 
 ys = stack(extract.(Ref(sim_m), [markevich.FMN, markevich.FMNsq, markevich.FMNH, markevich.FMN_NAD, markevich.FMNH_NADH, markevich.FMN_NADH, markevich.FMNH_NAD]), dims=2)
@@ -667,7 +654,7 @@ plot(pl1, pl2)
 xs = dpsirange
 ys_g = extract(sim_g, gauthier.vROSC1)
 ys_m = extract(sim_m, markevich.vROSC1)
-ys_d = extract(sim_d, sys.vROSC1)
+ys_d = extract(sim_q, sys.vROSC1)
 plot(xs, [ys_g ys_m ys_d], xlabel="MMP (mV)", ylabel="ROS production (μM/ms)", label=["Gauthier" "Markevich" "Q site"])
 
 # ## Varying NADH
@@ -678,10 +665,10 @@ alter_nadh = (prob, i, repeat) -> begin
     prob
 end
 
-eprob_d = EnsembleProblem(prob_d; prob_func=alter_nadh)
+eprob_q = EnsembleProblem(prob_q; prob_func=alter_nadh)
 eprob_g = EnsembleProblem(prob_g; prob_func=alter_nadh)
 eprob_m = EnsembleProblem(prob_m; prob_func=alter_nadh)
-@time sim_d = solve(eprob_d, alg, ealg; trajectories=length(nadhrange), abstol=1e-8, reltol=1e-8)
+@time sim_q = solve(eprob_q, alg, ealg; trajectories=length(nadhrange), abstol=1e-8, reltol=1e-8)
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(nadhrange), abstol=1e-8, reltol=1e-8)
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(nadhrange), abstol=1e-8, reltol=1e-8)
 
@@ -689,13 +676,13 @@ eprob_m = EnsembleProblem(prob_m; prob_func=alter_nadh)
 xs = nadhrange
 ys_g = extract(sim_g, gauthier.vNADHC1)
 ys_m = extract(sim_m, markevich.vNADHC1)
-ys_d = extract(sim_d, sys.vNADHC1)
+ys_d = extract(sim_q, sys.vNADHC1)
 
 plot(xs, [ys_g ys_m ys_d], xlabel="NADH (μM)", ylabel="NADH consumption (μM/ms)", label=["Gauthier" "Markevich" "Q site"])
 
 # NADH vs ROS production
 xs = nadhrange
-ys = [extract(sim_g, gauthier.vROSC1) extract(sim_m, markevich.vROSC1) extract(sim_d, sys.vROSC1)]
+ys = [extract(sim_g, gauthier.vROSC1) extract(sim_m, markevich.vROSC1) extract(sim_q, sys.vROSC1)]
 
 plot(xs, ys, xlabel="NADH (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "Q site"])
 
@@ -704,14 +691,14 @@ ys = stack(extract.(Ref(sim_m), [markevich.Q_C1, markevich.SQ_C1, markevich.QH2_
 plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1"], title="M model")
 
 #---
-ys = stack(extract.(Ref(sim_d), [sys.N2Q, sys.N2rQ, sys.N2SQ, sys.N2rSQ, sys.N2QH2]), dims=2)
-plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["N2Q" "N2rQ" "N2SQ" "N2rSQ" "N2QH2"], title="Q site model")
+ys = stack(extract.(Ref(sim_q), [sys.Q_C1, sys.SQ_C1, sys.QH2_C1]), dims=2)
+plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1"], title="Q model")
 
 #---
 ys = stack(extract.(Ref(sim_m), [markevich.FMN, markevich.FMNsq, markevich.FMNH, markevich.FMN_NAD, markevich.FMNH_NADH]), dims=2)
 pl1 = plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH"], legend=:topleft, title="M model")
 
-ys = stack(extract.(Ref(sim_d), [sys.FMN, sys.FMNsq, sys.FMNH, sys.FMN_NAD, sys.FMNH_NADH]), dims=2)
+ys = stack(extract.(Ref(sim_q), [sys.FMN, sys.FMNsq, sys.FMNH, sys.FMN_NAD, sys.FMNH_NADH]), dims=2)
 pl2 = plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH"], title="Q site model")
 
 plot(pl1, pl2, layout=(2, 1), size=(600, 800))
@@ -724,29 +711,28 @@ alter_qh2 = (prob, i, repeat) -> begin
     prob
 end
 
-eprob_d = EnsembleProblem(prob_d; prob_func=alter_qh2)
+eprob_q = EnsembleProblem(prob_q; prob_func=alter_qh2)
 eprob_g = EnsembleProblem(prob_g; prob_func=alter_qh2)
 eprob_m = EnsembleProblem(prob_m; prob_func=alter_qh2)
-@time sim_d = solve(eprob_d, alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
+@time sim_q = solve(eprob_q, alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
 
 # QH2 vs NADH turnover
 xs = qh2range
-ys = [extract(sim_g, gauthier.vNADHC1) extract(sim_m, markevich.vNADHC1) extract(sim_d, sys.vNADHC1)]
+ys = [extract(sim_g, gauthier.vNADHC1) extract(sim_m, markevich.vNADHC1) extract(sim_q, sys.vNADHC1)]
 
 plot(xs, ys, xlabel="QH2 (μM)", ylabel="NADH rate (mM/s)", label=["Gauthier" "Markevich" "Q site"])
 
 # QH2 vs ROS production
 # Gauthier model is sensitive to high QH2 because of slow NAD binding
 xs = qh2range
-ys = [extract(sim_g, gauthier.vROSC1) extract(sim_m, markevich.vROSC1) extract(sim_d, sys.vROSC1)]
+ys = [extract(sim_g, gauthier.vROSC1) extract(sim_m, markevich.vROSC1) extract(sim_q, sys.vROSC1)]
 plot(xs, ys, xlabel="QH2 (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "Q site"])
 
 #---
-ys = stack(extract.(Ref(sim_d), [sys.N2Q, sys.N2rQ, sys.N2SQ, sys.N2rSQ, sys.N2QH2]), dims=2)
-plot(xs, ys, xlabel="QH2 (μM)", ylabel="Concentration", label=["N2Q" "N2rQ" "N2SQ" "N2rSQ" "N2QH2"], title="Q site model")
-
+ys = stack(extract.(Ref(sim_q), [sys.Q_C1, sys.SQ_C1, sys.QH2_C1]), dims=2)
+plot(xs, ys, xlabel="QH2 (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1"], title="Q model")
 
 #---
 @unpack C1_1, C1_3, C1_4, C1_5, C1_6, C1_7 = gauthier
