@@ -493,7 +493,7 @@ function c1_q(; name=:c1q,
         kb16_C1 = kf16_C1 / KEQ16_C1
         kf17_C1 = 0.04Hz / μM       ## SOX production rate from Iq site
         KEQ17_C1 = exp(iVT * (Em_O2_SOX - Em_Q_SQ_C1))
-        kb17_C1 = kf17_C1 * KEQ17_C1
+        kb17_C1 = kf17_C1 / KEQ17_C1
     end
 
     C1_CONC = ET_C1 * MT_PROT
@@ -598,12 +598,14 @@ sys = c1_q(; Q_n, QH2_n, nad, nadh, dpsi, sox_m) |> mtkcompile
 markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi, sox_m) |> mtkcompile
 gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi, sox_m) |> mtkcompile
 
-# The parameter for ROS generation is adjusted to be comparable to ROS generation from complex III
-# The rate is increased by 10000 times
+# The parameter for ROS generation is adjusted (x10000) to be comparable to ROS generation from complex III
 prob_q = SteadyStateProblem(sys, [
     sys.ET_C1 => 17μM,
+    sys.kf8_C1 => 10Hz / μM / 2,
+    sys.kf9_C1 => 10000Hz / 100,
+    sys.kf13_C1 => 2.7e6Hz / 500,
     sys.kf16_C1 => 20Hz / μM,
-    sys.kf17_C1 => 0.4Hz / μM,
+    sys.kf17_C1 => 0.5Hz / μM,
 ])
 prob_m = SteadyStateProblem(markevich, [
     markevich.ET_C1 => 17μM,
@@ -656,6 +658,7 @@ ys_g = extract(sim_g, gauthier.vROSC1)
 ys_m = extract(sim_m, markevich.vROSC1)
 ys_d = extract(sim_q, sys.vROSC1)
 plot(xs, [ys_g ys_m ys_d], xlabel="MMP (mV)", ylabel="ROS production (μM/ms)", label=["Gauthier" "Markevich" "Q site"])
+
 
 # ## Varying NADH
 nadhrange = 10μM:10μM:2990μM
