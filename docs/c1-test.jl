@@ -7,7 +7,7 @@ using OrdinaryDiffEq
 using NaNMath
 using Plots
 using ECMEDox
-using ECMEDox: mM, μM, nM, iVT, mV, Molar, Hz, ms
+using ECMEDox: mM, μM, iVT, mV, Hz, ms
 
 # Gauthier 2012 7-state QSSA model
 function c1_gauthier(; name=:c1gauthier,
@@ -602,7 +602,7 @@ gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi, sox_m) |> mtkcompile
 prob_q = SteadyStateProblem(sys, [
     sys.ET_C1 => 17μM,
     sys.kf8_C1 => 10Hz / μM / 2,
-    sys.kf9_C1 => 10000Hz / 100,
+    sys.kf9_C1 => 10000Hz / 10,
     sys.kf13_C1 => 2.7e6Hz / 500,
     sys.kf16_C1 => 20Hz / μM,
     sys.kf17_C1 => 0.5Hz / μM,
