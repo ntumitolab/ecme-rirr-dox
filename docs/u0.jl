@@ -24,6 +24,9 @@ for i in sts
 end
 
 #---
+sol[sys.vO2 + sys.vROS]  # 0.21 mM/s
+
+#---
 plot(sol, idxs=sys.vm, legend=:right, tspan=(900second, 901second)) |> PNG
 
 # Citric acid cycle metabolites
