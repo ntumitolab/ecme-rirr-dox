@@ -34,3 +34,15 @@ prob2 = ODEProblem(sys2, [x => 0.0, iStim=>0.0], tspan)
 ts = 0:0.1:10.0
 ys = sol(ts, idxs=[sys.iStim, sys.x]).u |> stack |> transpose
 plot(ts, ys, label=["iStim" "x"])
+
+# Accepts optional parameter(s)
+function build_model(; istim = @parameters iStim(t))
+    # Convert an one-element collection into its only element
+    # If the input is scalar, don't change
+    return only(istim)
+end
+build_model()
+build_model(; istim = iStim)
+
+first([1])
+first(1)
