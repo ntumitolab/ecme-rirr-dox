@@ -7,7 +7,7 @@ using OrdinaryDiffEq
 using NaNMath
 using Plots
 using ECMEDox
-using ECMEDox: mM, μM, iVT, mV, Hz, ms
+using ECMEDox: mM, μM, iVT, mV, Hz, ms, Molar
 
 # Gauthier 2012 7-state QSSA model
 function c1_gauthier(; name=:c1gauthier,
@@ -566,8 +566,8 @@ function c1_q(; name=:c1q,
         FMN_NADH ~ wFMN_NADH * fC1,
         FMNH_NAD ~ wFMNH_NAD * fC1,
         N2_C1 ~ FMNsq / (FMNsq + FMNH * KEQ_FMNH_N2),
-        N2r_C1 ~ 1 - N2_C1,
-        QH2_C1 ~ C1_CONC - (Q_C1 + SQ_C1),
+        1 ~ N2r_C1 + N2_C1,
+        C1_CONC ~ Q_C1 + SQ_C1 + QH2_C1,
         D(Q_C1) ~ -q12 + q31 + v17,
         D(SQ_C1) ~ q12 - q23 - v17,
         vNADHC1 ~ -0.5 * (q12 + q23 + v16),
@@ -600,12 +600,12 @@ gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi, sox_m) |> mtkcompile
 
 # The parameter for ROS generation is adjusted (x10000) to be comparable to ROS generation from complex III
 prob_q = SteadyStateProblem(sys, [
-    sys.ET_C1 => 17μM,
-    sys.kf8_C1 => 10Hz / μM / 2,
-    sys.kf9_C1 => 10000Hz / 10,
-    sys.kf13_C1 => 2.7e6Hz / 500,
-    sys.kf16_C1 => 20Hz / μM,
-    sys.kf17_C1 => 0.5Hz / μM,
+    sys.ET_C1 => 1.5μM,
+    sys.kf8_C1 => 10Hz / μM,
+    sys.kf9_C1 => 10000Hz,
+    sys.kf13_C1 => 50000Hz,
+    sys.kf16_C1 => 200Hz / μM,
+    sys.kf17_C1 => 20Hz / μM,
 ])
 prob_m = SteadyStateProblem(markevich, [
     markevich.ET_C1 => 17μM,
@@ -637,7 +637,10 @@ extract(sim, k) = map(s -> s[k], sim)
 xs = dpsirange
 ys = hcat(extract(sim_g, gauthier.vNADHC1), extract(sim_m, markevich.vNADHC1), extract(sim_q, sys.vNADHC1))
 
-plot(xs, ys, xlabel="MMP (mV)", ylabel="NADH rate (μM/ms)", label=["Gauthier" "Markevich" "Q site"])
+plot(xs, ys, xlabel="MMP (mV)", ylabel="NADH rate (mM/s)", label=["Gauthier" "Markevich" "Q site"])
+
+#---
+extract(sim_q, sys.TNC1)
 
 #---
 ys = stack(extract.(Ref(sim_q), [sys.Q_C1, sys.SQ_C1, sys.QH2_C1]), dims=2)
@@ -656,9 +659,8 @@ plot(pl1, pl2)
 xs = dpsirange
 ys_g = extract(sim_g, gauthier.vROSC1)
 ys_m = extract(sim_m, markevich.vROSC1)
-ys_d = extract(sim_q, sys.vROSC1)
-plot(xs, [ys_g ys_m ys_d], xlabel="MMP (mV)", ylabel="ROS production (μM/ms)", label=["Gauthier" "Markevich" "Q site"])
-
+ys_q = extract(sim_q, sys.vROSC1)
+plot(xs, [ys_g ys_m ys_q], xlabel="MMP (mV)", ylabel="ROS production (μM/ms)", label=["Gauthier" "Markevich" "Q site"])
 
 # ## Varying NADH
 nadhrange = 10μM:10μM:2990μM
@@ -679,9 +681,9 @@ eprob_m = EnsembleProblem(prob_m; prob_func=alter_nadh)
 xs = nadhrange
 ys_g = extract(sim_g, gauthier.vNADHC1)
 ys_m = extract(sim_m, markevich.vNADHC1)
-ys_d = extract(sim_q, sys.vNADHC1)
+ys_q = extract(sim_q, sys.vNADHC1)
 
-plot(xs, [ys_g ys_m ys_d], xlabel="NADH (μM)", ylabel="NADH consumption (μM/ms)", label=["Gauthier" "Markevich" "Q site"])
+plot(xs, [ys_g ys_m ys_q], xlabel="NADH (μM)", ylabel="NADH rate (mM/s)", label=["Gauthier" "Markevich" "Q site"])
 
 # NADH vs ROS production
 xs = nadhrange
@@ -696,6 +698,9 @@ plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" 
 #---
 ys = stack(extract.(Ref(sim_q), [sys.Q_C1, sys.SQ_C1, sys.QH2_C1]), dims=2)
 plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1"], title="Q model")
+
+#---
+plot(xs, extract(sim_q, sys.N2r_C1 / sys.N2_C1))
 
 #---
 ys = stack(extract.(Ref(sim_m), [markevich.FMN, markevich.FMNsq, markevich.FMNH, markevich.FMN_NAD, markevich.FMNH_NADH]), dims=2)
