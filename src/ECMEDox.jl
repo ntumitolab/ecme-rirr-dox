@@ -22,7 +22,7 @@ include("oxphos.jl")
 include("transmito.jl")
 include("u0.jl")
 
-function build_model(; name=:ecmesys, use_mg=false, simplify=true, bcl=1second, istim=-80μAcm⁻², tstart=0second, tend=10second, duty=0.5ms)
+function build_model(; name=:ecmesys, use_mg=false, simplify=true, bcl=0second, istim=-80μAcm⁻², tstart=0second, tend=10second, duty=0.5ms)
     @parameters begin
         iStim(t) = 0μAcm⁻²          # Stimulation current
         DOX(t) = 0mM                # Doxorubicin concentration
@@ -69,13 +69,13 @@ function build_model(; name=:ecmesys, use_mg=false, simplify=true, bcl=1second, 
 
     @variables begin
         vm(t) = -87.28mV        # Sarcolemmal membrane potential
-        dpsi(t) = 175.318mV     # Mitochondrial membrane potential
+        dpsi(t) = 170mV         # Mitochondrial membrane potential
         atp_i(t) # Conserved
-        adp_i(t) = 130μM
+        adp_i(t) = 50μM
         atp_m(t) # Conserved
-        adp_m(t) = 0.0058mM
+        adp_m(t) = 50μM
         nad_m(t) # Conserved
-        nadh_m(t) = 100μM
+        nadh_m(t) = 500μM
         na_i(t) = 8.2143mM      # Cytoplasmic Na
         k_i(t) = 150.8mM        # Cytoplasmic K
         ca_i(t) = 5.8653e-5mM   # Cytoplasmic Ca
@@ -83,7 +83,7 @@ function build_model(; name=:ecmesys, use_mg=false, simplify=true, bcl=1second, 
         ca_nsr(t) = 0.1948mM    # Network SR Ca
         ca_ss(t) = 7.057e-5mM   # Subspace calcium
         ca_m(t) = 2.19e-5mM     # Mitochondrial calcium
-        sox_m(t) = 0.5μM        # Mitochondrial superoxide
+        sox_m(t) = 0.1μM        # Mitochondrial superoxide
     end
 
     # Subsystems
@@ -116,6 +116,9 @@ function build_model(; name=:ecmesys, use_mg=false, simplify=true, bcl=1second, 
     @unpack vUni, vNaCa = mitocasys
 
     eqs = [
+        ΣA_i ~ atp_i + adp_i,
+        ΣA_m ~ atp_m + adp_m,
+        ΣNAD_m ~ nad_m + nadh_m,
         D(vm) ~ -iCM * (INa + ICaL + IK + IK1 + IKp + INaCa + INaK + INsNa + IPMCA + ICaB + INaB + iStim + IKatp + ICaK),
         D(na_i) ~ -A_CAP_V_MYO_F * (INa + INaB + INsNa + 3INaCa + 3INaK),
         D(k_i) ~ -A_CAP_V_MYO_F * (IK + IK1 + IKp + IKatp + iStim - 2INaK + ICaK),
@@ -129,9 +132,6 @@ function build_model(; name=:ecmesys, use_mg=false, simplify=true, bcl=1second, 
         D(nadh_m) ~ vNADHC1 + vIDH + vKGDH + vMDH,
         D(dpsi) ~ iCMito * (vHres - vHu - vANT - vHleak - vNaCa - 2vUni - vIMAC),
         D(sox_m) ~ vROS - vTrROS,
-        ΣA_i ~ atp_i + adp_i,
-        ΣA_m ~ atp_m + adp_m,
-        ΣNAD_m ~ nad_m + nadh_m,
     ]
 
     if bcl > 0 && duty > 0 && istim != 0
