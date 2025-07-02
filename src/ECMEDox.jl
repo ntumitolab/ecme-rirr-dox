@@ -21,11 +21,11 @@ include("oxphos.jl")
 include("transmito.jl")
 include("u0.jl")
 
-function build_model(; name=:ecmesys, use_mg=false, simplify=true, bcl=0second, istim=-80μAcm⁻², tstart=0second, tend=10second, duty=0.5ms)
+function build_model(; name=:ecmesys, bcl=0second, istim=-80μAcm⁻², tstart=0second, tend=10second, duty=0.5ms, use_mg=false, simplify=true)
     @parameters begin
         iStim(t) = 0μAcm⁻²          # Stimulation current
         DOX(t) = 0mM                # Doxorubicin concentration
-        O2(t) = 6μM                 # Oxygen concentration
+        kdiffO2(t) = 1000Hz            # Oxygen diffusion rate
         MT_PROT = 1                 # OXPHOS protein content
         ΣA_m = 1.01mM               # Mitochondrial ATP + ADP pool (Gauthier-2013)
         ΣA_i = 8mM                  # Cytosolic ATP + ADP pool (Li-2015)
@@ -64,6 +64,7 @@ function build_model(; name=:ecmesys, use_mg=false, simplify=true, bcl=0second, 
         mg_i = 1mM          # Cytosolic magnesium (Gauthier-2013) # 3.1mM (Li-2015)
         mg_m = 0.4mM        # Mitochondrial magnesium (li-2015)
         pi_i = 3mM          # Cytosolic inorganic phosphate
+        O2_o(t) = 6μM       # Extracellular oxygen
     end
 
     @variables begin
@@ -83,6 +84,7 @@ function build_model(; name=:ecmesys, use_mg=false, simplify=true, bcl=0second, 
         ca_ss(t) = 7.057e-5mM   # Subspace calcium
         ca_m(t) = 2.19e-5mM     # Mitochondrial calcium
         sox_m(t) = 0.1μM        # Mitochondrial superoxide
+        O2(t) = 6μM             # Mitochondrial oxygen concentration
     end
 
     # Subsystems
@@ -98,11 +100,11 @@ function build_model(; name=:ecmesys, use_mg=false, simplify=true, bcl=0second, 
     @unpack suc, fum, oaa, vSL, vIDH, vKGDH, vMDH = tcassys
     etcsys = get_etc_sys(; h_i, h_m, DOX, MT_PROT, O2, nad_m, nadh_m, suc, fum, oaa)
     c5sys = get_c5_sys(; dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT, mg_i, mg_m, use_mg)
-    @unpack vROS, vNADHC1, vHres = etcsys
+    @unpack vROS, vNADHC1, vHres, vO2 = etcsys
     rossys = get_ros_sys(; dpsi, sox_m, nadph_i, V_MITO_V_MYO)
     mitocasys = get_mitoca_sys(; na_i, ca_m, ca_i, dpsi)
 
-    @unpack vTrROS, vIMAC = rossys
+    @unpack vTrROS, vIMAC, vSOD_i = rossys
     @unpack INa, INsNa, ICaB, INaB = inasys
     @unpack IPMCA, Jup, INaCa, Jtr, Jxfer = jcasys
     @unpack IK, IK1, IKp, IKatp = iksys
@@ -131,6 +133,7 @@ function build_model(; name=:ecmesys, use_mg=false, simplify=true, bcl=0second, 
         D(nadh_m) ~ vNADHC1 + vIDH + vKGDH + vMDH,
         D(dpsi) ~ iCMito * (vHres - vHu - vANT - vHleak - vNaCa - 2vUni - vIMAC),
         D(sox_m) ~ vROS - vTrROS,
+        D(O2) ~ V_MT / (V_MYO + V_MT) * (-vROS - vO2) + kdiffO2 * (O2_o - O2),
     ]
 
     if bcl > 0 && duty > 0 && istim != 0
