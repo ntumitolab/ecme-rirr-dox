@@ -53,8 +53,8 @@ plot(sol, idxs = [sys.vROSIf, sys.vROSIq, sys.vROSC1, sys.vROSC3], tspan=(900e3,
 # O2 Shunt
 plot(sol, idxs=100 * sys.vROS / (sys.vO2 + sys.vROS), title="O2 Shunt", tspan=(900e3, 910e3))
 
-#---
+# MMP
 plot(sol, idxs = [sys.dpsi], tspan=(900e3, 910e3))
 
-#---
+# ATP synthesis rate
 plot(sol, idxs = [sys.vC5], tspan=(900e3, 910e3))
