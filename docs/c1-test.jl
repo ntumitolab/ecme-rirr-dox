@@ -647,8 +647,8 @@ gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi, sox_m) |> mtkcompile
 prob_q = SteadyStateProblem(sys, [
     sys.ET_C1 => 17μM,
     sys.kf8_C1 => 1Hz / μM,
-    sys.kf9_C1 => 10000Hz,
-    sys.kf13_C1 => 50000Hz,
+    sys.kf9_C1 => 1000Hz,
+    sys.kf13_C1 => 5000Hz,
     sys.kf16_C1 => 20Hz / μM,
     sys.kf17_C1 => 0.4Hz / μM,
 ])
