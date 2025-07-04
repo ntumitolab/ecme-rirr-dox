@@ -143,49 +143,49 @@ function c1_markevich_full(; name=:c1markevich_full,
         KI_DOX_C1 = 400μM
         kf1_C1 = 83Hz / μM
         KEQ1_C1 = 0.01 / μM
-        kr1_C1
+        kr1_C1 = kf1_C1 / KEQ1_C1
         kf3_C1 = 1e6Hz
         KEQ3_C1 = 25μM
-        kr3_C1
+        kr3_C1 = kf3_C1 / KEQ3_C1
         kf2_C1 = 1.44e12Hz
-        KEQ2_C1
-        kr2_C1
+        KEQ2_C1 = exp(2iVT * (Em_FMN_FMNH - Em_NAD)) / KEQ1_C1 / KEQ3_C1
+        kr2_C1 = kf2_C1 / KEQ2_C1
         kf4_C1 = 1Hz / μM
         KEQ4_C1 = 0.001 / μM
-        kr4_C1
+        kr4_C1 = kf4_C1 / KEQ4_C1
         kf5_C1 = 2Hz / μM
         KEQ5_C1 = 0.02 / μM
-        kr5_C1
+        kr5_C1 = kf5_C1 / KEQ5_C1
         kf6_C1 = 5e8Hz / μM
-        KEQ6_C1
-        kr6_C1
+        KEQ6_C1 = exp(iVT * (Em_N3 - Em_FMNsq_FMNH))
+        kr6_C1 = kf6_C1 / KEQ6_C1
         kf7_C1 = 10000Hz / μM
-        KEQ7_C1
-        kr7_C1
+        KEQ7_C1 = exp(iVT * (Em_N2 - Em_N3))
+        kr7_C1 = kf7_C1 / KEQ7_C1
         kf8_C1 = 10Hz / μM
         KEQ8_C1 = 0.1 / μM         ## Association constant for Q
-        kr8_C1
+        kr8_C1 = kf8_C1 / KEQ8_C1
         kf9_C1 = 4e5Hz / μM
-        KEQ9_C1
-        kr9_C1
+        KEQ9_C1 = exp(iVT * (Em_Q_SQ_C1 - Em_N2))
+        kr9_C1 = kf9_C1 / KEQ9_C1
         kf10_C1 = 2e6Hz / μM
-        KEQ10_C1
-        KEQ10B_C1
-        kr10_C1
-        kr10b_C1
+        KEQ10_C1 = exp(iVT * (Em_N1a - Em_FMN_FMNsq))
+        KEQ10B_C1 = exp(iVT * (Em_FMNsq_FMNH - Em_N1a))
+        kr10_C1 = kf10_C1 / KEQ10_C1
+        kr10b_C1 = kf10_C1 / KEQ10B_C1
         kf11_C1 = 1e9Hz / μM
-        KEQ11_C1
-        kr11_C1
+        KEQ11_C1 = exp(iVT * (Em_N3 - Em_FMN_FMNsq))
+        kr11_C1 = kf11_C1 / KEQ11_C1
         kf13_C1 = 2.7e6Hz / μM
         kf14_C1 = 1000Hz
         KEQ14_C1 = 20μM             ## Dissociation constant for QH2
-        kr14_C1
+        kr14_C1 = kf14_C1 / KEQ14_C1
         kf16_C1 = 2Hz / μM          ## SOX production rate from If site
-        KEQ16_C1
-        kr16_C1
+        KEQ16_C1 = exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
+        kr16_C1 = kf16_C1 / KEQ16_C1
         kf17_C1 = 0.04Hz / μM       ## SOX production rate from Iq site
-        KEQ17_C1
-        kr17_C1
+        KEQ17_C1 = exp(iVT * (Em_O2_SOX - Em_Q_SQ_C1))
+        kr17_C1 = kf17_C1 / KEQ17_C1
     end
 
     @variables begin
@@ -258,30 +258,6 @@ function c1_markevich_full(; name=:c1markevich_full,
     v17 = kf17_C1 * SQ_C1 * O2 - kr17_C1 * Q_C1 * sox_m
 
     eqs = [
-        kr1_C1 ~ kf1_C1 / KEQ1_C1,
-        kr3_C1 ~ kf3_C1 / KEQ3_C1,
-        KEQ2_C1 ~ exp(2iVT * (Em_FMN_FMNH - Em_NAD)) / KEQ1_C1 / KEQ3_C1,
-        kr2_C1 ~ kf2_C1 / KEQ2_C1,
-        kr4_C1 ~ kf4_C1 / KEQ4_C1,
-        kr5_C1 ~ kf5_C1 / KEQ5_C1,
-        KEQ6_C1 ~ exp(iVT * (Em_N3 - Em_FMNsq_FMNH)),
-        kr6_C1 ~ kf6_C1 / KEQ6_C1,
-        KEQ7_C1 ~ exp(iVT * (Em_N2 - Em_N3)),
-        kr7_C1 ~ kf7_C1 / KEQ7_C1,
-        kr8_C1 ~ kf8_C1 / KEQ8_C1,
-        KEQ9_C1 ~ exp(iVT * (Em_Q_SQ_C1 - Em_N2)),
-        kr9_C1 ~ kf9_C1 / KEQ9_C1,
-        KEQ10_C1 ~ exp(iVT * (Em_N1a - Em_FMN_FMNsq)),
-        KEQ10B_C1 ~ exp(iVT * (Em_FMNsq_FMNH - Em_N1a)),
-        kr10_C1 ~ kf10_C1 / KEQ10_C1,
-        kr10b_C1 ~ kf10_C1 / KEQ10B_C1,
-        KEQ11_C1 ~ exp(iVT * (Em_N3 - Em_FMN_FMNsq)),
-        kr11_C1 ~ kf11_C1 / KEQ11_C1,
-        kr14_C1 ~ kf14_C1 / KEQ14_C1,
-        KEQ16_C1 ~ exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH)),
-        kr16_C1 ~ kf16_C1 / KEQ16_C1,
-        KEQ17_C1 ~ exp(iVT * (Em_O2_SOX - Em_Q_SQ_C1)),
-        kr17_C1 ~ kf17_C1 / KEQ17_C1,
         ET_C1 ~ N2r_C1 + N2_C1,
         ET_C1 ~ N3r_C1 + N3_C1,
         ET_C1 ~ N1ar_C1 + N1a_C1,
@@ -496,17 +472,18 @@ function c1_q(; name=:c1q,
     DOX=0μM, ROTENONE_BLOCK=0, MT_PROT=1)
 
     @parameters begin
-        ET_C1 = 17μM                ## Activity of complex I
-        KI_DOX_C1 = 400μM           ## DOX IC50 on complex I
+        ET_C1 = 17μM              ## Activity of complex I
+        KI_DOX_C1 = 400μM         ## DOX IC50 on complex I
         Em_O2_SOX = -160mV        ## O2/Superoxide redox potential
         Em_FMN_FMNsq = -387mV     ## FMN/FMNH- avg redox potential
         Em_FMNsq_FMNH = -293mV    ## FMN semiquinone/FMNH- redox potential
         Em_FMN_FMNH = -340mV      ## FMN/FMNH- avg redox potential
         Em_NAD = -320mV           ## NAD/NADH avg redox potential
         Em_N3 = -250mV
-        Em_N2 = -150mV            ## B. taurus ISC N2 redox potential
-        Em_Q_SQ_C1 = -300mV       ## -213mV in Markevich, 2015
-        Em_SQ_QH2_C1 = +500mV
+        Em_N2 = -150mV            ## B. taurus complex N2 redox potential
+        Em_Q_SQ_C1 = -300mV       ## -213mV in Markevich's model
+        Em_SQ_Q2_C1 = -300mV       ## About the same as first electron reduction
+        Em_Q2_QH2_C1 = +800mV     ## Protonation of Q dianion releases energy
         KI_NADH_C1 = 50μM
         KD_NADH_C1 = 100μM
         KI_NAD_C1 = 1000μM
@@ -516,23 +493,40 @@ function c1_q(; name=:c1q,
         ## 2FMNsq = (ISC) = FMN + FMNH- + H+
         rKEQ_FMNsq_Dis = exp(-iVT * (Em_FMNsq_FMNH - Em_FMN_FMNsq))
         ## FMNH- + N3 = FMNsq + N3-
-        KEQ_FMNH_N2 = exp(iVT * (Em_N2 - Em_FMNsq_FMNH))
+        kf6_C1 = 5e8Hz / μM
+        KEQ6_C1 = exp(iVT * (Em_N3 - Em_FMNsq_FMNH))
+        kr6_C1 = kf6_C1 / KEQ6_C1
+        ## N2 + N3− = N2− + N3
+        kf7_C1 = 2e4Hz / μM
+        KEQ7_C1 = exp(iVT * (Em_N2 - Em_N3))
+        kr7_C1 = kf7_C1 / KEQ7_C1
+        ## I + Q = IQ
         kf8_C1 = 10Hz / μM
-        KEQ8_C1 = inv(10μM)
-        kb8_C1 = kf8_C1 / KEQ8_C1
-        kf9_C1 = 10000Hz
+        KEQ8_C1 = 0.1 / μM
+        kr8_C1 = kf8_C1 / KEQ8_C1
+        ## Q + N2- = Q- + N2-
+        kf9_C1 = 4e5Hz / μM
         KEQ9_C1 = exp(iVT * (Em_Q_SQ_C1 - Em_N2))
-        kb9_C1 = kf9_C1 / KEQ9_C1
-        kf13_C1 = 2.7e6Hz
+        kr9_C1 = kf9_C1 / KEQ9_C1
+        ## Q- + N2- = Q2- + N2
+        kf10_C1 = 4e5Hz / μM
+        KEQ10_C1 = exp(iVT * (Em_SQ_Q2_C1 - Em_N2))
+        kr10_C1 = kf10_C1 / KEQ10_C1
+        ## FMNHsq + N3 = FMN + N3− + Hi+
+        kf11_C1 = 1e9Hz / μM
+        KEQ11_C1 = exp(iVT * (Em_N3 - Em_FMN_FMNsq))
+        kr11_C1 = kf11_C1 / KEQ11_C1
+        ## Q2- + 6Hm = QH2 + 4Hi
+        kf13_C1 = 2.7e6Hz / μM
         kf14_C1 = 1000Hz
         KEQ14_C1 = 20μM
-        kb14_C1 = kf14_C1 / KEQ14_C1
+        kr14_C1 = kf14_C1 / KEQ14_C1
         kf16_C1 = 2Hz / μM          ## SOX production rate from If site
         KEQ16_C1 = exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
-        kb16_C1 = kf16_C1 / KEQ16_C1
+        kr16_C1 = kf16_C1 / KEQ16_C1
         kf17_C1 = 0.04Hz / μM       ## SOX production rate from Iq site
         KEQ17_C1 = exp(iVT * (Em_O2_SOX - Em_Q_SQ_C1))
-        kb17_C1 = kf17_C1 / KEQ17_C1
+        kr17_C1 = kf17_C1 / KEQ17_C1
     end
 
     C1_CONC = ET_C1 * MT_PROT
@@ -546,12 +540,15 @@ function c1_q(; name=:c1q,
         FMNH_NADH(t)
         FMN_NADH(t)
         FMNH_NAD(t)
+        N3_C1(t)
+        N3r_C1(t)
         N2_C1(t)
         N2r_C1(t)
         ## Quinone site
         I_C1(t)
         Q_C1(t) = 0
         SQ_C1(t) = 0
+        Q2_C1(t) = 0
         QH2_C1(t) = 0
         rKEQ_N2r_SQ(t)
         ## Reaction rates
@@ -606,6 +603,19 @@ function c1_q(; name=:c1q,
         FMNH_NADH ~ wFMNH_NADH * fC1,
         FMN_NADH ~ wFMN_NADH * fC1,
         FMNH_NAD ~ wFMNH_NAD * fC1,
+        KEQ6_C1 ~ exp(iVT * (Em_N3 - Em_FMNsq_FMNH)),
+        kr6_C1 ~ kf6_C1 / KEQ6_C1,
+        KEQ7_C1 ~ exp(iVT * (Em_N2 - Em_N3)),
+        kr7_C1 ~ kf7_C1 / KEQ7_C1,
+        kr8_C1 ~ kf8_C1 / KEQ8_C1,
+        KEQ9_C1 ~ exp(iVT * (Em_Q_SQ_C1 - Em_N2)),
+        kr9_C1 ~ kf9_C1 / KEQ9_C1,
+        KEQ11_C1 ~ exp(iVT * (Em_N3 - Em_FMN_FMNsq)),
+        kr11_C1 ~ kf11_C1 / KEQ11_C1,
+        KEQ16_C1 ~ exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH)),
+        kr16_C1 ~ kf16_C1 / KEQ16_C1,
+        KEQ17_C1 ~ exp(iVT * (Em_O2_SOX - Em_Q_SQ_C1)),
+        kr17_C1 ~ kf17_C1 / KEQ17_C1,
         N2_C1 ~ FMNsq / (FMNsq + FMNH * KEQ_FMNH_N2),
         1 ~ N2r_C1 + N2_C1,
         C1_CONC ~ I_C1 + Q_C1 + SQ_C1 + QH2_C1,

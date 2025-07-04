@@ -4,45 +4,16 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 using DiffEqCallbacks
 using Plots
 
-@parameters iStim(t)
-@variables x(t) v_istim(t) rhs(t)
-
-stimulate! = (integrator) -> begin
-    integrator.ps[iStim] = 5
+@parameters begin
+    kf = 1
+    keq = 1
+    kb = kf / keq
 end
-cb = PresetTimeCallback(1.0, stimulate!)
 
-ev = ModelingToolkit.SymbolicDiscreteCallback(
-    [1.0] => [iStim ~ 5], discrete_parameters = iStim, iv = t)
+@variables a(t) = 1 b(t) = 0
 
-@named model = System([D(x) ~ rhs, rhs ~ -x + v_istim, v_istim ~ iStim], t; discrete_events = [ev])
+v = kf * a - kb * b
 
-sys = mtkcompile(model)
+@mtkcompile sys = System([D(a) ~ -v; D(b) ~ v], t)
 
-@named model2 = System(equations(model), t)
-
-sys2 = mtkcompile(model2)
-
-tspan = (0.0, 10.0)
-prob = ODEProblem(sys, [x => 0.0, iStim=>0.0], tspan)
-
-@time sol = solve(prob)
-
-prob2 = ODEProblem(sys2, [x => 0.0, iStim=>0.0], tspan)
-@time sol2 = solve(prob2)
-
-ts = 0:0.1:10.0
-ys = sol(ts, idxs=[sys.iStim, sys.x]).u |> stack |> transpose
-plot(ts, ys, label=["iStim" "x"])
-
-# Accepts optional parameter(s)
-function build_model(; istim = @parameters iStim(t))
-    # Convert an one-element collection into its only element
-    # If the input is scalar, don't change
-    return only(istim)
-end
-build_model()
-build_model(; istim = iStim)
-
-first([1])
-first(1)
+prob = ODEProblem(sys, [], (0.0, 1.0))
