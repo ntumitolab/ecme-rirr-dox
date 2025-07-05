@@ -482,8 +482,8 @@ function c1_q(; name=:c1q,
         Em_N3 = -250mV
         Em_N2 = -150mV            ## B. taurus complex N2 redox potential
         Em_Q_SQ_C1 = -300mV       ## -213mV in Markevich's model
-        Em_SQ_Q2_C1 = -300mV       ## About the same as first electron reduction
-        Em_Q2_QH2_C1 = +800mV     ## Protonation of Q dianion releases energy
+        Em_SQ_Q2_C1 = -300mV      ## About the same as first electron reduction
+        Em_SQ_QH2_C1 = +500mV     ## Protonation of Q dianion releases energy
         KI_NADH_C1 = 50μM
         KD_NADH_C1 = 100μM
         KI_NAD_C1 = 1000μM
@@ -496,6 +496,8 @@ function c1_q(; name=:c1q,
         kf6_C1 = 5e8Hz / μM
         KEQ6_C1 = exp(iVT * (Em_N3 - Em_FMNsq_FMNH))
         kr6_C1 = kf6_C1 / KEQ6_C1
+        ## FMNH- + N2 = FMNsq + N2-
+        KEQ_FMNH_N2 = exp(iVT * (Em_N2 - Em_FMNsq_FMNH))
         ## N2 + N3− = N2− + N3
         kf7_C1 = 2e4Hz / μM
         KEQ7_C1 = exp(iVT * (Em_N2 - Em_N3))
@@ -548,7 +550,6 @@ function c1_q(; name=:c1q,
         I_C1(t)
         Q_C1(t) = 0
         SQ_C1(t) = 0
-        Q2_C1(t) = 0
         QH2_C1(t) = 0
         rKEQ_N2r_SQ(t)
         ## Reaction rates
@@ -581,18 +582,18 @@ function c1_q(; name=:c1q,
 
     ## Quinone site state transitions
     ## C1 + Q = Q_C1
-    v8 = kf8_C1 * Q_n * C1_INHIB * I_C1 - kb8_C1 * Q_C1
+    v8 = kf8_C1 * Q_n * C1_INHIB * I_C1 - kr8_C1 * Q_C1
     ## Q_C1 + N2r = SQ_C1 + N2
-    v9 = kf9_C1 * N2r_C1 * Q_C1 - kb9_C1 * N2_C1 * SQ_C1
+    v9 = kf9_C1 * N2r_C1 * Q_C1 - kr9_C1 * N2_C1 * SQ_C1
     ## C1_SQ + N2r + 6Hm = C1_QH2 + N2 + 4Hi
     v13 = kf13_C1 * (fhm^2 * N2r_C1 * SQ_C1 - rKEQ_N2r_SQ * N2_C1 * QH2_C1)
     ## C1_QH2 = C1 + QH2
-    v14 = kf14_C1 * QH2_C1 - kb14_C1 * QH2_n * C1_INHIB * I_C1
+    v14 = kf14_C1 * QH2_C1 - kr14_C1 * QH2_n * C1_INHIB * I_C1
 
     ## Flavin site ROS production
-    v16 = kf16_C1 * FMNH * O2 - kb16_C1 * FMNsq * sox_m
+    v16 = kf16_C1 * FMNH * O2 - kr16_C1 * FMNsq * sox_m
     ## Quinone site ROS production
-    v17 = kf17_C1 * SQ_C1 * O2 - kb17_C1 * Q_C1 * sox_m
+    v17 = kf17_C1 * SQ_C1 * O2 - kr17_C1 * Q_C1 * sox_m
 
     eqs = [
         rKEQ_N2r_SQ ~ exp(-iVT * (Em_SQ_QH2_C1 - Em_N2 - 4dpsi)) * (h_i / h_m)^4,
@@ -603,19 +604,6 @@ function c1_q(; name=:c1q,
         FMNH_NADH ~ wFMNH_NADH * fC1,
         FMN_NADH ~ wFMN_NADH * fC1,
         FMNH_NAD ~ wFMNH_NAD * fC1,
-        KEQ6_C1 ~ exp(iVT * (Em_N3 - Em_FMNsq_FMNH)),
-        kr6_C1 ~ kf6_C1 / KEQ6_C1,
-        KEQ7_C1 ~ exp(iVT * (Em_N2 - Em_N3)),
-        kr7_C1 ~ kf7_C1 / KEQ7_C1,
-        kr8_C1 ~ kf8_C1 / KEQ8_C1,
-        KEQ9_C1 ~ exp(iVT * (Em_Q_SQ_C1 - Em_N2)),
-        kr9_C1 ~ kf9_C1 / KEQ9_C1,
-        KEQ11_C1 ~ exp(iVT * (Em_N3 - Em_FMN_FMNsq)),
-        kr11_C1 ~ kf11_C1 / KEQ11_C1,
-        KEQ16_C1 ~ exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH)),
-        kr16_C1 ~ kf16_C1 / KEQ16_C1,
-        KEQ17_C1 ~ exp(iVT * (Em_O2_SOX - Em_Q_SQ_C1)),
-        kr17_C1 ~ kf17_C1 / KEQ17_C1,
         N2_C1 ~ FMNsq / (FMNsq + FMNH * KEQ_FMNH_N2),
         1 ~ N2r_C1 + N2_C1,
         C1_CONC ~ I_C1 + Q_C1 + SQ_C1 + QH2_C1,
@@ -744,24 +732,23 @@ ys = [extract(sim_g, gauthier.vROSC1) extract(sim_m, markevich.vROSC1) extract(s
 plot(xs, ys, xlabel="NADH (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "Q site"])
 
 #---
-ys = stack(extract.(Ref(sim_m), [markevich.Q_C1, markevich.SQ_C1, markevich.QH2_C1]), dims=2)
-plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1"], title="M model")
+xs = nadhrange
+ys1 = stack(extract.(Ref(sim_m), [markevich.Q_C1, markevich.SQ_C1, markevich.QH2_C1]), dims=2)
+pl1 = plot(xs, ys1, xlabel="NADH (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1"], title="M model")
 
-#---
-ys = stack(extract.(Ref(sim_q), [sys.Q_C1, sys.SQ_C1, sys.QH2_C1]), dims=2)
-plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1"], title="Q model")
+ys2 = stack(extract.(Ref(sim_q), [sys.Q_C1, sys.SQ_C1, sys.QH2_C1]), dims=2)
+pl2 = plot(xs, ys2, xlabel="NADH (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1"], title="Q model")
 
-#---
-plot(xs, extract(sim_q, sys.N2r_C1 / sys.N2_C1))
+plot(pl1, pl2)
 
 #---
 ys = stack(extract.(Ref(sim_m), [markevich.FMN, markevich.FMNsq, markevich.FMNH, markevich.FMN_NAD, markevich.FMNH_NADH]), dims=2)
 pl1 = plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH"], legend=:topleft, title="M model")
 
 ys = stack(extract.(Ref(sim_q), [sys.FMN, sys.FMNsq, sys.FMNH, sys.FMN_NAD, sys.FMNH_NADH]), dims=2)
-pl2 = plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH"], title="Q site model")
+pl2 = plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH"], title="Q model")
 
-plot(pl1, pl2, layout=(2, 1), size=(600, 800))
+plot(pl1, pl2)
 
 # ## Varying Q
 qh2range = 10μM:10μM:1990μM
