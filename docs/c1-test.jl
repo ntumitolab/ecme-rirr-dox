@@ -552,6 +552,7 @@ function c1_q(; name=:c1q,
         N2SQ(t) = 0
         N2rSQ(t) = 0
         N2QH2(t) = 0
+        N2rQH2(t) = 0
         rKEQ_N2r_SQ(t)
         ## Reaction rates
         vQC1(t)
@@ -587,10 +588,12 @@ function c1_q(; name=:c1q,
     ## N2rQ = N2SQ
     v9 = kf9_C1 * N2rQ - kr9_C1 * N2SQ
     ## N2SQ + N3r = N2rSQ + N3
-    v12 = kf7_C1 * N2SQ * N3r_C1 - kr7_C1 * N2rSQ * N3_C1
+    v7b = kf7_C1 * N2SQ * N3r_C1 - kr7_C1 * N2rSQ * N3_C1
+    ## N2QH2 + N3r = N2rQH2 + N3
+    v7c = kf7_C1 * N2QH2 * N3r_C1 - kr7_C1 * N2rQH2 * N3_C1
     ## N2rSQ + 6Hm = N2QH2 + 4Hi
     v13 = kf13_C1 * (fhm^2 * N2rSQ - rKEQ_N2r_SQ * N2QH2)
-    ## N2_QH2 + Q = N2_Q + QH2
+    ## N2(r)_QH2 + Q = N2(r)_Q + QH2
     kf1 = kf14_C1
     kr1 = kr14_C1 * QH2_n * C1_INHIB
     kf2 = kf8_C1 * Q_n * C1_INHIB
@@ -598,6 +601,7 @@ function c1_q(; name=:c1q,
     kf = kf1 * kf2 / (kf2 * kr1)
     kb = kr1 * kr2 / (kf2 * kr1)
     v14 = kf * N2QH2 - kb * N2Q
+    v14b = kf * N2rQH2 - kb * N2rQ
 
     ## Flavin site ROS production
     v16 = kf16_C1 * FMNH * O2 - kr16_C1 * FMNsq * sox_m
@@ -616,16 +620,17 @@ function c1_q(; name=:c1q,
         FMNH_NAD ~ wFMNH_NAD * fC1,
         N3_C1 ~ C1_CONC * FMNsq / (FMNsq + FMNH * KEQ_FMNH_N3),
         C1_CONC ~ N3r_C1 + N3_C1,
-        C1_CONC ~ N2Q + N2rQ + N2SQ + N2rSQ + N2QH2,
-        D(N2rQ) ~ v7 - v9 + v17b,
-        D(N2SQ) ~ v9 - v12 - v17,
-        D(N2rSQ) ~ v12 - v13 - v17b,
-        D(N2QH2) ~ v13 - v14,
-        vNADHC1 ~ -0.5 * (v7 + v12 + v16),
+        C1_CONC ~ N2Q + N2rQ + N2SQ + N2rSQ + N2QH2 + N2rQH2,
+        D(N2rQ) ~ v7 - v9 + v17b + v14b,
+        D(N2SQ) ~ v9 - v7b - v17,
+        D(N2rSQ) ~ v7b - v13 - v17b,
+        D(N2QH2) ~ v13 - v14 - v7c,
+        D(N2rQH2) ~ v7c - v14b,
+        vNADHC1 ~ -0.5 * (v7 + v7b + v7c),
         vROSIf ~ v16,
         vROSIq ~ v17 + v17b,
         vROSC1 ~ vROSIf + vROSIq,
-        vQH2C1 ~ v14,
+        vQH2C1 ~ v14 + v14b,
         vQC1 ~ -vQH2C1,
         vHresC1 ~ 4 * v13,
         vNADC1 ~ -vNADHC1,
@@ -685,18 +690,13 @@ eprob_g = EnsembleProblem(prob_g; prob_func=alter_dpsi)
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
 
 # MMP vs NADH turnover
-# markevich model has a steeper dependence
 xs = dpsirange
 ys = hcat(extract(sim_g, gauthier.vNADHC1), extract(sim_m, markevich.vNADHC1), extract(sim_q, sys.vNADHC1))
 plot(dpsirange, ys, xlabel="MMP (mV)", ylabel="NADH rate (mM/s)", label=["Gauthier" "Markevich" "Q site"])
 
 #---
-ys = stack(extract.(Ref(sim_q), [sys.N2Q, sys.N2rQ, sys.N2SQ, sys.N2rSQ, sys.N2QH2]), dims=2)
-plot(dpsirange, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["N2Q" "N2rQ" "N2SQ" "N2rSQ" "N2QH2"], title="Q site")
-
-#---
-plot(dpsirange, extract(sim_q, sys.rKEQ_N2r_SQ), yscale=:log10)
-
+ys = stack(extract.(Ref(sim_q), [sys.N2Q, sys.N2rQ, sys.N2SQ, sys.N2rSQ, sys.N2QH2, sys.N2rQH2]), dims=2)
+plot(dpsirange, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["N2Q" "N2rQ" "N2SQ" "N2rSQ" "N2QH2" "N2rQH2"], title="Q site", legend=:left)
 
 #---
 ys = stack(extract.(Ref(sim_m), [markevich.Q_C1, markevich.SQ_C1, markevich.QH2_C1]), dims=2)
@@ -751,7 +751,7 @@ xs = nadhrange
 ys1 = stack(extract.(Ref(sim_m), [markevich.Q_C1, markevich.SQ_C1, markevich.QH2_C1]), dims=2)
 pl1 = plot(xs, ys1, xlabel="NADH (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1"], title="M model")
 
-ys2 = stack(extract.(Ref(sim_q), [sys.Q_C1, sys.SQ_C1, sys.QH2_C1]), dims=2)
+ys2 = stack(extract.(Ref(sim_q), [sys.N2Q + sys.N2rQ, sys.N2SQ+sys.N2rSQ, sys.N2QH2 + sys.N2rQH2]), dims=2)
 pl2 = plot(xs, ys2, xlabel="NADH (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1"], title="Q model")
 
 plot(pl1, pl2)
@@ -792,7 +792,7 @@ ys = [extract(sim_g, gauthier.vROSC1) extract(sim_m, markevich.vROSC1) extract(s
 plot(xs, ys, xlabel="QH2 (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "Q site"])
 
 #---
-ys = stack(extract.(Ref(sim_q), [sys.Q_C1, sys.SQ_C1, sys.QH2_C1]), dims=2)
+ys = stack(extract.(Ref(sim_q), [sys.N2Q + sys.N2rQ, sys.N2SQ+sys.N2rSQ, sys.N2QH2 + sys.N2rQH2]), dims=2)
 plot(xs, ys, xlabel="QH2 (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1"], title="Q model")
 
 #---
