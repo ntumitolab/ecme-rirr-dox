@@ -134,7 +134,7 @@ function c1_markevich_full(; name=:c1markevich_full,
         Em_FMN_FMNH = -340mV      ## FMN/FMNH- avg redox potential
         Em_NAD = -320mV           ## NAD/NADH avg redox potential
         Em_N3 = -250mV
-        Em_N2 = -80mV
+        Em_N2 = -150mV
         Em_N1a = -370mV
         Em_Q_SQ_C1 = -300mV       ## -213mV in Markevich, 2015
         Em_SQ_QH2_C1 = +500mV     ## ~800mV (?) in Markevich, 2015
@@ -310,7 +310,7 @@ function c1_markevich_s(; name=:c1s,
         Em_FMN_FMNH = -340mV      ## FMN/FMNH- avg redox potential
         Em_NAD = -320mV           ## NAD/NADH avg redox potential
         Em_N3 = -250mV
-        Em_N2 = -80mV
+        Em_N2 = -150mV
         Em_Q_SQ_C1 = -300mV       ## -213mV in Markevich, 2015
         Em_SQ_QH2_C1 = +500mV     ## ~800mV (?) in Markevich, 2015
         KI_NADH_C1 = 50μM
@@ -481,7 +481,7 @@ function c1_q(; name=:c1q,
         Em_FMN_FMNH = -340mV      ## FMN/FMNH- avg redox potential
         Em_NAD = -320mV           ## NAD/NADH avg redox potential
         Em_N3 = -250mV
-        Em_N2 = -80mV
+        Em_N2 = -150mV
         Em_Q_SQ_C1 = -300mV       ## -213mV in Markevich's model
         Em_SQ_QH2_C1 = +500mV
         KI_NADH_C1 = 50μM
@@ -625,9 +625,9 @@ gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi, sox_m) |> mtkcompile
 # The parameter for ROS generation is adjusted (x10000) to be comparable to ROS generation from complex III
 prob_q = SteadyStateProblem(sys, [
     sys.ET_C1 => 17μM,
-    sys.kf8_C1 => 10Hz / μM,
-    sys.kf9_C1 => 1e4Hz / μM,
-    sys.kf13_C1 => 6e4Hz / μM,
+    sys.kf8_C1 => 5Hz / μM,
+    sys.kf9_C1 => 1000Hz / μM,
+    sys.kf13_C1 => 10000Hz / μM,
     sys.kf16_C1 => 20Hz / μM,
     sys.kf17_C1 => 0.4Hz / μM,
 ])
@@ -648,10 +648,12 @@ alter_dpsi = (prob, i, repeat) -> begin
 end
 
 eprob_q = EnsembleProblem(prob_q; prob_func=alter_dpsi)
-eprob_m = EnsembleProblem(prob_m; prob_func=alter_dpsi)
-eprob_g = EnsembleProblem(prob_g; prob_func=alter_dpsi)
 @time sim_q = solve(eprob_q, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
+
+eprob_m = EnsembleProblem(prob_m; prob_func=alter_dpsi)
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
+
+eprob_g = EnsembleProblem(prob_g; prob_func=alter_dpsi)
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
 
 # MMP vs NADH turnover
@@ -695,10 +697,12 @@ alter_nadh = (prob, i, repeat) -> begin
 end
 
 eprob_q = EnsembleProblem(prob_q; prob_func=alter_nadh)
-eprob_g = EnsembleProblem(prob_g; prob_func=alter_nadh)
-eprob_m = EnsembleProblem(prob_m; prob_func=alter_nadh)
 @time sim_q = solve(eprob_q, alg, ealg; trajectories=length(nadhrange), abstol=1e-8, reltol=1e-8)
+
+eprob_g = EnsembleProblem(prob_g; prob_func=alter_nadh)
 @time sim_g = solve(eprob_g, alg, ealg; trajectories=length(nadhrange), abstol=1e-8, reltol=1e-8)
+
+eprob_m = EnsembleProblem(prob_m; prob_func=alter_nadh)
 @time sim_m = solve(eprob_m, alg, ealg; trajectories=length(nadhrange), abstol=1e-8, reltol=1e-8)
 
 # NADH vs turnover
@@ -709,6 +713,10 @@ ys_q = extract(sim_q, sys.vNADHC1)
 
 plot(xs, [ys_g ys_m ys_q], xlabel="NADH (μM)", ylabel="NADH rate (mM/s)", label=["Gauthier" "Markevich" "Q site"])
 
+#---
+ys = [extract(sim_m, markevich.N2r_C1) extract(sim_q, sys.N2r_C1)]
+plot(xs, ys, xlabel="NADH (μM)", ylabel="NADH rate (mM/s)", label=["Markevich" "Q site"])
+
 # NADH vs ROS production
 xs = nadhrange
 ys = [extract(sim_g, gauthier.vROSC1) extract(sim_m, markevich.vROSC1) extract(sim_q, sys.vROSC1)]
@@ -716,7 +724,7 @@ plot(xs, ys, xlabel="NADH (μM)", ylabel="ROS production", label=["Gauthier" "Ma
 
 #---
 ys = stack(extract.(Ref(sim_q), [sys.Q_C1, sys.SQ_C1, sys.QH2_C1, sys.I_C1]), dims=2)
-pl1 = plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "I_C1"], title="Q site", legend=:left, ylims=(0, 17))
+pl1 = plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "I_C1"], title="Q site", legend=:top, ylims=(0, 17))
 
 #---
 ys = stack(extract.(Ref(sim_m), [markevich.Q_C1, markevich.SQ_C1, markevich.QH2_C1, markevich.Iq_C1]), dims=2)
@@ -761,8 +769,15 @@ ys = [extract(sim_g, gauthier.vROSC1) extract(sim_m, markevich.vROSC1) extract(s
 plot(xs, ys, xlabel="QH2 (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "Q site"])
 
 #---
-ys = stack(extract.(Ref(sim_q), [sys.N2Q + sys.N2rQ, sys.N2SQ+sys.N2rSQ, sys.N2QH2 + sys.N2rQH2]), dims=2)
-plot(xs, ys, xlabel="QH2 (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1"], title="Q model")
+ys = stack(extract.(Ref(sim_q), [sys.Q_C1, sys.SQ_C1, sys.QH2_C1, sys.I_C1]), dims=2)
+pl1 = plot(xs, ys, xlabel="QH2 (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "I_C1"], title="Q site", legend=:top, ylims=(0, 17))
+
+#---
+ys = stack(extract.(Ref(sim_m), [markevich.Q_C1, markevich.SQ_C1, markevich.QH2_C1, markevich.Iq_C1]), dims=2)
+pl2 = plot(xs, ys, xlabel="QH2 (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "I_C1"], title="Markevich", legend=:top, ylims=(0, 17))
+
+#---
+plot(pl1, pl2)
 
 #---
 @unpack C1_1, C1_3, C1_4, C1_5, C1_6, C1_7 = gauthier
