@@ -49,7 +49,7 @@ end
 
 @time sol = Symbolics.symbolic_solve(eqs, [I1, I2, I3, I4, I5, I6, I7])[1]
 
-# Weights of all 7 states
+# Weights of states
 for k in (I1, I2, I3, I4, I5, I6, I7)
     println(k, " = ", numerator(sol[k]))
 end
