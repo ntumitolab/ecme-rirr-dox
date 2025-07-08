@@ -51,7 +51,7 @@ function get_etc_sys(;
         Em_FMN_FMNH = -340mV      ## FMN/FMNH- avg redox potential
         Em_NAD = -320mV           ## NAD/NADH avg redox potential
         Em_N3 = -250mV
-        Em_N2 = -80mV             ## -150mV in B. taurus mitochondrial complex I
+        Em_N2 = -150mV             ## -150mV in B. taurus mitochondrial complex I
         Em_Q_SQ_C1 = -300mV       ## -213mV in Markevich, 2015
         Em_SQ_QH2_C1 = +500mV     ## ~800mV (?) in Markevich, 2015
         KI_NADH_C1 = 50μM
