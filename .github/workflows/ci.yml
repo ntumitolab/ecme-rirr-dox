@@ -14,7 +14,7 @@ concurrency:
 env:
   LITERATE_PROC: '6'
   NBCONVERT_JOBS: '6'
-  JULIA_NUM_THREADS: '2'
+  JULIA_NUM_THREADS: '6'
   ALLOWERRORS: 'false'
   NBCACHE: '.cache'
   JULIA_CONDAPKG_BACKEND: 'Null'
