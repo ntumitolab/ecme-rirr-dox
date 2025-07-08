@@ -51,7 +51,7 @@ function get_etc_sys(;
         Em_FMN_FMNH = -340mV      ## FMN/FMNH- avg redox potential
         Em_NAD = -320mV           ## NAD/NADH avg redox potential
         Em_N3 = -250mV
-        Em_N2 = -80mV
+        Em_N2 = -80mV             ## -150mV in B. taurus mitochondrial complex I
         Em_Q_SQ_C1 = -300mV       ## -213mV in Markevich, 2015
         Em_SQ_QH2_C1 = +500mV     ## ~800mV (?) in Markevich, 2015
         KI_NADH_C1 = 50μM
@@ -205,18 +205,19 @@ function get_etc_sys(;
         ]
     end
 
-    # Reversible ping-pong complex II (SDH)
+    ## Complex II (SDH)
+    ## Reversible random Bi-Bi enzyme catalytic mechanism
     @parameters begin
         KI_DOX_C2 = 2000μM      ## DOX inhibition concentration (IC50) on complex II
         VF_C2 = 250mM / minute  ## Reaction rate constant of SDH (complex II)
-        KI_OAA_C2 = 150μM           # Inhibition constant for OAA
+        KI_OAA_C2 = 150μM       ## Inhibition constant for OAA
         KM_SUC_C2 = 30μM
         KM_Q_C2 = 0.3μM
         KM_FUM_C2 = 25μM
         KM_QH2_C2 = 1.5μM
-        Em_FUM_SUC = 40mV           # midpoint potential of FUM -> SUC
-        Em_Q_QH2 = 100mV            # midpoint potential of Q -> QH2
-        KEQ_C2 = exp(2iVT * (Em_Q_QH2 - Em_FUM_SUC)) # (Reverse) equlibrium constant of SDH
+        Em_FUM_SUC = 40mV       ## midpoint potential of FUM -> SUC
+        Em_Q_QH2 = 100mV        ## midpoint potential of Q -> QH2
+        KEQ_C2 = exp(2iVT * (Em_Q_QH2 - Em_FUM_SUC)) ## equlibrium constant of SDH
         VR_C2 = VF_C2 * KM_FUM_C2 * KM_QH2_C2 / (KEQ_C2 * KM_SUC_C2 * KM_Q_C2)
     end
 
@@ -227,7 +228,7 @@ function get_etc_sys(;
         B = Q_n / KM_Q_C2
         P = fum / KM_FUM_C2
         Q = QH2_n / KM_QH2_C2
-        [vSDH ~ C2_INHIB * (VF_C2 * A * B - VR_C2 * P * Q) / (1 + A + B + P + Q)]
+        [vSDH ~ C2_INHIB * (VF_C2 * A * B - VR_C2 * P * Q) / ((1 + A + P) * (1 + B + Q))]
     end
 
     # complex IV (CCO)
