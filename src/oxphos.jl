@@ -67,7 +67,7 @@ function get_etc_sys(;
         ## N3- + N2 = N3 + N2-
         kf7_C1 = 10000Hz / μM
         KEQ7_C1 = exp(iVT * (Em_N2 - Em_N3))
-        kr7_C1 = kf7_C1 / rKEQ7_C1
+        kr7_C1 = kf7_C1 / KEQ7_C1
         kf8_C1 = 10Hz / μM
         KEQ8_C1 = inv(10μM)
         kr8_C1 = kf8_C1 / KEQ8_C1
