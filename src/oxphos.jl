@@ -138,7 +138,7 @@ function get_etc_sys(;
         fDen = wFMN + wFMN_NAD + wFMNH + wFMNH_NADH + wFMNsq + wFMN_NADH + wFMNH_NAD
         fC1 = C1_CONC / fDen
         ## FMNH + O2 = FMNsq + sox
-        v16 = kf16_C1 * FMNH * O2 - kr16_C1 * FMNsq * sox_m
+        v16 = E_LEAK_C1 * (kf16_C1 * FMNH * O2 - kr16_C1 * FMNsq * sox_m)
 
         ## N3− + N2 = N3 + N2−
         v7 = kf7_C1 * N3r_C1 * N2_C1 - kr7_C1 * N3_C1 * N2r_C1
