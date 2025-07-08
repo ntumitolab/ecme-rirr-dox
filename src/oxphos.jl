@@ -66,24 +66,24 @@ function get_etc_sys(;
         KEQ_FMNH_N3 = exp(iVT * (Em_N3 - Em_FMNsq_FMNH))
         ## N3- + N2 = N3 + N2-
         kf7_C1 = 10000Hz / μM
-        rKEQ7_C1 = exp(-iVT * (Em_N2 - Em_N3))
-        kb7_C1 = kf7_C1 * rKEQ7_C1
+        KEQ7_C1 = exp(iVT * (Em_N2 - Em_N3))
+        kr7_C1 = kf7_C1 / rKEQ7_C1
         kf8_C1 = 10Hz / μM
-        rKEQ8_C1 = 10μM
-        kb8_C1 = kf8_C1 * rKEQ8_C1
+        KEQ8_C1 = inv(10μM)
+        kr8_C1 = kf8_C1 / KEQ8_C1
         kf9_C1 = 4E5Hz / μM
-        rKEQ9_C1 = exp(-iVT * (Em_Q_SQ_C1 - Em_N2))
-        kb9_C1 = kf9_C1 * rKEQ9_C1
+        KEQ9_C1 = exp(iVT * (Em_Q_SQ_C1 - Em_N2))
+        kr9_C1 = kf9_C1 / KEQ9_C1
         kf13_C1 = 2.7e6Hz / μM
         kf14_C1 = 1000Hz
-        rKEQ14_C1 = inv(20μM)
-        kb14_C1 = kf14_C1 * rKEQ14_C1
+        KEQ14_C1 = 20μM
+        kr14_C1 = kf14_C1 / KEQ14_C1
         kf16_C1 = 2Hz / μM          ## SOX production rate from If site
-        rKEQ16_C1 = exp(-iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
-        kb16_C1 = kf16_C1 * rKEQ16_C1
+        KEQ16_C1 = exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
+        kr16_C1 = kf16_C1 / KEQ16_C1
         kf17_C1 = 0.02Hz / μM       ## SOX production rate from Iq site
-        rKEQ17_C1 = exp(-iVT * (Em_O2_SOX - Em_Q_SQ_C1))
-        kb17_C1 = kf17_C1 * rKEQ17_C1
+        KEQ17_C1 = exp(iVT * (Em_O2_SOX - Em_Q_SQ_C1))
+        kr17_C1 = kf17_C1 / KEQ17_C1
     end
 
     @variables begin
@@ -138,20 +138,20 @@ function get_etc_sys(;
         fDen = wFMN + wFMN_NAD + wFMNH + wFMNH_NADH + wFMNsq + wFMN_NADH + wFMNH_NAD
         fC1 = C1_CONC / fDen
         ## FMNH + O2 = FMNsq + sox
-        v16 = kf16_C1 * FMNH * O2 - kb16_C1 * FMNsq * sox_m
+        v16 = kf16_C1 * FMNH * O2 - kr16_C1 * FMNsq * sox_m
 
         ## N3− + N2 = N3 + N2−
-        v7 = kf7_C1 * N3r_C1 * N2_C1 - kb7_C1 * N3_C1 * N2r_C1
+        v7 = kf7_C1 * N3r_C1 * N2_C1 - kr7_C1 * N3_C1 * N2r_C1
         v12 = v7
 
         ## Quinone site state transition rates
         ## C1 + Q = Q_C1
         b12 = kf8_C1 * Q_n * C1_INHIB
-        b21 = kb8_C1
+        b21 = kr8_C1
         v8 = b12 * C1 - b21 * Q_C1
         ## Q_C1 + N2r = SQ_C1 + N2
         b23a = kf9_C1 * N2r_C1
-        b32a = kb9_C1 * N2_C1
+        b32a = kr9_C1 * N2_C1
         v9 = b23a * Q_C1 - b32a * SQ_C1
         ## C1_SQ + N2r + 6Hm = C1_QH2 + N2 + 4Hi
         b34 = kf13_C1 * N2r_C1 * fhm^2
@@ -159,20 +159,20 @@ function get_etc_sys(;
         v13 = b34 * SQ_C1 - b43 * QH2_C1
         ## C1_QH2 = C1 + QH2
         b41 = kf14_C1
-        b14 = kb14_C1 * QH2_n * C1_INHIB
+        b14 = kr14_C1 * QH2_n * C1_INHIB
         v14 = b41 * QH2_C1 - b14 * C1
         ## C1_SQ + O2 = C1_Q + sox
         b32b = kf17_C1 * O2
-        b23b = kb17_C1 * sox_m
+        b23b = kr17_C1 * sox_m
         v17 = b32b * SQ_C1 - b23b * Q_C1
         b23 = b23a + b23b
         b32 = b32a + b32b
 
         ## KA pattern
-        wC1 = b21*b32*b41 + b21*b32*b43 + b21*b34*b41 + b23*b34*b41
-        wC1_Q = b12*b32*b41 + b12*b32*b43 + b12*b34*b41 + b14*b32*b43
-        wC1_SQ = b12*b23*b41 + b12*b23*b43 + b14*b21*b43 + b14*b23*b43
-        wC1_QH2 = b12*b23*b34 + b14*b21*b32 + b14*b21*b34 + b14*b23*b34
+        wC1 = b21 * b32 * b41 + b21 * b32 * b43 + b21 * b34 * b41 + b23 * b34 * b41
+        wC1_Q = b12 * b32 * b41 + b12 * b32 * b43 + b12 * b34 * b41 + b14 * b32 * b43
+        wC1_SQ = b12 * b23 * b41 + b12 * b23 * b43 + b14 * b21 * b43 + b14 * b23 * b43
+        wC1_QH2 = b12 * b23 * b34 + b14 * b21 * b32 + b14 * b21 * b34 + b14 * b23 * b34
         qDen = wC1 + wC1_Q + wC1_SQ + wC1_QH2
         qC1 = C1_CONC / qDen
 
@@ -211,7 +211,7 @@ function get_etc_sys(;
         VF_C2 = 250mM / minute  ## Reaction rate constant of SDH (complex II)
         KI_OAA_C2 = 150μM           # Inhibition constant for OAA
         KM_SUC_C2 = 30μM
-        KM_Q_C2 =  0.3μM
+        KM_Q_C2 = 0.3μM
         KM_FUM_C2 = 25μM
         KM_QH2_C2 = 1.5μM
         Em_FUM_SUC = 40mV           # midpoint potential of FUM -> SUC
