@@ -206,7 +206,7 @@ function get_etc_sys(;
     end
 
     ## Complex II (SDH)
-    ## Reversible random Bi-Bi enzyme catalytic mechanism
+    ## Reversible rapid equlibrium random Bi-Bi enzyme catalytic mechanism
     @parameters begin
         KI_DOX_C2 = 2000μM      ## DOX inhibition concentration (IC50) on complex II
         VF_C2 = 250mM / minute  ## Reaction rate constant of SDH (complex II)
@@ -228,7 +228,7 @@ function get_etc_sys(;
         B = Q_n / KM_Q_C2
         P = fum / KM_FUM_C2
         Q = QH2_n / KM_QH2_C2
-        [vSDH ~ C2_INHIB * (VF_C2 * A * B - VR_C2 * P * Q) / ((1 + A + P) * (1 + B + Q))]
+        [vSDH ~ C2_INHIB * (VF_C2 * A * B - VR_C2 * P * Q) / ((1+A)*(1+B) + (1 + P) * (1 + Q) - 1)]
     end
 
     # complex IV (CCO)
