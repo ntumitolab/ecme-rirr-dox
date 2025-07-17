@@ -1,34 +1,3 @@
-"Succinyl-CoA lyase rate"
-function v_sl(scoa, adp_m, suc, atp_m; pi_m=8mM, COA=20μM, KF_SL=28 / (μM * ms), rKEQ_SL=inv(3.115))
-    return KF_SL * (scoa * adp_m * pi_m - suc * atp_m * COA * rKEQ_SL)
-end
-
-function v_sl2(scoa, adp_m, suc, atp_m; pi_m=8mM, COA=20μM, KF_SL=28 / (μM * ms), rKEQ_SL=inv(3.115), h_m=exp10(-7.6) * Molar, mg_m=400μM)
-    atp4, hatp, _, atp_poly = breakdown_atp(atp_m, h_m, mg_m)
-    _, _, _, adp_poly = breakdown_adp(adp_m, h_m, mg_m)
-    pi_poly = pipoly(h_m)
-    suc_poly = sucpoly(h_m)
-    rkeq = rKEQ_SL * (adp_poly * pi_poly) / (atp_poly * suc_poly)
-    atp = atp4 + hatp
-    return v_sl(scoa, adp_m, suc, atp; pi_m, COA, KF_SL, rKEQ_SL=rkeq)
-end
-
-"Fumarate hydrase rate"
-function v_fh(fum, mal; KF_FH=8.3Hz, rKEQ_FH=1.0)
-    KF_FH * (fum - mal * rKEQ_FH)
-end
-
-"Malate dehydrogenase rate"
-function v_mdh(mal, oaa, nad_m; h_m=exp10(-7.6) * Molar, KCAT_MDH=126Hz, ET_MDH=154μM, KH1_MDH=1.131E-5mM, KH2_MDH=26.7mM, KH3_MDH=6.68E-9mM, KH4_MDH=5.62E-6mM, K_OFFSET_MDH=3.99E-2, KM_MAL_MDH=1493μM, KI_OAA_MDH=3.1μM, KM_NAD_MDH=224.4μM)
-    vmax = KCAT_MDH * ET_MDH
-    f_ha = K_OFFSET_MDH + hil(KH1_MDH * hil(KH2_MDH, h_m), h_m)
-    f_hi = 1 + KH3_MDH / h_m * (1 + KH4_MDH / h_m)
-    f_oaa = hil(KI_OAA_MDH, oaa)
-    f_mal = hil(mal * f_oaa, KM_MAL_MDH)
-    f_nad = hil(nad_m, KM_NAD_MDH)
-    return vmax * ET_MDH * f_ha * f_hi * f_nad * f_mal
-end
-
 # TCA cycle model, default parameters values from Gauthier et al. (2013)
 function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Molar, pi_m=8mM, mg_m=0.4mM, use_mg=false, name=:tcasys)
     @parameters begin
@@ -71,7 +40,7 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
 
         ### SL (Succinyl-coA lyase)
         COA = 20μM
-        KF_SL = 28 / (μM * ms)
+        KF_SL = 28 / (μM^2 * ms)
         rKEQ_SL = inv(3.115)
 
         ### FH (Fumarate hydrase) parameters
@@ -141,9 +110,33 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
     end
     ## Succinyl-CoA lyase
     v_sl = let
-
+        if use_mg
+            atp4, hatp, _, atp_poly = breakdown_atp(atp_m, h_m, mg_m)
+            _, _, _, adp_poly = breakdown_adp(adp_m, h_m, mg_m)
+            pi_poly = pipoly(h_m)
+            suc_poly = sucpoly(h_m)
+            rkeq = rKEQ_SL * (adp_poly * pi_poly) / (atp_poly * suc_poly)
+            atp = atp4 + hatp
+        else
+            rkeq = rKEQ_SL
+            atp = atp_m
+        end
+        v_sl = KF_SL * (scoa * adp_m * pi_m - suc * atp * COA * rKEQ_SL)
     end
-
+    ## Fumarate hydrase
+    v_fh = KF_FH * (fum - mal * rKEQ_FH)
+    ## Malate dehydrogenase
+    v_mdh = let
+        vmax = KCAT_MDH * ET_MDH
+        f_ha = K_OFFSET_MDH + hil(KH1_MDH * hil(KH2_MDH, h_m), h_m)
+        f_hi = 1 + KH3_MDH / h_m * (1 + KH4_MDH / h_m)
+        f_oaa = hil(KI_OAA_MDH, oaa)
+        f_mal = hil(mal * f_oaa, KM_MAL_MDH)
+        f_nad = hil(nad_m, KM_NAD_MDH)
+        v_mdh = vmax * ET_MDH * f_ha * f_hi * f_nad * f_mal
+    end
+    ## AST
+    v_aat = KF_AAT * oaa * GLU * hil(K_ASP * KEQ_AAT, akg * KF_AAT)
 
     eqs = [
         TCA_T ~ cit + isoc + oaa + akg + scoa + suc + fum + mal,
@@ -151,10 +144,10 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
         vACO ~ v_aco,
         vIDH ~ v_idh3,
         vKGDH ~ v_kgdh,
-        vSL ~ use_mg ? v_sl2(scoa, adp_m, suc, atp_m; pi_m, COA, KF_SL, rKEQ_SL, h_m, mg_m) : v_sl(scoa, adp_m, suc, atp_m; pi_m, COA, KF_SL, rKEQ_SL),
-        vFH ~ v_fh(fum, mal; KF_FH, rKEQ_FH),
-        vMDH ~ v_mdh(mal, oaa, nad_m; h_m, KCAT_MDH, ET_MDH, KH1_MDH, KH2_MDH, KH3_MDH, KH4_MDH, K_OFFSET_MDH, KM_MAL_MDH, KI_OAA_MDH, KM_NAD_MDH),
-        vAAT ~ KF_AAT * oaa * GLU * hil(K_ASP * KEQ_AAT, akg * KF_AAT),
+        vSL ~ v_sl,
+        vFH ~ v_fh,
+        vMDH ~ v_mdh,
+        vAAT ~ v_aat,
         D(isoc) ~ vACO - vIDH,
         D(akg) ~ vIDH - vKGDH + vAAT,
         D(scoa) ~ vKGDH - vSL,
