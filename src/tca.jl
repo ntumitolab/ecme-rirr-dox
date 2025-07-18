@@ -3,18 +3,15 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
     @parameters begin
         # Total TCA metabolite pool
         TCA_T = 1.3mM
-
         ## Citrate synthase
         KCAT_CS = 50Hz
         ET_CS = 400μM
         KM_ACCOA_CS = 12.6μM
         KM_OAA_CS = 0.64μM
         ACCOA = 1000μM
-
         ## ACO (aconitase)
         KF_ACO = 12.5Hz # Zhou, 2009
         rKEQ_ACO = inv(2.22)
-
         ## IDH3 (Isocitrate dehydrogenase, NADH-producing)
         KCAT_IDH = 43Hz ## 50Hz
         ET_IDH = 109μM
@@ -26,7 +23,6 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
         KM_NAD_IDH = 923μM
         KM_ADP_IDH = 620μM
         KM_CA_IDH = 0.5μM
-
         ## KGDH (alpha-ketoglutarate dehydrogenase)
         ET_KGDH = 500μM
         KCAT_KGDH = 50Hz
@@ -37,33 +33,33 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
         KM_MG_KGDH = 30.8μM
         KM_CA_KGDH = 0.15μM
         NI_AKG_KGDH = 1.2
-
-        ### SL (Succinyl-coA lyase)
+        ## SL (Succinyl-coA lyase)
         COA = 20μM
         KF_SL = 28 / (μM^2 * ms)
         rKEQ_SL = inv(3.115)
-
-        ### FH (Fumarate hydrase) parameters
+        ## FH (Fumarate hydrase) parameters
         KF_FH = 8.3Hz
         rKEQ_FH = 1.0
-
-        ### MDH (Malate dehydrogenase)
+        ## MDH (Malate dehydrogenase), reversible
         KCAT_MDH = 126Hz
         ET_MDH = 154μM
+        VF_MDH = KCAT_MDH * ET_MDH
+        KEQ_MDH = 3.08e-4
         KH1_MDH = 11.31nM
         KH2_MDH = 26.7mM
         KH3_MDH = 6.68E-3nM
         KH4_MDH = 5.62nM
         K_OFFSET_MDH = 0.0399
-        KM_MAL_MDH = 1493μM
-        KI_OAA_MDH = 3.1μM
-        KM_NAD_MDH = 224.4μM
-
+        KM_NAD_MDH = 110μM
+        KM_MAL_MDH = 450μM
+        KM_OAA_MDH = 7μM
+        KM_NADH_MDH = 17μM
+        VR_MDH = VF_MDH * KM_OAA_MDH * KM_NADH_MDH / (KEQ_MDH * KM_NAD_MDH * KM_MAL_MDH)
         ### AAT (alanine aminotransferase)
         KF_AAT = 0.644Hz / mM
         KEQ_AAT = 6.6
-        K_ASP = 1.5e-3Hz
-        GLU = 10mM        # Glutamate
+        GLU = 10mM   ## Glutamate
+        ASP = GLU    ## Aspartate
     end
 
     @variables begin
@@ -87,14 +83,19 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
     end
 
     ## Citrate synthase
-    v_cs = KCAT_CS * ET_CS * hil(oaa, KM_OAA_CS) * hil(ACCOA, KM_ACCOA_CS)
+    v_cs = let
+        vmax = KCAT_CS * ET_CS
+        A = oaa / KM_OAA_CS
+        B = ACCOA / KM_ACCOA_CS
+        v_cs = vmax * A * B / (1 + A + B + A * B)
+    end
     ## Aconitase
     v_aco = KF_ACO * (cit - isoc * rKEQ_ACO)
     ## IDH3 (Isocitrate dehydrogenase, NADH-producing)
     v_idh3 = let
         vmax = KCAT_IDH * ET_IDH
         A = (isoc / KM_ISOC_IDH)^2 * (1 + adp_m / KM_ADP_IDH) * (1 + ca_m / KM_CA_IDH)
-        B = nad_m / KM_NAD_IDH * hil(KI_NADH_IDH, nadh_m)
+        B = nad_m * KI_NADH_IDH / (KM_NAD_IDH * (KI_NADH_IDH + nadh_m))
         H = 1 + h_m / KH1_IDH + KH2_IDH / h_m
         v_idh3 = vmax * A * B / (H * A * B + A + B + 1)
     end
@@ -128,15 +129,17 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
     ## Malate dehydrogenase
     v_mdh = let
         vmax = KCAT_MDH * ET_MDH
-        f_ha = K_OFFSET_MDH + hil(KH1_MDH * hil(KH2_MDH, h_m), h_m)
-        f_hi = 1 + KH3_MDH / h_m * (1 + KH4_MDH / h_m)
-        f_oaa = hil(KI_OAA_MDH, oaa)
-        f_mal = hil(mal * f_oaa, KM_MAL_MDH)
-        f_nad = hil(nad_m, KM_NAD_MDH)
-        v_mdh = vmax * ET_MDH * f_ha * f_hi * f_nad * f_mal
+        f_ha = K_OFFSET_MDH + (KH1_MDH * KH2_MDH / (KH1_MDH * KH2_MDH + KH2_MDH * h_m + h_m^2))
+        f_hi = (h_m^2 / (h_m^2 + h_m * KH3_MDH + KH3_MDH * KH4_MDH))^2
+        f_h = f_ha * f_hi
+        f_nad = nad_m / KM_NAD_MDH
+        f_mal = mal / KM_MAL_MDH
+        f_oaa = oaa / KM_OAA_MDH
+        f_nadh = nadh_m / KM_NADH_MDH
+        v_mdh = f_h * (VF_MDH * f_nad * f_mal - VR_MDH * f_oaa * f_nadh) / (1 + f_nad + f_nad * f_mal + f_oaa * f_nadh + f_nadh)
     end
     ## AST
-    v_aat = KF_AAT * oaa * GLU * hil(K_ASP * KEQ_AAT, akg * KF_AAT)
+    v_aat = KF_AAT * (oaa * GLU - akg * ASP / KEQ_AAT)
 
     eqs = [
         TCA_T ~ cit + isoc + oaa + akg + scoa + suc + fum + mal,
