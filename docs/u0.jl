@@ -14,7 +14,7 @@ bcl = 1.0second
 u0 = build_u0(sys)
 sts = unknowns(sys)
 alg = KenCarp47()
-prob = ODEProblem(sys, [u0; sys.KCAT_IDH => 43Hz; sys.Em_N2 => -150mV], tend)
+prob = ODEProblem(sys, u0, tend)
 
 @time sol = solve(prob, alg; reltol=1e-6, abstol=1e-6, progress=true)
 
@@ -22,9 +22,6 @@ for i in sts
     istr = replace(string(i), "(t)" => "")
     println("sys.", istr, " => ", sol[i][end], ",")
 end
-
-#---
-sol[sys.vO2 + sys.vROS]  # 0.21 mM/s
 
 #---
 plot(sol, idxs=sys.vm, legend=:right, tspan=(900second, 901second)) |> PNG
