@@ -95,7 +95,7 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
     v_idh3 = let
         vmax = KCAT_IDH * ET_IDH
         A = (isoc / KM_ISOC_IDH)^2 * (1 + adp_m / KM_ADP_IDH) * (1 + ca_m / KM_CA_IDH)
-        B = nad_m / KM_NAD_IDH * hil(KI_NADH_IDH, nadh_m)
+        B = nad_m * KI_NADH_IDH / (KM_NAD_IDH * (KI_NADH_IDH + nadh_m))
         H = 1 + h_m / KH1_IDH + KH2_IDH / h_m
         v_idh3 = vmax * A * B / (H * A * B + A + B + 1)
     end
