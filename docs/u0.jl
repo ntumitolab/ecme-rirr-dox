@@ -27,9 +27,13 @@ end
 plot(sol, idxs=sys.vm, legend=:right, tspan=(900second, 901second)) |> PNG
 
 # Citric acid cycle metabolites
-# Dominated by citrate and isocitrate
+# Citrate and isocitrate have the highest concentrations
 @unpack cit, isoc, oaa, akg, scoa, suc, fum, mal = sys
 plot(sol, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal], legend=:right, title="CAC metabolites") |> PNG
+
+# CAC flux
+@unpack vMDH, vAAT, vIDH = sys
+plot(sol, idxs=[vMDH, vAAT, vIDH], legend=:right, title="CAC flux") |> PNG
 
 # Q cycle
 @unpack Q_n, SQn, QH2_n, QH2_p, Q_p, SQp, fes_ox, fes_rd, cytc_ox, cytc_rd = sys
