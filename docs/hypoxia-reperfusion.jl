@@ -68,6 +68,11 @@ pl_cac = plot(sol, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal, nadh_m], lege
 vline!(pl_cac, [50.0second], lines=(:dash, :black), lab=false)
 pl_cac |> PNG
 
+# CAC flux
+pl = plot(sol, idxs=[sys.vSDH, sys.vAAT, sys.vMDH, sys.vIDH])
+vline!(pl, [50.0second], lines=(:dash, :black), lab=false)
+pl |> PNG
+
 # Q cycle
 @unpack Q_n, SQn, QH2_n, QH2_p, Q_p, fes_ox, fes_rd, cytc_ox, cytc_rd = sys
 pl_q = plot(sol, idxs=[Q_n, Q_p, SQn, QH2_n, QH2_p], title="(E) Q cycle", legend=:left, xlabel="Time (ms)", ylabel="Conc. (μM)")
@@ -104,10 +109,6 @@ pl = plot(sol, idxs=[sys.sox_m, sys.sox_i])
 vline!(pl, [50.0second], lines=(:dash, :black), lab=false)
 pl |> PNG
 
-# CAC flux
-pl = plot(sol, idxs=[sys.vSDH, sys.vAAT, sys.vMDH])
-vline!(pl, [50.0second], lines=(:dash, :black), lab=false)
-pl |> PNG
 
 # Semiquinone from Complex III Qo
 pl = plot(sol, idxs=[sys.SQp])

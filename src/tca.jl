@@ -1,7 +1,7 @@
 # TCA cycle model, default parameters values from Gauthier et al. (2013)
 function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Molar, pi_m=8mM, mg_m=0.4mM, use_mg=false, name=:tcasys)
     @parameters begin
-        # Total TCA metabolite pool
+        ## Total TCA metabolite pool
         TCA_T = 1.3mM
         ## Citrate synthase
         KCAT_CS = 50Hz
@@ -35,7 +35,7 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
         NI_AKG_KGDH = 1.2
         ## SL (Succinyl-coA lyase)
         COA = 20μM
-        KF_SL = 28 / (μM^2 * ms)
+        KF_SL = 28Hz / mM^2  ## Gauthier, 2013 vs 0.644 in Zhou, 2009
         rKEQ_SL = inv(3.115)
         ## FH (Fumarate hydrase) parameters
         KF_FH = 8.3Hz
@@ -55,11 +55,11 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
         KM_OAA_MDH = 7μM
         KM_NADH_MDH = 17μM
         VR_MDH = VF_MDH * KM_OAA_MDH * KM_NADH_MDH / (KEQ_MDH * KM_NAD_MDH * KM_MAL_MDH)
-        ### AAT (alanine aminotransferase)
-        KF_AAT = 0.644Hz / mM
+        ### AAT (alanine aminotransferase, aka AST)
+        KF_AAT = 21.4Hz / mM
         KEQ_AAT = 6.6
         GLU = 10mM   ## Glutamate
-        ASP = GLU    ## Aspartate
+        ASP = 100μM  ## Aspartate
     end
 
     @variables begin
