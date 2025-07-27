@@ -1,6 +1,6 @@
 # Good old 16-state CICR (Cortassa 2006), including L-type calcium channel (LCC) and Ryanodine receptor (RyR)
 "LCC ODE system"
-function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
+function get_lcc_sys(; ca_ss, ca_o, k_i, k_o, vm, name=:cicrsys)
     @parameters begin
         A_LCC = 2
         B_LCC = 1/2
@@ -18,7 +18,7 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
         α_lcc(t)
         β_lcc(t)
         # Closed LCC state
-        c0_lcc(t) # = 0.9991
+        c0_lcc(t) # 0.9991
         c1_lcc(t) = 0
         c2_lcc(t) = 0
         c3_lcc(t) = 0
@@ -64,7 +64,7 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
     vc4ca4 = 16γ * c4_lcc - ω / 16 * cca4_lcc
 
     eqs = [
-        α_lcc ~ 0.4kHz * exp((v + 2) / 10),
+        α_lcc ~ 0.4kHz * exp((v + 2mV) * inv(10mV)),
         β_lcc ~ 0.05kHz * exp(-(v + 2) / 13),
         1 ~ c0_lcc + c1_lcc + c2_lcc + c3_lcc + c4_lcc + o_lcc + cca0_lcc + cca1_lcc + cca2_lcc + cca3_lcc + cca4_lcc,
         # D(c0_lcc) ~ -vc0c1 - vc0ca0,
@@ -89,7 +89,7 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
 end
 
 "Ryanodine receptor (RyR)"
-function get_ryr_sys(ca_jsr, ca_ss; name=:ryrsys)
+function get_ryr_sys(; ca_jsr, ca_ss, name=:ryrsys)
     @parameters begin
         R_RYR = 3.6/ms
         KA_P_RYR = 1.125E10 / (mM^4 * ms)

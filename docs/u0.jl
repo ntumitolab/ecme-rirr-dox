@@ -16,6 +16,11 @@ sts = unknowns(sys)
 alg = KenCarp47()
 prob = ODEProblem(sys, u0, tend)
 
+#---
+unknowns(sys)
+#---
+parameters(sys)
+#---
 @time sol = solve(prob, alg; reltol=1e-6, abstol=1e-6, progress=true)
 
 for i in sts
