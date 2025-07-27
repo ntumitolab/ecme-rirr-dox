@@ -23,7 +23,7 @@ include("u0.jl")
 
 function build_model(; name=:ecmesys, bcl=0second, istim=-80μAcm⁻², tstart=0second, tend=10second, duty=0.5ms, use_mg=false, simplify=true)
     @parameters begin
-        iStim = 0μAcm⁻²          # Stimulation current
+        iStim(t) = 0μAcm⁻²          # Stimulation current
         DOX = 0mM                # Doxorubicin concentration
         kdiffO2 = 1000Hz            # Oxygen diffusion rate
         MT_PROT = 1                 # OXPHOS protein content
@@ -139,15 +139,16 @@ function build_model(; name=:ecmesys, bcl=0second, istim=-80μAcm⁻², tstart=0
     if bcl > 0 && duty > 0 && istim != 0
         ts0 = collect(tstart:bcl:tend)
         ts1 = ts0 .+ duty
-        sstart = ts0 => [iStim ~ istim]
-        send = ts1 => [iStim ~ 0]
+
+        sstart = ModelingToolkit.SymbolicDiscreteCallback( ts0 => [iStim ~ istim], discrete_parameters = iStim, iv = t)
+        send = ModelingToolkit.SymbolicDiscreteCallback( ts1 => [iStim ~ 0], discrete_parameters = iStim, iv = t)
         sys = System(eqs, t; name, discrete_events = [sstart, send])
     else
         sys = System(eqs, t; name)
     end
 
     for s in (lccsys, ryrsys, cksys, forcesys, jcasys, iksys, inasys, inaksys, tcassys, etcsys, c5sys, rossys, mitocasys)
-        sys = extend(sys, s)
+        sys = extend(s, sys; name)
     end
 
     if simplify

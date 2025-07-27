@@ -2,21 +2,30 @@ using OrdinaryDiffEq
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
 using Plots
-using DiffEqCallbacks
 
-ph = 7:0.1:9
+@variables x(t)
+@parameters c(t) = 1
 
-h_m = exp10.(-ph)
+ev = ModelingToolkit.SymbolicDiscreteCallback(
+    1.0 => [c ~ 1], discrete_parameters = c, iv = t)
+@mtkcompile sys = System(
+    D(x) ~ c * cos(x), t, [x], [c]; discrete_events = [ev])
 
-KH1_MDH=1.131E-8
-KH2_MDH=26.7E-2
-KH3_MDH=6.68E-12
-KH4_MDH=5.62E-9
-K_OFFSET_MDH = 0.04
+prob = ODEProblem(sys, [x => 0.0], (0.0, 2pi))
+sol = solve(prob, Tsit5())
+sol[c]
 
-f_ha = @. K_OFFSET_MDH + ( KH1_MDH * KH2_MDH/ (KH1_MDH * KH2_MDH + KH2_MDH * h_m + h_m * h_m))
+bcl=1.0
+duty=0.1
+tstart=0
+tend=10
+ts0 = collect(tstart:bcl:tend)
+ts1 = ts0 .+ duty
+ev0 = ModelingToolkit.SymbolicDiscreteCallback(
+    ts0 => [c ~ 3], discrete_parameters = c, iv = t)
+ev1 = ModelingToolkit.SymbolicDiscreteCallback(
+    ts1 => [c ~ 1], discrete_parameters = c, iv = t)
 
-f_hi = @. 1 + KH3_MDH / h_m * (1 + KH4_MDH / h_m)
-f = f_ha .* f_hi
+@mtkcompile sys = System(D(x) ~ c * cos(x), t; discrete_events = [ev0, ev1])
 
-plot(ph, [f_ha f_hi f], labels=["f_ha" "f_hi" "f"])
+discrete_events(sys)
