@@ -12,7 +12,7 @@ Plots.default(lw=1.5)
 #---
 tend = 100.0second
 bcl = 1.0second
-@named sys = build_model(; bcl, tend)
+@named sys = build_model()
 u0 = build_u0(sys)
 sts = unknowns(sys)
 alg = KenCarp47()
