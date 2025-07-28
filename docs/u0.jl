@@ -10,13 +10,16 @@ using DisplayAs: PNG
 
 tend = 1000.0second
 bcl = 1.0second
-@named sys = build_model(; tend, bcl)
+@named sys = build_model()
 u0 = build_u0(sys)
 sts = unknowns(sys)
 alg = KenCarp47()
+@unpack iStim = sys
+callback = build_stim_callbacks(iStim, tend; period=bcl)
 prob = ODEProblem(sys, u0, tend)
 
-@time sol = solve(prob, alg; reltol=1e-6, abstol=1e-6, progress=true)
+#---
+@time sol = solve(prob, alg; reltol=1e-6, abstol=1e-6, progress=true, callback = callback)
 
 for i in sts
     istr = replace(string(i), "(t)" => "")

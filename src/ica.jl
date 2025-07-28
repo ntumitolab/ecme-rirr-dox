@@ -43,13 +43,13 @@ function get_jca_sys(; atp_i, adp_i, ca_i, ca_nsr, ca_jsr, ca_ss, ca_o, na_i, na
         fb = NaNMath.pow(ca_i * iKMF_CA_SERCA, NFB_SERCA)
         rb = NaNMath.pow(ca_nsr * iKMR_CA_SERCA, NRB_SERCA)
         f_atp = atp_i / (KM_ATP_SERCA * (adp_i / KI1_ADP_SERCA + 1) + atp_i * (adp_i / KI2_ADP_SERCA + 1))
-        f_atp * (VF_SERCA * fb - VR_SERCA * rb) / (fb + rb + 1)
+        j_up = f_atp * (VF_SERCA * fb - VR_SERCA * rb) / (fb + rb + 1)
     end
 
     i_naca = let
         a_eta = exp(η_NCX * iVT * vm)
         a_etam1 = exp((η_NCX - 1) * iVT * vm)
-        IMAX_NCX * (a_eta * na_i^3 * ca_o - a_etam1 * na_o^3 * ca_i) / (1 + K_SAT_NCX * a_etam1)
+        i_naca = IMAX_NCX * (a_eta * na_i^3 * ca_o - a_etam1 * na_o^3 * ca_i) / (1 + K_SAT_NCX * a_etam1)
     end
 
     eqs = [

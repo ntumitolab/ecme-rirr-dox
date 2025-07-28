@@ -12,12 +12,14 @@ Plots.default(lw=1.5, size=(600, 600))
 
 tend = 1000.0second
 bcl = 1second
-@named sys = build_model(; bcl, tend)
+@named sys = build_model()
 @unpack DOX = sys
 sts = unknowns(sys)
 u0 = build_u0(sys)
 alg = KenCarp47()
-opts = (; reltol=1e-6, abstol=1e-6, progress=true)
+@unpack iStim = sys
+callback = build_stim_callbacks(iStim, tend; period=bcl)
+opts = (; reltol=1e-6, abstol=1e-6, progress=true, callback=callback)
 prob = ODEProblem(sys, u0, tend)
 
 # The collapse of MMP is between 290uM and 300uM of DOX
