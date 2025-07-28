@@ -16,6 +16,9 @@ bcl = 1.0second
 u0 = build_u0(sys)
 sts = unknowns(sys)
 alg = KenCarp47()
+@unpack iStim = sys
+stim! = build_stim_callbacks(iStim, tend; period=bcl)
+
 prob = ODEProblem(sys, [u0; sys.O2_o => 6nM], tend)
 
 reoxygen! = (integrator) -> begin
@@ -23,7 +26,7 @@ reoxygen! = (integrator) -> begin
     set_proposed_dt!(integrator, 1e-6)
 end
 
-cbs = PresetTimeCallback(50.0second, reoxygen!)
+cbs = CallbackSet(stim!, PresetTimeCallback(50.0second, reoxygen!))
 
 #---
 @time sol = solve(prob, alg; reltol=1e-6, abstol=1e-6, progress=true, dt=1e-6, callback=cbs)
