@@ -78,7 +78,7 @@ function get_lcc_sys(; ca_ss, ca_o, k_i, k_o, vm, name=:cicrsys)
         D(cca2_lcc) ~ vc2ca2 + vca1ca2 - vca2ca3,
         D(cca3_lcc) ~ vc3ca3 + vca2ca3 - vca3ca4,
         D(cca4_lcc) ~ vca3ca4 + vc4ca4,
-        y_inf ~ expit(-(v + 55mV) * inv(7.5mV)) + 0.5 * expit((v - 2vm) * inv(6mV)),
+        y_inf ~ expit(-(v + 55mV) * inv(7.5mV)) + 0.5 * expit((v - 21mV) * inv(6mV)),
         τ_yca ~ 20ms + 600ms * expit(-(v + 30mV) * inv(9.5mV)),
         D(x_yca) ~ (y_inf - x_yca) / τ_yca,
         ICaMax ~ ghk(P_CA_LCC, vm, 1μM, 0.341 * ca_o, 2) ,
