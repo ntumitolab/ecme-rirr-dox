@@ -5,7 +5,7 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 using OrdinaryDiffEq
 using NaNMath
 
-export build_model, build_u0
+export build_model, build_u0, build_stim_callbacks
 
 include("utils.jl")
 include("ck.jl")
@@ -24,8 +24,8 @@ include("u0.jl")
 function build_model(; name=:ecmesys, bcl=0second, istim=-80μAcm⁻², tstart=0second, tend=10second, duty=0.5ms, use_mg=false, simplify=true)
     @parameters begin
         iStim(t) = 0μAcm⁻²          # Stimulation current
-        DOX(t) = 0mM                # Doxorubicin concentration
-        kdiffO2(t) = 1000Hz            # Oxygen diffusion rate
+        DOX = 0mM                # Doxorubicin concentration
+        kdiffO2 = 1000Hz            # Oxygen diffusion rate
         MT_PROT = 1                 # OXPHOS protein content
         ΣA_m = 1.01mM               # Mitochondrial ATP + ADP pool (Gauthier-2013)
         ΣA_i = 8mM                  # Cytosolic ATP + ADP pool (Li-2015)
@@ -54,9 +54,9 @@ function build_model(; name=:ecmesys, bcl=0second, istim=-80μAcm⁻², tstart=0
         δCA = 3E-4          # Mito. Ca buffering factor
 
         # constant concentrations
-        h_i(t) = exp10(-7) * Molar   # Cytosolic proton concentration
-        h_m(t) = exp10(-7.6) * Molar # Mitochondrial proton concentration
-        nadph_i = 0.075mM   # Cytosolic NADPH (Gauthier-2013) # 1.0mM (Li-2015)
+        h_i = exp10(-7) * Molar   # Cytosolic proton concentration
+        h_m = exp10(-7.6) * Molar # Mitochondrial proton concentration
+        nadph_i = 75μM      # Cytosolic NADPH (Gauthier-2013) # 1.0mM (Li-2015)
         pi_m = 8.6512mM     # Inorganic phosphate (Gauthier-2013 and Kembro-2013)
         k_o = 5.4mM         # Extracellular potassium
         na_o = 140mM        # Extracellular sodium
@@ -64,7 +64,7 @@ function build_model(; name=:ecmesys, bcl=0second, istim=-80μAcm⁻², tstart=0
         mg_i = 1mM          # Cytosolic magnesium (Gauthier-2013) # 3.1mM (Li-2015)
         mg_m = 0.4mM        # Mitochondrial magnesium (li-2015)
         pi_i = 3mM          # Cytosolic inorganic phosphate
-        O2_o(t) = 6μM       # Extracellular oxygen
+        O2_o = 6μM       # Extracellular oxygen
     end
 
     @variables begin
@@ -88,8 +88,8 @@ function build_model(; name=:ecmesys, bcl=0second, istim=-80μAcm⁻², tstart=0
     end
 
     # Subsystems
-    lccsys = get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm)
-    ryrsys = get_ryr_sys(ca_jsr, ca_ss)
+    lccsys = get_lcc_sys(; ca_ss, ca_o, k_i, k_o, vm)
+    ryrsys = get_ryr_sys(; ca_jsr, ca_ss)
     cksys = get_ck_sys(; atp_i, adp_i)
     forcesys = get_force_sys(; atp_i, adp_i, ca_i)
     jcasys = get_jca_sys(; atp_i, adp_i, ca_i, ca_nsr, ca_jsr, ca_ss, ca_o, na_i, na_o, vm)
@@ -139,15 +139,16 @@ function build_model(; name=:ecmesys, bcl=0second, istim=-80μAcm⁻², tstart=0
     if bcl > 0 && duty > 0 && istim != 0
         ts0 = collect(tstart:bcl:tend)
         ts1 = ts0 .+ duty
-        sstart = ModelingToolkit.SymbolicDiscreteCallback(ts0 => [iStim ~ istim], discrete_parameters = iStim, iv = t)
-        send = ModelingToolkit.SymbolicDiscreteCallback(ts1 => [iStim ~ 0], discrete_parameters = iStim, iv = t)
+
+        sstart = ModelingToolkit.SymbolicDiscreteCallback( ts0 => [iStim ~ istim], discrete_parameters = iStim, iv = t)
+        send = ModelingToolkit.SymbolicDiscreteCallback( ts1 => [iStim ~ 0], discrete_parameters = iStim, iv = t)
         sys = System(eqs, t; name, discrete_events = [sstart, send])
     else
         sys = System(eqs, t; name)
     end
 
     for s in (lccsys, ryrsys, cksys, forcesys, jcasys, iksys, inasys, inaksys, tcassys, etcsys, c5sys, rossys, mitocasys)
-        sys = extend(sys, s)
+        sys = extend(s, sys; name)
     end
 
     if simplify

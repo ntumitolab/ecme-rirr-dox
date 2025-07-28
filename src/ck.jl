@@ -11,12 +11,12 @@ function get_ck_sys(; atp_i, adp_i, name=:cksys)
     end
 
     @variables begin
-        cr_ic(t)  # Conserved
+        cr_ic(t)  ## Conserved
         crp_ic(t) = 5.1291mM
-        cr_i(t)   # Conserved
+        cr_i(t)   ## Conserved
         crp_i(t) = 5.0297mM
         adp_ic(t) = 0.29mM
-        atp_ic(t)  # Conserved
+        atp_ic(t)  ## Conserved
         vCK_mito(t)
         vCK_cyto(t)
         vTR_crp(t)

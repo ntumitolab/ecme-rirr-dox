@@ -1,6 +1,6 @@
 # Good old 16-state CICR (Cortassa 2006), including L-type calcium channel (LCC) and Ryanodine receptor (RyR)
 "LCC ODE system"
-function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
+function get_lcc_sys(; ca_ss, ca_o, k_i, k_o, vm, name=:cicrsys)
     @parameters begin
         A_LCC = 2
         B_LCC = 1/2
@@ -18,7 +18,7 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
         α_lcc(t)
         β_lcc(t)
         # Closed LCC state
-        c0_lcc(t) # = 0.9991
+        c0_lcc(t) # 0.9991
         c1_lcc(t) = 0
         c2_lcc(t) = 0
         c3_lcc(t) = 0
@@ -64,8 +64,8 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
     vc4ca4 = 16γ * c4_lcc - ω / 16 * cca4_lcc
 
     eqs = [
-        α_lcc ~ 0.4kHz * exp((v + 2) / 10),
-        β_lcc ~ 0.05kHz * exp(-(v + 2) / 13),
+        α_lcc ~ 0.4kHz * exp((v + 2mV) * inv(10mV)),
+        β_lcc ~ 0.05kHz * exp(-(v + 2mV) * inv(13mV)),
         1 ~ c0_lcc + c1_lcc + c2_lcc + c3_lcc + c4_lcc + o_lcc + cca0_lcc + cca1_lcc + cca2_lcc + cca3_lcc + cca4_lcc,
         # D(c0_lcc) ~ -vc0c1 - vc0ca0,
         D(c1_lcc) ~ vc0c1 - vc1c2 - vc1ca1,
@@ -78,8 +78,8 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
         D(cca2_lcc) ~ vc2ca2 + vca1ca2 - vca2ca3,
         D(cca3_lcc) ~ vc3ca3 + vca2ca3 - vca3ca4,
         D(cca4_lcc) ~ vca3ca4 + vc4ca4,
-        y_inf ~ expit(-(v + 55) / 7.5) + 0.5 * expit((v - 21) / 6.0),
-        τ_yca ~ 20ms + 600ms * expit(-(v + 30) / 9.5),
+        y_inf ~ expit(-(v + 55mV) * inv(7.5mV)) + 0.5 * expit((v - 21mV) * inv(6mV)),
+        τ_yca ~ 20ms + 600ms * expit(-(v + 30mV) * inv(9.5mV)),
         D(x_yca) ~ (y_inf - x_yca) / τ_yca,
         ICaMax ~ ghk(P_CA_LCC, vm, 1μM, 0.341 * ca_o, 2) ,
         ICaL ~ 6 * x_yca * o_lcc * ICaMax,
@@ -89,22 +89,22 @@ function get_lcc_sys(ca_ss, ca_o, k_i, k_o, vm; name=:cicrsys)
 end
 
 "Ryanodine receptor (RyR)"
-function get_ryr_sys(ca_jsr, ca_ss; name=:ryrsys)
+function get_ryr_sys(; ca_jsr, ca_ss, name=:ryrsys)
     @parameters begin
-        R_RYR = 3.6/ms
+        R_RYR = 3.6kHz
         KA_P_RYR = 1.125E10 / (mM^4 * ms)
-        KA_M_RYR = 0.576 / ms
+        KA_M_RYR = 0.576kHz
         KB_P_RYR = 4.05E6 / (mM^3 * ms)
-        KB_M_RYR = 1.93 / ms
-        KC_P_RYR = 0.1 / ms
-        KC_M_RYR = 8E-4 / ms
+        KB_M_RYR = 1.93kHz
+        KC_P_RYR = 0.1kHz
+        KC_M_RYR = 8E-4kHz
     end
 
     @variables begin
-        po1_ryr(t) = 8.309e-5
-        po2_ryr(t) = 7.12e-11
-        pc1_ryr(t) # = 0.7528
-        pc2_ryr(t) = 0.2471
+        po1_ryr(t) = 0
+        po2_ryr(t) = 0
+        pc1_ryr(t) ## Conserved
+        pc2_ryr(t) = 0
         Jrel(t)
     end
 
