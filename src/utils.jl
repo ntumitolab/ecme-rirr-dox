@@ -149,18 +149,26 @@ end
 "Accumulate chemical reaction rates into a look-up table"
 function add_raw_rate!(lut, rate, substrates, products)
     for s in substrates
-        lut[s] -= rate
+        if !haskey(lut, s)
+            lut[s] = -rate
+        else
+            lut[s] += -rate
+        end
     end
     for p in products
-        lut[p] += rate
+        if !haskey(lut, p)
+            lut[p] = rate
+        else
+            lut[p] += rate
+        end
     end
     return lut
 end
 
 "Accumulate chemical reaction rates with law of mass action into a look-up table"
-function add_rate!(lut, kf, substrates, kb, products)
+function add_rate!(lut, kf, substrates, kb = 0, products = [])
     rate = prod(substrates; init=kf) - prod(products; init=kb)
-    return add_raw_rate!(lut, rate, substrates, products)
+    return add_raw_rate!(rate, substrates, products, lut)
 end
 
 function build_stim_callbacks(sym, endtime; period=1second, duty=0.5ms, starttime=zero(endtime), strength=-80μAμF, baseline=0μAμF, proposeddt=duty)
