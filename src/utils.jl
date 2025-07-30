@@ -88,19 +88,15 @@ Relative exponential function.
 """
 exprel(x) = x / expm1(x)
 
-"Acid dissociation polynomial"
-_poly(h, iKA) = h * iKA + 1
-_poly(h, iKA, mg, iKMG) = h * iKA + +mg * iKMG + 1
-
 #=
 Get propotions of AXP from dissociation constants
 Returns AXPn-, HAXP, MgAXP, poly (the denominator polynomial)
 =#
-function _breakdown_axp(axp, h, mg, iKA, iKMG)
-    poly = _poly(h, iKA, mg, iKMG)
-    axpn = axp / poly
+function _breakdown_axp(tot, h, mg, iKA, iKMG)
+    poly = 1 + h * iKA + mg * iKMG
+    axpn = tot / poly
     haxp = axpn * h * iKA
-    mgaxp = axp - axpn - haxp
+    mgaxp = tot - axpn - haxp
     return (axpn, haxp, mgaxp, poly)
 end
 
@@ -108,16 +104,16 @@ breakdown_atp(atp, h, mg) = _breakdown_axp(atp, h, mg, iKA_ATP, iKMG_ATP)
 breakdown_adp(adp, h, mg) = _breakdown_axp(adp, h, mg, iKA_ADP, iKMG_ADP)
 
 "Binding polynomial of phosphate"
-pipoly(h) = _poly(h, iKA_PI)
+pipoly(h) = 1 + h * iKA_PI
 
 "Dihydrogen phosphate"
 dhpi(Σpi, h) = Σpi * hil(h, KA_PI)
 
 "Binding Polynomial of succinate"
-sucpoly(h) = _poly(h, iKA_SUC)
+sucpoly(h) = 1 + h * iKA_SUC
 
 "Binding Polynomial of water"
-h2opoly(h) = _poly(h, iKA_H2O)
+h2opoly(h) = 1 + h * iKA_H2O
 
 "Nernst potential"
 nernst(x_out, x_in) = VT * NaNMath.log(x_out / x_in)
@@ -168,7 +164,7 @@ end
 "Accumulate chemical reaction rates with law of mass action into a look-up table"
 function add_rate!(lut, kf, substrates, kb = 0, products = [])
     rate = prod(substrates; init=kf) - prod(products; init=kb)
-    return add_raw_rate!(rate, substrates, products, lut)
+    return add_raw_rate!(lut, rate, substrates, products)
 end
 
 function build_stim_callbacks(sym, endtime; period=1second, duty=0.5ms, starttime=zero(endtime), strength=-80μAμF, baseline=0μAμF, proposeddt=duty)
