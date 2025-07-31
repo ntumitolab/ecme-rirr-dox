@@ -1,5 +1,6 @@
-"Creatine kinase (CK)"
-function get_ck_sys(; atp_i, adp_i, name=:cksys)
+function get_ck_eqs(; atp_i=7.9mM, adp_i=0.1mM)
+    @independent_variables t
+    D = Differential(t)
     @parameters begin
         KCK_IN = 0.14Hz     # Rate constant of creatine kinase (cytosolic)
         KCK_MT = 1.33E-3Hz  # Rate constant of creatine kinase (juxta-mitochondrial)
@@ -9,7 +10,6 @@ function get_ck_sys(; atp_i, adp_i, name=:cksys)
         ΣCR = 25mM          # Pool of creatine and creatine phosphate
         ΣA_ic = 8mM         # Pool of cytosolic ATP + ADP
     end
-
     @variables begin
         cr_ic(t)  ## Conserved
         crp_ic(t) = 5.1291mM
@@ -21,7 +21,8 @@ function get_ck_sys(; atp_i, adp_i, name=:cksys)
         vCK_cyto(t)
         vTR_crp(t)
     end
-    eqs = [
+
+    eqs_ck = [
         ΣCR ~ cr_ic + crp_ic,
         ΣCR ~ cr_i + crp_i,
         ΣA_ic ~ adp_ic + atp_ic,
@@ -32,5 +33,13 @@ function get_ck_sys(; atp_i, adp_i, name=:cksys)
         D(crp_i) ~ vCK_mito - vTR_crp,
         D(crp_ic) ~ vTR_crp + vCK_cyto
     ]
-    return System(eqs, t; name)
+
+    return (; eqs_ck, vCK_mito)
+end
+
+"Creatine kinase (CK)"
+function get_ck_sys(; atp_i, adp_i, name=:cksys)
+    @independent_variables t
+    eqs_ck, _ = get_ck_eqs(; atp_i, adp_i)
+    return System(eqs_ck, t; name)
 end
