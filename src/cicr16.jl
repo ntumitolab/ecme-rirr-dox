@@ -1,8 +1,11 @@
 # Good old 16-state CICR (Cortassa 2006), including L-type calcium channel (LCC) and Ryanodine receptor (RyR)
-function get_cicr16_eqs(; vm=-80mV, ca_ss=100nM, ca_jsr=1mM, k_i=144mM, ca_o=2mM, k_o=5.4mM)
+function get_cicr16_eqs(; vm=-80mV, ca_ss=100nM, ca_i=100nM, ca_jsr=1mM, ca_nsr=1mM, k_i=144mM, ca_o=2mM, k_o=5.4mM)
     @independent_variables t
     D = Differential(t)
     @parameters begin
+        R_TR = inv(9.09ms)          # Diffusion rate between JSR and NSR
+        R_XFER= inv(0.5747ms)       # Diffusion rate between subspace and cytosol
+        ## L-type calcium channels
         A_LCC = 2
         B_LCC = 1/2
         ω_LCC = 0.01kHz
@@ -12,6 +15,7 @@ function get_cicr16_eqs(; vm=-80mV, ca_ss=100nM, ca_jsr=1mM, k_i=144mM, ca_o=2mM
         P_CA_LCC = 1E-3cm * Hz # 1.24E-3cm * Hz
         P_K_LCC = 1.11E-11cm * Hz
         I_CA_HALF_LCC = -0.4583μAcm⁻²
+        ## Ryanodine receptors
         R_RYR = 3.6kHz
         KA_P_RYR = 1.125E10 / (mM^4 * ms)
         KA_M_RYR = 0.576kHz
@@ -53,6 +57,8 @@ function get_cicr16_eqs(; vm=-80mV, ca_ss=100nM, ca_jsr=1mM, k_i=144mM, ca_o=2mM
         ICaK(t)
         ICaL(t)
         Jrel(t)
+        Jtr(t)
+        Jxfer(t)
     end
 
     v = vm / mV
@@ -96,12 +102,14 @@ function get_cicr16_eqs(; vm=-80mV, ca_ss=100nM, ca_jsr=1mM, k_i=144mM, ca_o=2mM
         ICaMax ~ ghk(P_CA_LCC, vm, 1μM, 0.341 * ca_o, 2) ,
         ICaL ~ 6 * x_yca * o_lcc * ICaMax,
         ICaK ~ hil(I_CA_HALF_LCC, ICaMax) * x_yca * o_lcc * ghk(P_K_LCC, vm, k_i, k_o),
-        Jrel ~ R_RYR * (po1_ryr + po2_ryr) * (ca_jsr - ca_ss)
+        Jrel ~ R_RYR * (po1_ryr + po2_ryr) * (ca_jsr - ca_ss),
+        Jtr ~ R_TR * (ca_nsr - ca_jsr),
+        Jxfer ~ R_XFER * (ca_ss - ca_i),
     ]
 
     eqs_cicr16 = [ryreqs; lcceqs; eqs]
 
-    return (; eqs_cicr16, ICaL, ICaK, Jrel)
+    return (; eqs_cicr16, ICaL, ICaK, Jrel, Jtr, Jxfer)
 end
 
 "LCC ODE system"

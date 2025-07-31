@@ -1,5 +1,6 @@
-"Sarcomere force generation and ATP consumption"
-function get_force_sys(; atp_i, adp_i, ca_i, name=:forcesys)
+function get_force_eqs(; atp_i=7.9mM, adp_i=0.1mM, ca_i=200nM)
+    @independent_variables t
+    D = Differential(t)
     @parameters begin
         ΣLTRPN = 70μM               # Total pool of low affinity troponin ca binding sites
         ΣHTRPN = 140μM              # Total pool of high affinity troponin ca binding sites
@@ -58,13 +59,16 @@ function get_force_sys(; atp_i, adp_i, ca_i, name=:forcesys)
     end
 
     k_np_trop = K_PN_TROP * NaNMath.pow(ltr_ca / (ΣLTRPN * K½_TRPN), N_TROP)
-    v01 = F01_AM * x_p0 - G01_SL_AM * x_p1
-    v12 = F12_AM * x_p1 - G12_SL_AM * x_p2
-    v23 = F23_AM * x_p2 - G23_SL_AM * x_p3
-    v04 = K_PN_TROP * x_p0 - k_np_trop * x_n0
-    v15 = K_PN_TROP * x_p1 - k_np_trop * x_n1
-    v54 = G01_OFF_AM * x_n1
 
+    rs = Dict()
+    add_rate!(rs, F01_AM, x_p0, G01_SL_AM, x_p1)
+    add_rate!(rs, F12_AM, x_p1, G12_SL_AM, x_p2)
+    add_rate!(rs, F23_AM, x_p2, G23_SL_AM, x_p3)
+    add_rate!(rs, K_PN_TROP, x_p0, k_np_trop, x_n0)
+    add_rate!(rs, K_PN_TROP, x_p1, k_np_trop, x_n1)
+    add_rate!(rs, G01_OFF_AM, x_n1, 0, x_n0)
+
+    deq = [D(x) ~ rs[x] for x in (x_p0,x_p1,x_p2,x_n1)]
     eqs = [
         force ~ ζ_AM * (x_p1 + x_n1 + 2 * x_p2 + 3 * x_p3) * iDEN_FORCE,
         force_normal ~ (x_p1 + x_p2 + x_p3 + x_n1) * iDEN_FORCE_N,
@@ -75,11 +79,13 @@ function get_force_sys(; atp_i, adp_i, ca_i, name=:forcesys)
         D(htr_ca) ~ K_P_HTRPN * ca_i * htr_free - K_M_HTRPN * htr_ca,
         Jtrpn ~ D(ltr_ca) + D(htr_ca),
         1 ~ x_p0 + x_p1 + x_p2 + x_p3 + x_n0 + x_n1,
-        D(x_p0) ~ -v01 - v04,
-        D(x_p1) ~ v01 - v12 - v15,
-        D(x_p2) ~ v12 - v23,
-        D(x_p3) ~ v23,
-        D(x_n1) ~ v15 - v54,
     ]
-    return System(eqs, t; name)
+    eqs_force = [deq; eqs]
+    return (;eqs_force, vAm, Jtrpn)
+end
+
+"Sarcomere force generation and ATP consumption"
+function get_force_sys(; atp_i, adp_i, ca_i, name=:forcesys)
+    eqs_force, _, _ = get_force_eqs(; atp_i, adp_i, ca_i)
+    return System(eqs_force, t; name)
 end

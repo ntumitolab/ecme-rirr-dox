@@ -162,7 +162,7 @@ function add_raw_rate!(lut, rate, substrates, products)
 end
 
 "Accumulate chemical reaction rates with law of mass action into a look-up table"
-function add_rate!(lut, kf, substrates, kb = 0, products = [])
+function add_rate!(lut, kf, substrates, kb, products)
     rate = prod(substrates; init=kf) - prod(products; init=kb)
     return add_raw_rate!(lut, rate, substrates, products)
 end
