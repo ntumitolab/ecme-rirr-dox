@@ -1,8 +1,8 @@
-"Potassium currents, Zhou 2009 version"
-function get_ik_sys(; na_i, na_o, k_i, k_o=5.4mM, mg_i, vm, atp_i, adp_i, name=:iksys)
+function get_ik_eqs(; na_i, na_o=140mM, k_i, k_o=5.4mM, mg_i=1mM, vm=-80mV, atp_i=7.9mM, adp_i=0.1mM)
+    fko = sqrt(k_o / 5.4mM)
     @parameters begin
-        G_K1 = 0.75mScm⁻² * sqrt(k_o / 5.4mM)  # Time-independent
-        G_K = 0.282mScm⁻² * sqrt(k_o / 5.4mM)  # Time-dependent
+        G_K1 = 0.75mScm⁻² * fko  # Time-independent
+        G_K = 0.282mScm⁻² * fko  # Time-dependent
         P_NA_K = 0.01833         # Permeability ratio of Na to K in IKs
         G_KP = 8.28E-3mScm⁻²   # Plateau potassium current
         # ATP-inhibited K channel (Zhou, 2009, adapted from Ferrero et al.)
@@ -16,24 +16,22 @@ function get_ik_sys(; na_i, na_o, k_i, k_o=5.4mM, mg_i, vm, atp_i, adp_i, name=:
         IKatp(t)            # ATP-dependent K channel (KATP) current
         x_k(t) = 0          # Time-dependent K channel gating variable
     end
-
     # Time-independent potassium current
     ΔVK = vm - EK
     vk = ΔVK / mV
-    α1 = 1.02 / (1 + exp(0.2385 * (vk - 59.215)))
-    β1 = (0.4912 * exp(0.08032 * (vk + 5.476)) + exp(0.06175 * (vk - 594.31))) / (1 + exp(-0.5143 * (vk + 4.753)))
+    α1 = 1.02 / (1 + exp(0.2385 * (vk - 59.215mV)))
+    β1 = (0.4912 * exp(0.08032 * (vk + 5.476mV)) + exp(0.06175 * (vk - 594.31mV))) / (1 + exp(-0.5143 * (vk + 4.753mV)))
     # Time-dependent delayed rectifier K current system
-    α = 7.19e-5 / ms / (0.148) * exprel(-0.148 * (vm + 30))
-    β = 1.31e-4 / ms / (0.0687) * exprel(0.0687* (vm + 30))
+    α = 7.19e-5 / ms / (0.148) * exprel(-0.148 * (vm + 30mV))
+    β = 1.31e-4 / ms / (0.0687) * exprel(0.0687* (vm + 30mV))
     E_KNa = nernst(na_o * P_NA_K + k_o, na_i * P_NA_K + k_i)
-    x1 = expit(-inv(40) * (vm - 40))
+    x1 = expit(-inv(40) * (vm - 40mV))
     # ATP-dependent K channel (KATP) current
-    adp = adp_i / μM
-    hatp = 1.3 + 0.74 * exp(-0.09adp)   # Hill factor (Ferrero)
-    km_atp = 35.8μM + 17.9μM * NaNMath.pow(adp, 0.256) # fixed, it's μM rather than mM
+    hatp = 1.3 + 0.74 * exp(-0.09adp_i / μM)   # Hill factor (Ferrero)
+    km_atp = 35.8μM + 17.9μM * NaNMath.pow(adp_i / μM, 0.256) # fixed, it's μM rather than mM
     f_atp = hil(km_atp, atp_i, hatp)  # Inhibition by ATP
 
-    eqs = [
+    eqs_ik = [
         D(x_k) ~ α - x_k * (α + β),
         EK ~ nernst(k_o, k_i),
         IK1 ~ G_K1 * (α1 / (α1 + β1)) * ΔVK,
@@ -41,5 +39,12 @@ function get_ik_sys(; na_i, na_o, k_i, k_o=5.4mM, mg_i, vm, atp_i, adp_i, name=:
         IKp ~ G_KP * ΔVK / (1 + exp(-(vm - 7.488) / 5.98)),
         IKatp ~ G0_KATP * f_atp * ΔVK
     ]
-    return System(eqs, t; name)
+
+    return (; eqs_ik, IK1, IK, IKp, IKatp)
+end
+
+"Potassium currents, Zhou 2009 version"
+function get_ik_sys(; na_i, na_o, k_i, k_o=5.4mM, mg_i=1mM, vm, atp_i, adp_i, name=:iksys)
+    @unpack eqs_ik = get_ik_eqs(; na_i, na_o, k_i, k_o, mg_i, vm, atp_i, adp_i)
+    return System(eqs_ik, t; name)
 end
