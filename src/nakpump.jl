@@ -1,5 +1,5 @@
-"Na-K pump"
-function get_inak_sys(; atp_i, adp_i, vm, na_i, na_o, k_o, name=:naksys)
+function get_inak_eqs(; atp_i, adp_i, vm, na_i, na_o, k_o)
+    @independent_variables t
     @parameters begin
         KM_NA_NAK = 10mM  # Na half-saturate constant of Na-K ATPase
         KM_K_NAK = 1.5mM    # K half-saturate constant of Na-K ATPase
@@ -9,11 +9,17 @@ function get_inak_sys(; atp_i, adp_i, vm, na_i, na_o, k_o, name=:naksys)
         fnao_NAK = expm1(na_o / 67.3mM) / 7
         fko_NAK = hil(k_o, KM_K_NAK)
     end
-
     @variables INaK(t)
     fnai = hil(na_i, KM_NA_NAK, 1.5)
     f_nak = inv(1.0 + 0.1245 * exp(-0.1iVT * vm) + 0.0365 * fnao_NAK * exp(-iVT * vm))
     f_atp = hil(atp_i * hil(KI_ADP_NAK, adp_i), KM_ATP_NAK)
-    eqs = [INaK ~ IMAX_NAK * fko_NAK * fnai * f_atp * f_nak]
+    eqs_nak = [INaK ~ IMAX_NAK * fko_NAK * fnai * f_atp * f_nak]
+    return (; eqs_nak, INaK)
+end
+
+"Na-K pump"
+function get_inak_sys(; atp_i, adp_i, vm, na_i, na_o, k_o, name=:naksys)
+    @independent_variables t
+    @unpack eqs_nak = get_inak_eqs(; atp_i, adp_i, vm, na_i, na_o, k_o)
     return System(eqs, t; name)
 end
