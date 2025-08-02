@@ -1,7 +1,5 @@
 # 16-state CICR from Cortassa et al. (2006), including L-type calcium channels (LCC) and Ryanodine receptors (RyR)
 function get_cicr16_eqs(; vm=-80mV, ca_ss=100nM, ca_i=100nM, ca_jsr=1mM, ca_nsr=1mM, k_i=144mM, ca_o=2mM, k_o=5.4mM)
-    @independent_variables t
-    D = Differential(t)
     @parameters begin
         R_TR = inv(9.09ms)          # Diffusion rate between JSR and NSR
         R_XFER= inv(0.5747ms)       # Diffusion rate between subspace and cytosol

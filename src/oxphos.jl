@@ -8,17 +8,14 @@ function get_etc_eqs(;
     sox_m=1nM,                # Superoxide concentration in the matrix
     suc=1μM,                  # Succinate concentration
     fum=10μM,                 # Fumarate concentration
+    oaa=0.1μM,                # Oxaloacetate concentration
     h_i=exp10(-7) * Molar,      # IMS proton concentration
     h_m=exp10(-7.6) * Molar,    # Matrix proton concentration
     ROTENONE_BLOCK=0,
     ANTIMYCIN_BLOCK=0,
     MYXOTHIAZOL_BLOCK=0,
     STIGMATELLIN_BLOCK=0,
-    CYANIDE_BLOCK=0,
-)
-
-    @independent_variables t
-    D = Differential(t)
+    CYANIDE_BLOCK=0,)
 
     # Q cycle variables
     @variables begin
@@ -466,8 +463,9 @@ function get_etc_sys(;
     sox_m=1nM,                # Superoxide concentration in the matrix
     suc=1μM,                  # Succinate concentration
     fum=10μM,                 # Fumarate concentration
-    h_i=exp10(-7) * Molar,      # IMS proton concentration
-    h_m=exp10(-7.6) * Molar,    # Matrix proton concentration
+    oaa=0.1μM,                # Oxaloacetate concentration
+    h_i=exp10(-7) * Molar,    # IMS proton concentration
+    h_m=exp10(-7.6) * Molar,  # Matrix proton concentration
     ROTENONE_BLOCK=0,
     ANTIMYCIN_BLOCK=0,
     MYXOTHIAZOL_BLOCK=0,
@@ -478,7 +476,7 @@ function get_etc_sys(;
     @independent_variables t
     @unpack eqs_etc = get_etc_eqs(;
         DOX, MT_PROT, O2, nad_m, nadh_m,
-        dpsi, sox_m, suc, fum, h_i, h_m,
+        dpsi, sox_m, suc, fum, oaa, h_i, h_m,
         ROTENONE_BLOCK,
         ANTIMYCIN_BLOCK,
         MYXOTHIAZOL_BLOCK,

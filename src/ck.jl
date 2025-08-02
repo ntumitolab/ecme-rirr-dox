@@ -1,6 +1,4 @@
 function get_ck_eqs(; atp_i=7.9mM, adp_i=0.1mM)
-    @independent_variables t
-    D = Differential(t)
     @parameters begin
         KCK_IN = 0.14Hz     # Rate constant of creatine kinase (cytosolic)
         KCK_MT = 1.33E-3Hz  # Rate constant of creatine kinase (juxta-mitochondrial)
@@ -39,7 +37,6 @@ end
 
 "Creatine kinase (CK)"
 function get_ck_sys(; atp_i, adp_i, name=:cksys)
-    @independent_variables t
     eqs_ck, _ = get_ck_eqs(; atp_i, adp_i)
     return System(eqs_ck, t; name)
 end

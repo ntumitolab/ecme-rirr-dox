@@ -13,8 +13,6 @@ function _vsod(sox, h2o2, K1, K3, K5, KI_H2O2, E0)
 end
 
 function get_ros_eqs(; dpsi, sox_m, nadph_i=75μM, V_MITO_V_MYO=0.615)
-    @independent_variables t
-    D = Differential(t)
     @parameters begin
         # superoxide dismutase (SOD)
         K1_SOD = 1200 / mM / ms     # Reaction rate constant of SOD (Zhou, 2009)
