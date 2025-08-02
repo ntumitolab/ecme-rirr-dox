@@ -43,8 +43,10 @@ function get_mitoh_sys(na_m, na_i, h_m, h_i, pi_m, pi_i; name=:mitohsys)
     return System(eqs, t; name)
 end
 
-"Mitochondrial calcium handling"
-function get_mitoca_sys(; na_i, ca_m, ca_i, dpsi, name=:mitocasys)
+function get_mitoca_eqs(; na_i=8mM, ca_m=500nM, ca_i=100nM, dpsi=150mV)
+    @independent_variables t
+    D = Differential(t)
+
     @parameters begin
         # Mitochondrial NCE (NCLX)
         VMAX_NCLX = 0.1μM / ms
@@ -59,7 +61,9 @@ function get_mitoca_sys(; na_i, ca_m, ca_i, dpsi, name=:mitocasys)
         L_MCU = 110
         N_MCU = 2.8
     end
+
     @variables vUni(t) vNaCa(t)
+
     v2frt = 2 * iVT * (dpsi - DPSI_OFFSET_MCU)
     f_trans = ca_i * iKTRANS_MCU
     f_act = L_MCU * (NaNMath.pow(hil(KACT_MCU, ca_i), N_MCU))
@@ -68,6 +72,13 @@ function get_mitoca_sys(; na_i, ca_m, ca_i, dpsi, name=:mitocasys)
     f_ca = hil(ca_m, KM_CA_NCLX)
     r_ca = ca_m / ca_i
     v_naca = VMAX_NCLX * exp(iVT * B_NCLX * (dpsi - DPSI_OFFSET_MCU)) * r_ca * f_na * f_ca
-    eqs = [vUni ~ v_mcu, vNaCa ~ v_naca]
-    return System(eqs, t; name)
+    eqs_mitoca = [vUni ~ v_mcu, vNaCa ~ v_naca]
+    return (; eqs_mitoca, vUni, vNaCa)
+end
+
+"Mitochondrial calcium handling"
+function get_mitoca_sys(; na_i, ca_m, ca_i, dpsi, name=:mitocasys)
+    @independent_variables t
+    @unpack eqs_mitoca = get_mitoca_eqs(; na_i, ca_m, ca_i, dpsi)
+    return System(eqs_mitoca, t; name)
 end

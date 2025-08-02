@@ -78,6 +78,7 @@ function get_etc_eqs(;
         kr17_C1 = kf17_C1 / KEQ17_C1
     end
 
+    ## Complex I variables
     @variables begin
         ## Flavin site
         FMN(t)
@@ -451,7 +452,7 @@ function get_etc_eqs(;
     end
 
     eqs_etc = [c1eqs; c2eqs; c4eqs; c3eqs]
-    return (; eqs_etc, vHres, vROS, vSDH)
+    return (; eqs_etc, vHres, vROS, vSDH, vNADHC1)
 end
 
 "Electron transport chain (ETC)"
@@ -487,10 +488,12 @@ function get_etc_sys(;
     return System(eqs_etc, t; name)
 end
 
-function get_c5_eqs(; dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m=8.6512mM, MT_PROT=1, C5_INHIB=1, use_mg=false, mg_i=1mM, mg_m=0.4mM)
-    @independent_variables t
-    D = Differential(t)
+function get_c5_eqs(; dpsi, atp_i, adp_i, atp_m, adp_m,
+    h_i=exp10(-7) * Molar, h_m=exp10(-7.6) * Molar,
+    pi_m=8.6512mM, MT_PROT=1, C5_INHIB=1,
+    use_mg=false, mg_i=1mM, mg_m=0.4mM)
 
+    @independent_variables t
     @parameters begin
         ρF1 = 5.0mM                 # Concentration of ATP synthase
         P1_C5 = 1.346E-8
