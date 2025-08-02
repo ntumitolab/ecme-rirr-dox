@@ -20,7 +20,7 @@ function get_ina_eqs(; na_i, na_o, ca_i, ca_o, vm)
 
     ΔVNa = vm - ENa
     ΔVCa = vm - ECa
-    mα = 0.32/ms / 0.1 * exprel(-0.1 * (vm + 47.13mV))
+    mα = 0.32/ms / 0.1 * exprel(-0.1/mV * (vm + 47.13mV))
     mβ = 0.08/ms * exp(-vm * inv(11mV))
     hα = 0.135 * exp(-(vm + 80mV) * inv(6.8mV))
     hβ = inv(0.13ms) * expit((vm + 10.66mV) * inv(11.1mV))

@@ -25,7 +25,7 @@ function get_ik_eqs(; na_i, na_o=140mM, k_i, k_o=5.4mM, mg_i=1mM, vm=-80mV, atp_
     α = 7.19e-5 / ms / (0.148) * exprel(-0.148 * (vm + 30mV))
     β = 1.31e-4 / ms / (0.0687) * exprel(0.0687* (vm + 30mV))
     E_KNa = nernst(na_o * P_NA_K + k_o, na_i * P_NA_K + k_i)
-    x1 = expit(-inv(40) * (vm - 40mV))
+    x1 = expit(-inv(40mV) * (vm - 40mV))
     # ATP-dependent K channel (KATP) current
     hatp = 1.3 + 0.74 * exp(-0.09adp_i / μM)   # Hill factor (Ferrero)
     km_atp = 35.8μM + 17.9μM * NaNMath.pow(adp_i / μM, 0.256) # fixed, it's μM rather than mM

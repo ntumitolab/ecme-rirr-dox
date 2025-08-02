@@ -145,21 +145,15 @@ end
 "Accumulate chemical reaction rates into a look-up table"
 function add_raw_rate!(lut, rate, substrates, products)
     for s in substrates
-        if !haskey(lut, s)
-            lut[s] = -rate
-        else
-            lut[s] += -rate
-        end
+        lut[s] = get(lut, s, 0) - rate
     end
     for p in products
-        if !haskey(lut, p)
-            lut[p] = rate
-        else
-            lut[p] += rate
-        end
+        lut[p] = get(lut, p, 0) + rate
     end
     return lut
 end
+
+get
 
 "Accumulate chemical reaction rates with law of mass action into a look-up table"
 function add_rate!(lut, kf, substrates, kb, products)

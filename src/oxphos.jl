@@ -490,8 +490,6 @@ function get_c5_eqs(; dpsi, atp_i, adp_i, atp_m, adp_m,
     h_i=exp10(-7) * Molar, h_m=exp10(-7.6) * Molar,
     pi_m=8.6512mM, MT_PROT=1, C5_INHIB=1,
     use_mg=false, mg_i=1mM, mg_m=0.4mM)
-
-    @independent_variables t
     @parameters begin
         ρF1 = 5.0mM                 # Concentration of ATP synthase
         P1_C5 = 1.346E-8
@@ -568,7 +566,6 @@ function get_c5_eqs(; dpsi, atp_i, adp_i, atp_m, adp_m,
 end
 
 function get_c5_sys(; dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m=8.6512mM, MT_PROT=1, C5_INHIB=1, use_mg=false, mg_i=1mM, mg_m=0.4mM, name=:c5sys)
-    @independent_variables t
     @unpack eqs_c5 = get_c5_eqs(;
         dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m,
         MT_PROT, C5_INHIB, use_mg, mg_i, mg_m)
