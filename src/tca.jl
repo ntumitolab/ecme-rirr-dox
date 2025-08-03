@@ -1,5 +1,5 @@
 # TCA cycle model
-function get_tca_eqs(; atp_m=0.9mM, adp_m=0.1mM, nad_m=2500μM, nadh_m=500μM, ca_m=500nM, h_m=exp10(-7.6) * Molar, pi_m=8mM, mg_m=0.4mM, use_mg=false)
+function get_tca_eqs(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Molar, pi_m=8mM, mg_m=0.4mM, use_mg=false)
     @parameters begin
         ## Total TCA metabolite pool
         TCA_T = 1.3mM

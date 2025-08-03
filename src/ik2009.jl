@@ -1,4 +1,4 @@
-function get_ik_eqs(; na_i, na_o=140mM, k_i, k_o=5.4mM, mg_i=1mM, vm=-80mV, atp_i=7.9mM, adp_i=0.1mM)
+function get_ik_eqs(; na_i, na_o, k_i, k_o, mg_i, vm, atp_i, adp_i)
     fko = sqrt(k_o / 5.4mM)
     @parameters begin
         G_K1 = 0.75mScm⁻² * fko  # Time-independent
@@ -44,7 +44,7 @@ function get_ik_eqs(; na_i, na_o=140mM, k_i, k_o=5.4mM, mg_i=1mM, vm=-80mV, atp_
 end
 
 "Potassium currents, Zhou 2009 version"
-function get_ik_sys(; na_i, na_o, k_i, k_o=5.4mM, mg_i=1mM, vm, atp_i, adp_i, name=:iksys)
+function get_ik_sys(; na_i, na_o, k_i, k_o, mg_i, vm, atp_i, adp_i, name=:iksys)
     @unpack eqs_ik = get_ik_eqs(; na_i, na_o, k_i, k_o, mg_i, vm, atp_i, adp_i)
     return System(eqs_ik, t; name)
 end

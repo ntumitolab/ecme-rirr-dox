@@ -1,4 +1,4 @@
-function get_ck_eqs(; atp_i=7.9mM, adp_i=0.1mM)
+function get_ck_eqs(; atp_i, adp_i)
     @parameters begin
         KCK_IN = 0.14Hz     # Rate constant of creatine kinase (cytosolic)
         KCK_MT = 1.33E-3Hz  # Rate constant of creatine kinase (juxta-mitochondrial)
@@ -32,11 +32,11 @@ function get_ck_eqs(; atp_i=7.9mM, adp_i=0.1mM)
         D(crp_ic) ~ vTR_crp + vCK_cyto
     ]
 
-    return (; eqs_ck, vCK_mito)
+    return (; eqs_ck, vCK_mito, vCK_cyto, vTR_crp)
 end
 
 "Creatine kinase (CK)"
 function get_ck_sys(; atp_i, adp_i, name=:cksys)
-    eqs_ck, _ = get_ck_eqs(; atp_i, adp_i)
+    @unpack eqs_ck = get_ck_eqs(; atp_i, adp_i)
     return System(eqs_ck, t; name)
 end

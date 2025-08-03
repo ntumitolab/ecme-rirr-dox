@@ -1,5 +1,5 @@
 # 16-state CICR from Cortassa et al. (2006), including L-type calcium channels (LCC) and Ryanodine receptors (RyR)
-function get_cicr16_eqs(; vm=-80mV, ca_ss=100nM, ca_i=100nM, ca_jsr=1mM, ca_nsr=1mM, k_i=144mM, ca_o=2mM, k_o=5.4mM)
+function get_cicr16_eqs(; vm, ca_ss, ca_i, ca_jsr, ca_nsr, k_i, ca_o, k_o)
     @parameters begin
         R_TR = inv(9.09ms)          # Diffusion rate between JSR and NSR
         R_XFER= inv(0.5747ms)       # Diffusion rate between subspace and cytosol
@@ -59,7 +59,6 @@ function get_cicr16_eqs(; vm=-80mV, ca_ss=100nM, ca_i=100nM, ca_jsr=1mM, ca_nsr=
         Jxfer(t)
     end
 
-    v = vm / mV
     ω, f, g = ω_LCC, f_LCC, g_LCC
     α = α_lcc
     β = β_lcc
@@ -92,10 +91,10 @@ function get_cicr16_eqs(; vm=-80mV, ca_ss=100nM, ca_i=100nM, ca_jsr=1mM, ca_nsr=
     eqs = [
         1 ~ c0_lcc + c1_lcc + c2_lcc + c3_lcc + c4_lcc + o_lcc + cca0_lcc + cca1_lcc + cca2_lcc + cca3_lcc + cca4_lcc,
         1 ~ pc1_ryr + po1_ryr + po2_ryr + pc2_ryr,
-        α_lcc ~ 0.4kHz * exp((v + 2mV) * inv(10mV)),
-        β_lcc ~ 0.05kHz * exp(-(v + 2mV) * inv(13mV)),
-        y_inf ~ expit(-(v + 55mV) * inv(7.5mV)) + 0.5 * expit((v - 21mV) * inv(6mV)),
-        τ_yca ~ 20ms + 600ms * expit(-(v + 30mV) * inv(9.5mV)),
+        α_lcc ~ 0.4kHz * exp((vm + 2mV) * inv(10mV)),
+        β_lcc ~ 0.05kHz * exp(-(vm + 2mV) * inv(13mV)),
+        y_inf ~ expit(-(vm + 55mV) * inv(7.5mV)) + 0.5 * expit((vm - 21mV) * inv(6mV)),
+        τ_yca ~ 20ms + 600ms * expit(-(vm + 30mV) * inv(9.5mV)),
         D(x_yca) ~ (y_inf - x_yca) / τ_yca,
         ICaMax ~ ghk(P_CA_LCC, vm, 1μM, 0.341 * ca_o, 2) ,
         ICaL ~ 6 * x_yca * o_lcc * ICaMax,
@@ -115,8 +114,8 @@ function get_lcc_sys(; ca_ss, ca_o, k_i, k_o, vm, name=:cicrsys)
     @parameters begin
         A_LCC = 2
         B_LCC = 1/2
-        ω_LCC = 0.01kHz
-        f_LCC = 0.3kHz
+        ω_LCC = 10Hz
+        f_LCC = 300Hz
         g_LCC = 2kHz
         γ_LCC = 0.1875 / (ms * mM)
         P_CA_LCC = 1E-3cm * Hz # 1.24E-3cm * Hz
@@ -158,7 +157,6 @@ function get_lcc_sys(; ca_ss, ca_o, k_i, k_o, vm, name=:cicrsys)
         Jrel(t)
     end
 
-    v = vm / mV
     ω, f, g = ω_LCC, f_LCC, g_LCC
     α = α_lcc
     β = β_lcc
@@ -181,8 +179,8 @@ function get_lcc_sys(; ca_ss, ca_o, k_i, k_o, vm, name=:cicrsys)
     vc4ca4 = 16γ * c4_lcc - ω / 16 * cca4_lcc
 
     eqs = [
-        α_lcc ~ 0.4kHz * exp((v + 2mV) * inv(10mV)),
-        β_lcc ~ 0.05kHz * exp(-(v + 2mV) * inv(13mV)),
+        α_lcc ~ 0.4kHz * exp((vm + 2mV) * inv(10mV)),
+        β_lcc ~ 0.05kHz * exp(-(vm + 2mV) * inv(13mV)),
         1 ~ c0_lcc + c1_lcc + c2_lcc + c3_lcc + c4_lcc + o_lcc + cca0_lcc + cca1_lcc + cca2_lcc + cca3_lcc + cca4_lcc,
         # D(c0_lcc) ~ -vc0c1 - vc0ca0,
         D(c1_lcc) ~ vc0c1 - vc1c2 - vc1ca1,
@@ -195,8 +193,8 @@ function get_lcc_sys(; ca_ss, ca_o, k_i, k_o, vm, name=:cicrsys)
         D(cca2_lcc) ~ vc2ca2 + vca1ca2 - vca2ca3,
         D(cca3_lcc) ~ vc3ca3 + vca2ca3 - vca3ca4,
         D(cca4_lcc) ~ vca3ca4 + vc4ca4,
-        y_inf ~ expit(-(v + 55mV) * inv(7.5mV)) + 0.5 * expit((v - 21mV) * inv(6mV)),
-        τ_yca ~ 20ms + 600ms * expit(-(v + 30mV) * inv(9.5mV)),
+        y_inf ~ expit(-(vm + 55mV) * inv(7.5mV)) + 0.5 * expit((vm - 21mV) * inv(6mV)),
+        τ_yca ~ 20ms + 600ms * expit(-(vm + 30mV) * inv(9.5mV)),
         D(x_yca) ~ (y_inf - x_yca) / τ_yca,
         ICaMax ~ ghk(P_CA_LCC, vm, 1μM, 0.341 * ca_o, 2) ,
         ICaL ~ 6 * x_yca * o_lcc * ICaMax,

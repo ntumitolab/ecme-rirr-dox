@@ -98,7 +98,7 @@ function build_model(; name=:ecmesys, bcl=0second, istim=-80μAcm⁻², tstart=0
     inaksys = get_inak_sys(; atp_i, adp_i, vm, na_i, na_o, k_o)
     tcassys = get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m, mg_m, use_mg)
     @unpack suc, fum, oaa, vSL, vIDH, vKGDH, vMDH = tcassys
-    etcsys = get_etc_sys(; h_i, h_m, DOX, MT_PROT, O2, nad_m, nadh_m, suc, fum, oaa)
+    etcsys = get_etc_sys(; h_i, h_m, DOX, MT_PROT, O2, dpsi, sox_m, nad_m, nadh_m, suc, fum, oaa)
     c5sys = get_c5_sys(; dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT, mg_i, mg_m, use_mg)
     @unpack vROS, vNADHC1, vHres, vO2 = etcsys
     rossys = get_ros_sys(; dpsi, sox_m, nadph_i, V_MITO_V_MYO)

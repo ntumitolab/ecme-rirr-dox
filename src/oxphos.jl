@@ -1,28 +1,28 @@
 function get_etc_eqs(;
-    DOX=0μM,                    # Doxorubicin concentration
-    MT_PROT=1,                  # OXPHOS protein content scale factor
-    O2=6μM,                     # Oxygen concentration
-    nad_m=2500μM,
-    nadh_m=500μM,
-    dpsi=150mV,               # Mitochondrial membrane potential
-    sox_m=1nM,                # Superoxide concentration in the matrix
-    suc=1μM,                  # Succinate concentration
-    fum=10μM,                 # Fumarate concentration
-    oaa=0.1μM,                # Oxaloacetate concentration
-    h_i=exp10(-7) * Molar,      # IMS proton concentration
-    h_m=exp10(-7.6) * Molar,    # Matrix proton concentration
+    nad_m,                  ## NAD concentration
+    nadh_m,                 ## NADH concentration
+    dpsi,                   ## Mitochondrial membrane potential
+    sox_m,                  ## Superoxide concentration in the matrix
+    suc,                    ## Succinate concentration
+    fum,                    ## Fumarate concentration
+    oaa,                    ## Oxaloacetate concentration
+    DOX=0μM,                    ## Doxorubicin concentration
+    MT_PROT=1,                  ## OXPHOS protein content scale factor
+    O2=6μM,                     ## Oxygen concentration
+    h_i=exp10(-7) * Molar,      ## IMS proton concentration
+    h_m=exp10(-7.6) * Molar,    ## Matrix proton concentration
     ROTENONE_BLOCK=0,
     ANTIMYCIN_BLOCK=0,
     MYXOTHIAZOL_BLOCK=0,
     STIGMATELLIN_BLOCK=0,
     CYANIDE_BLOCK=0,)
 
-    # Q cycle variables
+    ## Q cycle variables
     @variables begin
         Q_n(t) = 1805μM
         QH2_n(t) = 123μM
         QH2_p(t) = 123μM
-        Q_p(t) ## Conserved
+        Q_p(t) ## Qtotal - Qn - QH2n - QH2p - SQn - SQp
         SQn(t) = 142μM
         SQp(t) = 0μM
     end
@@ -454,18 +454,18 @@ end
 
 "Electron transport chain (ETC)"
 function get_etc_sys(;
+    nad_m,
+    nadh_m,
+    dpsi,                       # Mitochondrial membrane potential
+    sox_m,                      # Superoxide concentration in the matrix
+    suc,                        # Succinate concentration
+    fum,                        # Fumarate concentration
+    oaa,                        # Oxaloacetate concentration
     DOX=0μM,                    # Doxorubicin concentration
     MT_PROT=1,                  # OXPHOS protein content scale factor
     O2=6μM,                     # Oxygen concentration
-    nad_m=2500μM,
-    nadh_m=500μM,
-    dpsi=150mV,               # Mitochondrial membrane potential
-    sox_m=1nM,                # Superoxide concentration in the matrix
-    suc=1μM,                  # Succinate concentration
-    fum=10μM,                 # Fumarate concentration
-    oaa=0.1μM,                # Oxaloacetate concentration
-    h_i=exp10(-7) * Molar,    # IMS proton concentration
-    h_m=exp10(-7.6) * Molar,  # Matrix proton concentration
+    h_i=exp10(-7) * Molar,      # IMS proton concentration
+    h_m=exp10(-7.6) * Molar,    # Matrix proton concentration
     ROTENONE_BLOCK=0,
     ANTIMYCIN_BLOCK=0,
     MYXOTHIAZOL_BLOCK=0,

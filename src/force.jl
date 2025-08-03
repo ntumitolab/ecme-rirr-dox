@@ -1,4 +1,4 @@
-function get_force_eqs(; atp_i=7.9mM, adp_i=0.1mM, ca_i=200nM)
+function get_force_eqs(; atp_i, adp_i, ca_i)
     @parameters begin
         ΣLTRPN = 70μM               # Total pool of low affinity troponin ca binding sites
         ΣHTRPN = 140μM              # Total pool of high affinity troponin ca binding sites
@@ -35,7 +35,7 @@ function get_force_eqs(; atp_i=7.9mM, adp_i=0.1mM, ca_i=200nM)
         G23_SL_AM = Φ_AM * G23_AM
         G01_OFF_AM = Φ_AM * G_OFF
         N_TROP = 3.5 * SL - 2.0   ## Hill coefficient ~ 5.525
-        K_CA_TRPN = K_M_LTRPN / K_P_LTRPN  # Activation factor for calcium of low affinity troponin sites
+        K_CA_TRPN = K_M_LTRPN / K_P_LTRPN  ## Activation factor for calcium of low affinity troponin sites
         K½_TRPN = hil((1.7 - 0.8 * (SL - 1.7) / 0.6), K_CA_TRPN)
     end
 
@@ -66,7 +66,7 @@ function get_force_eqs(; atp_i=7.9mM, adp_i=0.1mM, ca_i=200nM)
     add_rate!(rs, K_PN_TROP, x_p1, k_np_trop, x_n1)
     add_rate!(rs, G01_OFF_AM, x_n1, 0, x_n0)
 
-    deq = [D(x) ~ rs[x] for x in (x_p0, x_p1, x_p2, x_p3, x_n1)]
+    des = [D(x) ~ rs[x] for x in (x_p0, x_p1, x_p2, x_p3, x_n1)]
     eqs = [
         force ~ ζ_AM * (x_p1 + x_n1 + 2 * x_p2 + 3 * x_p3) * iDEN_FORCE,
         force_normal ~ (x_p1 + x_p2 + x_p3 + x_n1) * iDEN_FORCE_N,
@@ -78,7 +78,7 @@ function get_force_eqs(; atp_i=7.9mM, adp_i=0.1mM, ca_i=200nM)
         Jtrpn ~ D(ltr_ca) + D(htr_ca),
         1 ~ x_p0 + x_p1 + x_p2 + x_p3 + x_n0 + x_n1,
     ]
-    return (; eqs_force = [deq; eqs], vAm, Jtrpn)
+    return (; eqs_force = [des; eqs], vAm, Jtrpn)
 end
 
 "Sarcomere force generation and ATP consumption"

@@ -43,7 +43,7 @@ function get_mitoh_sys(na_m, na_i, h_m, h_i, pi_m, pi_i; name=:mitohsys)
     return System(eqs, t; name)
 end
 
-function get_mitoca_eqs(; na_i=8mM, ca_m=500nM, ca_i=100nM, dpsi=150mV)
+function get_mitoca_eqs(; na_i, ca_m, ca_i, dpsi)
     @parameters begin
         # Mitochondrial NCE (NCLX)
         VMAX_NCLX = 0.1μM / ms
