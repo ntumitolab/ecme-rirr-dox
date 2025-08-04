@@ -461,9 +461,9 @@ version = "1.15.1"
 
 [[deps.DifferentiationInterface]]
 deps = ["ADTypes", "LinearAlgebra"]
-git-tree-sha1 = "f620da805b82bec64ab4d5f881c7592c82dbc08a"
+git-tree-sha1 = "54d7b8c74408048aea9c055ac8573b2b5c5ec11f"
 uuid = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
-version = "0.7.3"
+version = "0.7.4"
 
     [deps.DifferentiationInterface.extensions]
     DifferentiationInterfaceChainRulesCoreExt = "ChainRulesCore"
@@ -996,9 +996,9 @@ version = "3.1.1+0"
 
 [[deps.JuliaFormatter]]
 deps = ["CommonMark", "Glob", "JuliaSyntax", "PrecompileTools", "TOML"]
-git-tree-sha1 = "7b3a1a49526f1549e24032520afd812790c37e5b"
+git-tree-sha1 = "f512fefd5fdc7dd1ca05778f08f91e9e4c9fdc37"
 uuid = "98e50ef6-434e-11e9-1051-2b60c6c9e899"
-version = "2.1.5"
+version = "2.1.6"
 
 [[deps.JuliaSyntax]]
 git-tree-sha1 = "937da4713526b96ac9a178e2035019d3b78ead4a"

@@ -1,39 +1,28 @@
-"Electron transport chain (ETC)"
-function get_etc_sys(;
-    DOX=0μM,                    # Doxorubicin concentration
-    MT_PROT=1,                  # OXPHOS protein content scale factor
-    O2=6μM,                     # Oxygen concentration
-    h_i=exp10(-7) * Molar,      # IMS proton concentration
-    h_m=exp10(-7.6) * Molar,    # Matrix proton concentration
-    name=:etcsys,
+function get_etc_eqs(;
+    nad_m,                  ## NAD concentration
+    nadh_m,                 ## NADH concentration
+    dpsi,                   ## Mitochondrial membrane potential
+    sox_m,                  ## Superoxide concentration in the matrix
+    suc,                    ## Succinate concentration
+    fum,                    ## Fumarate concentration
+    oaa,                    ## Oxaloacetate concentration
+    DOX=0μM,                    ## Doxorubicin concentration
+    MT_PROT=1,                  ## OXPHOS protein content scale factor
+    O2=6μM,                     ## Oxygen concentration
+    h_i=exp10(-7) * Molar,      ## IMS proton concentration
+    h_m=exp10(-7.6) * Molar,    ## Matrix proton concentration
     ROTENONE_BLOCK=0,
     ANTIMYCIN_BLOCK=0,
     MYXOTHIAZOL_BLOCK=0,
     STIGMATELLIN_BLOCK=0,
-    CYANIDE_BLOCK=0,
-    nad_m=nothing,
-    nadh_m=nothing,
-    dpsi=nothing,
-    sox_m=nothing,
-    suc=nothing,
-    fum=nothing,
-    oaa=nothing)
+    CYANIDE_BLOCK=0,)
 
-    # Define variables when needed
-    isnothing(nad_m) && @variables nad_m(t)
-    isnothing(nadh_m) && @variables nadh_m(t)
-    isnothing(dpsi) && @variables dpsi(t)
-    isnothing(sox_m) && @variables sox_m(t)
-    isnothing(suc) && @variables suc(t)
-    isnothing(fum) && @variables fum(t)
-    isnothing(oaa) && @variables oaa(t)
-
-    # Q cycle variables
+    ## Q cycle variables
     @variables begin
         Q_n(t) = 1805μM
         QH2_n(t) = 123μM
         QH2_p(t) = 123μM
-        Q_p(t) ## Conserved
+        Q_p(t) ## Qtotal - Qn - QH2n - QH2p - SQn - SQp
         SQn(t) = 142μM
         SQp(t) = 0μM
     end
@@ -86,6 +75,7 @@ function get_etc_sys(;
         kr17_C1 = kf17_C1 / KEQ17_C1
     end
 
+    ## Complex I variables
     @variables begin
         ## Flavin site
         FMN(t)
@@ -228,7 +218,7 @@ function get_etc_sys(;
         B = Q_n / KM_Q_C2
         P = fum / KM_FUM_C2
         Q = QH2_n / KM_QH2_C2
-        [vSDH ~ C2_INHIB * (VF_C2 * A * B - VR_C2 * P * Q) / ((1+A)*(1+B) + (1 + P) * (1 + Q) - 1)]
+        [vSDH ~ C2_INHIB * (VF_C2 * A * B - VR_C2 * P * Q) / ((1 + A) * (1 + B) + (1 + P) * (1 + Q) - 1)]
     end
 
     # complex IV (CCO)
@@ -458,10 +448,48 @@ function get_etc_sys(;
         ]
     end
 
-    return System([c1eqs; c2eqs; c4eqs; c3eqs], t; name)
+    eqs_etc = [c1eqs; c2eqs; c4eqs; c3eqs]
+    return (; eqs_etc, vHres, vROS, vSDH, vNADHC1, vO2)
 end
 
-function get_c5_sys(; dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=1, C5_INHIB=1, use_mg=false, mg_i=1mM, mg_m=0.4mM, name=:c5sys)
+"Electron transport chain (ETC)"
+function get_etc_sys(;
+    nad_m,
+    nadh_m,
+    dpsi,                       # Mitochondrial membrane potential
+    sox_m,                      # Superoxide concentration in the matrix
+    suc,                        # Succinate concentration
+    fum,                        # Fumarate concentration
+    oaa,                        # Oxaloacetate concentration
+    DOX=0μM,                    # Doxorubicin concentration
+    MT_PROT=1,                  # OXPHOS protein content scale factor
+    O2=6μM,                     # Oxygen concentration
+    h_i=exp10(-7) * Molar,      # IMS proton concentration
+    h_m=exp10(-7.6) * Molar,    # Matrix proton concentration
+    ROTENONE_BLOCK=0,
+    ANTIMYCIN_BLOCK=0,
+    MYXOTHIAZOL_BLOCK=0,
+    STIGMATELLIN_BLOCK=0,
+    CYANIDE_BLOCK=0,
+    name=:etcsys)
+
+    @independent_variables t
+    @unpack eqs_etc = get_etc_eqs(;
+        DOX, MT_PROT, O2, nad_m, nadh_m,
+        dpsi, sox_m, suc, fum, oaa, h_i, h_m,
+        ROTENONE_BLOCK,
+        ANTIMYCIN_BLOCK,
+        MYXOTHIAZOL_BLOCK,
+        STIGMATELLIN_BLOCK,
+        CYANIDE_BLOCK)
+
+    return System(eqs_etc, t; name)
+end
+
+function get_c5_eqs(; dpsi, atp_i, adp_i, atp_m, adp_m,
+    h_i=exp10(-7) * Molar, h_m=exp10(-7.6) * Molar,
+    pi_m=8.6512mM, MT_PROT=1, C5_INHIB=1,
+    use_mg=false, mg_i=1mM, mg_m=0.4mM)
     @parameters begin
         ρF1 = 5.0mM                 # Concentration of ATP synthase
         P1_C5 = 1.346E-8
@@ -470,9 +498,9 @@ function get_c5_sys(; dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=
         PA_C5 = 1.656E-5Hz
         PB_C5 = 3.373E-7Hz
         PC1_C5 = 9.651E-14Hz
-        PC2_C5 = 4.585E-19Hz        # Magnus model
-        # Equilibrium constant of ATP synthase (ΔG ~ -30kJ/mol)
-        # 1.71E6 * mM in Magnus model was different from Caplan's model (1.71E6 Molar)
+        PC2_C5 = 4.585E-19Hz        ## Magnus model
+        ## Equilibrium constant of ATP synthase (ΔG ~ -30kJ/mol)
+        ## 1.71E6 * mM in Magnus model was different from Caplan's model (1.71E6 Molar)
         KEQ_C5 = 2E5Molar
         G_H_MITO = 2E-6mM / ms / mV # Proton leak rate constant
         VMAX_ANT = 5E-3mM / ms      # Max rate of ANT, (Wei, 2011)
@@ -525,7 +553,7 @@ function get_c5_sys(; dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=
     f_m = adp3_m / atp4_m
     v_ant = VMAX_ANT * (1 - f_i * f_m * exp(-iVT * dpsi)) / ((1 + f_i * exp(-iVT * H_ANT * dpsi)) * (1 + f_m))
 
-    eqs = [
+    eqs_c5 = [
         ΔμH ~ dpsi + nernst(h_i, h_m, 1),
         E_PHOS ~ VT * NaNMath.log(AF1),
         vANT ~ v_ant,
@@ -534,5 +562,12 @@ function get_c5_sys(; dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT=
         vC5 ~ v_c5,
         vHu ~ v_hu,
     ]
-    return System(eqs, t; name)
+    return (; eqs_c5, vANT, vC5, vHu, vHleak)
+end
+
+function get_c5_sys(; dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m=8.6512mM, MT_PROT=1, C5_INHIB=1, use_mg=false, mg_i=1mM, mg_m=0.4mM, name=:c5sys)
+    @unpack eqs_c5 = get_c5_eqs(;
+        dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m,
+        MT_PROT, C5_INHIB, use_mg, mg_i, mg_m)
+    return System(eqs_c5, t; name)
 end

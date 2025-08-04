@@ -12,8 +12,7 @@ function _vsod(sox, h2o2, K1, K3, K5, KI_H2O2, E0)
     return 2 * E0 * K5 * K1 * sox * (K1 + k3′) / denom
 end
 
-"ROS diffusion and detox system"
-function get_ros_sys(; dpsi, sox_m, nadph_i=75μM, V_MITO_V_MYO=0.615, name=:rossys)
+function get_ros_eqs(; dpsi, sox_m, nadph_i=75μM, V_MITO_V_MYO=0.615)
     @parameters begin
         # superoxide dismutase (SOD)
         K1_SOD = 1200 / mM / ms     # Reaction rate constant of SOD (Zhou, 2009)
@@ -78,8 +77,7 @@ function get_ros_sys(; dpsi, sox_m, nadph_i=75μM, V_MITO_V_MYO=0.615, name=:ros
         faIMAC(t)  # IMAC activated by ROS
         ΔVROS(t)    # Reversal potential of ROS
     end
-
-    eqs = [
+    eqs_ros = [
         ΔVROS ~ nernst(sox_i, sox_m, -1),
         vTrROS ~ J_IMAC * gIMAC * (dpsi + ΔVROS),
         vIMAC ~ gIMAC * dpsi,
@@ -95,5 +93,11 @@ function get_ros_sys(; dpsi, sox_m, nadph_i=75μM, V_MITO_V_MYO=0.615, name=:ros
         D(h2o2_i) ~ 0.5vSOD_i - vGPX_i - vCAT,
         D(gssg_i) ~ -0.5 * (vGR_i - vGPX_i)
     ]
-    return System(eqs, t; name)
+    return (; eqs_ros, vTrROS, vIMAC, vCAT, vGPX_i, vGR_i, vSOD_i)
+end
+
+"ROS diffusion and detox system"
+function get_ros_sys(; dpsi, sox_m, nadph_i=75μM, V_MITO_V_MYO=0.615, name=:rossys)
+    @unpack eqs_ros = get_ros_eqs(; dpsi, sox_m, nadph_i, V_MITO_V_MYO)
+    return System(eqs_ros, t; name)
 end

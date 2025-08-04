@@ -88,33 +88,18 @@ function build_model(; name=:ecmesys, bcl=0second, istim=-80μAcm⁻², tstart=0
     end
 
     # Subsystems
-    lccsys = get_lcc_sys(; ca_ss, ca_o, k_i, k_o, vm)
-    ryrsys = get_ryr_sys(; ca_jsr, ca_ss)
-    cksys = get_ck_sys(; atp_i, adp_i)
-    forcesys = get_force_sys(; atp_i, adp_i, ca_i)
-    jcasys = get_jca_sys(; atp_i, adp_i, ca_i, ca_nsr, ca_jsr, ca_ss, ca_o, na_i, na_o, vm)
-    iksys = get_ik_sys(; na_i, na_o, k_i, k_o, mg_i, vm, atp_i, adp_i)
-    inasys = get_ina_sys(; na_i, na_o, ca_i, ca_o, vm)
-    inaksys = get_inak_sys(; atp_i, adp_i, vm, na_i, na_o, k_o)
-    tcassys = get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, h_m, ca_m, pi_m, mg_m, use_mg)
-    @unpack suc, fum, oaa, vSL, vIDH, vKGDH, vMDH = tcassys
-    etcsys = get_etc_sys(; h_i, h_m, DOX, MT_PROT, O2, nad_m, nadh_m, suc, fum, oaa)
-    c5sys = get_c5_sys(; dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT, mg_i, mg_m, use_mg)
-    @unpack vROS, vNADHC1, vHres, vO2 = etcsys
-    rossys = get_ros_sys(; dpsi, sox_m, nadph_i, V_MITO_V_MYO)
-    mitocasys = get_mitoca_sys(; na_i, ca_m, ca_i, dpsi)
-
-    @unpack vTrROS, vIMAC, vSOD_i = rossys
-    @unpack INa, INsNa, ICaB, INaB = inasys
-    @unpack IPMCA, Jup, INaCa, Jtr, Jxfer = jcasys
-    @unpack IK, IK1, IKp, IKatp = iksys
-    @unpack INaK = inaksys
-    @unpack ICaK, ICaL = lccsys
-    @unpack vCK_mito = cksys
-    @unpack vANT, vC5, vHu, vHleak = c5sys
-    @unpack Jrel = ryrsys
-    @unpack vAm, Jtrpn = forcesys
-    @unpack vUni, vNaCa = mitocasys
+    @unpack eqs_cicr16, ICaL, ICaK, Jrel, Jtr, Jxfer = get_cicr16_eqs(; vm, ca_ss, ca_i, ca_jsr, ca_nsr, k_i, ca_o, k_o)
+    @unpack eqs_ck, vCK_mito, vCK_cyto, vTR_crp = get_ck_eqs(; atp_i, adp_i)
+    @unpack eqs_force, vAm, Jtrpn = get_force_eqs(; atp_i, adp_i, ca_i)
+    @unpack eqs_jca, IPMCA, Jup, INaCa = get_jca_eqs(; atp_i, adp_i, ca_i, ca_nsr, ca_o, na_i, na_o, vm)
+    @unpack eqs_ik, IK1, IK, IKp, IKatp = get_ik_eqs(; na_i, na_o, k_i, k_o, vm, atp_i, adp_i, mg_i)
+    @unpack eqs_ina, INa, INsNa, INaB, ICaB = get_ina_eqs(; na_i, na_o, ca_i, ca_o, vm)
+    @unpack eqs_nak, INaK = get_inak_eqs(; atp_i, adp_i, vm, na_i, na_o, k_o)
+    @unpack eqs_tca, vIDH, vKGDH, vMDH, vSL, suc, fum, oaa = get_tca_eqs(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m, pi_m, mg_m, use_mg)
+    @unpack eqs_etc, vHres, vROS, vSDH, vNADHC1, vO2 = get_etc_eqs(; nad_m, nadh_m, dpsi, sox_m, suc, fum, oaa, DOX, MT_PROT, O2, h_i, h_m)
+    @unpack eqs_c5, vANT, vC5, vHu, vHleak = get_c5_eqs(; dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT, mg_i, mg_m)
+    @unpack eqs_ros, vTrROS, vIMAC, vCAT, vGPX_i, vGR_i, vSOD_i = get_ros_eqs(; dpsi, sox_m, nadph_i, V_MITO_V_MYO)
+    @unpack eqs_mitoca, vUni, vNaCa = get_mitoca_eqs(; na_i, ca_m, ca_i, dpsi)
 
     eqs = [
         ΣA_i ~ atp_i + adp_i,
@@ -136,19 +121,17 @@ function build_model(; name=:ecmesys, bcl=0second, istim=-80μAcm⁻², tstart=0
         D(O2) ~ V_MT / (V_MYO + V_MT) * (-vROS - vO2) + kdiffO2 * (O2_o - O2),
     ]
 
+    eqs = [eqs; eqs_cicr16; eqs_ck; eqs_force; eqs_jca; eqs_ik; eqs_ina; eqs_nak; eqs_tca; eqs_etc; eqs_c5; eqs_ros; eqs_mitoca]
+
     if bcl > 0 && duty > 0 && istim != 0
         ts0 = collect(tstart:bcl:tend)
         ts1 = ts0 .+ duty
 
-        sstart = ModelingToolkit.SymbolicDiscreteCallback( ts0 => [iStim ~ istim], discrete_parameters = iStim, iv = t)
-        send = ModelingToolkit.SymbolicDiscreteCallback( ts1 => [iStim ~ 0], discrete_parameters = iStim, iv = t)
+        sstart = ModelingToolkit.SymbolicDiscreteCallback( ts0 => [iStim ~ istim]; discrete_parameters = [iStim], iv = t)
+        send = ModelingToolkit.SymbolicDiscreteCallback( ts1 => [iStim ~ 0]; discrete_parameters = [iStim], iv = t)
         sys = System(eqs, t; name, discrete_events = [sstart, send])
     else
         sys = System(eqs, t; name)
-    end
-
-    for s in (lccsys, ryrsys, cksys, forcesys, jcasys, iksys, inasys, inaksys, tcassys, etcsys, c5sys, rossys, mitocasys)
-        sys = extend(s, sys; name)
     end
 
     if simplify
