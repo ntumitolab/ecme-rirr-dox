@@ -88,19 +88,15 @@ Relative exponential function.
 """
 exprel(x) = x / expm1(x)
 
-"Acid dissociation polynomial"
-_poly(h, iKA) = h * iKA + 1
-_poly(h, iKA, mg, iKMG) = h * iKA + +mg * iKMG + 1
-
 #=
 Get propotions of AXP from dissociation constants
 Returns AXPn-, HAXP, MgAXP, poly (the denominator polynomial)
 =#
-function _breakdown_axp(axp, h, mg, iKA, iKMG)
-    poly = _poly(h, iKA, mg, iKMG)
-    axpn = axp / poly
+function _breakdown_axp(tot, h, mg, iKA, iKMG)
+    poly = 1 + h * iKA + mg * iKMG
+    axpn = tot / poly
     haxp = axpn * h * iKA
-    mgaxp = axp - axpn - haxp
+    mgaxp = tot - axpn - haxp
     return (axpn, haxp, mgaxp, poly)
 end
 
@@ -108,16 +104,16 @@ breakdown_atp(atp, h, mg) = _breakdown_axp(atp, h, mg, iKA_ATP, iKMG_ATP)
 breakdown_adp(adp, h, mg) = _breakdown_axp(adp, h, mg, iKA_ADP, iKMG_ADP)
 
 "Binding polynomial of phosphate"
-pipoly(h) = _poly(h, iKA_PI)
+pipoly(h) = 1 + h * iKA_PI
 
 "Dihydrogen phosphate"
 dhpi(Σpi, h) = Σpi * hil(h, KA_PI)
 
 "Binding Polynomial of succinate"
-sucpoly(h) = _poly(h, iKA_SUC)
+sucpoly(h) = 1 + h * iKA_SUC
 
 "Binding Polynomial of water"
-h2opoly(h) = _poly(h, iKA_H2O)
+h2opoly(h) = 1 + h * iKA_H2O
 
 "Nernst potential"
 nernst(x_out, x_in) = VT * NaNMath.log(x_out / x_in)
@@ -127,6 +123,9 @@ nernstNaK(k_o, na_o, k_i, na_i, P_NA_K) = nernst(na_o * P_NA_K + k_o, na_i * P_N
 "Proton motive force"
 Δp(ΔΨ, h_m, h_i) = ΔΨ + nernst(h_i, h_m)
 Δp(ΔΨ, ΔpH) = ΔΨ - VT * log(10) * ΔpH
+
+"Inverse of calcium buffering power by CMDN or CSQN"
+β_ca(ca, KM, ET) = hil((ca + KM)^2, KM * ET)
 
 """
 GHK flux equation
@@ -149,13 +148,15 @@ end
 "Accumulate chemical reaction rates into a look-up table"
 function add_raw_rate!(lut, rate, substrates, products)
     for s in substrates
-        lut[s] -= rate
+        lut[s] = get(lut, s, 0) - rate
     end
     for p in products
-        lut[p] += rate
+        lut[p] = get(lut, p, 0) + rate
     end
     return lut
 end
+
+get
 
 "Accumulate chemical reaction rates with law of mass action into a look-up table"
 function add_rate!(lut, kf, substrates, kb, products)

@@ -1,5 +1,5 @@
-# TCA cycle model, default parameters values from Gauthier et al. (2013)
-function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Molar, pi_m=8mM, mg_m=0.4mM, use_mg=false, name=:tcasys)
+# TCA cycle model
+function get_tca_eqs(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Molar, pi_m=8mM, mg_m=0.4mM, use_mg=false)
     @parameters begin
         ## Total TCA metabolite pool
         TCA_T = 1.3mM
@@ -73,15 +73,14 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
         vAAT(t)
         vSDH(t)
         oaa(t) = 11.6μM
-        cit(t) # Conserved
-        isoc(t) = 51.6μM    # isocitrate
-        akg(t) = 51μM       # alpha-ketoglutarate
-        scoa(t) = 35μM      # succinyl-CoA
-        suc(t) = 1.9μM      # succinate
-        fum(t) = 175μM      # fumarate
-        mal(t) = 160μM      # malate
+        cit(t) ## Conserved = TCA_T - isoc - oaa - akg - scoa - suc - fum - mal
+        isoc(t) = 51.6μM    ## isocitrate
+        akg(t) = 51μM       ## alpha-ketoglutarate
+        scoa(t) = 35μM      ## succinyl-CoA
+        suc(t) = 1.9μM      ## succinate
+        fum(t) = 175μM      ## fumarate
+        mal(t) = 160μM      ## malate
     end
-
     ## Citrate synthase
     v_cs = let
         vmax = KCAT_CS * ET_CS
@@ -89,7 +88,8 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
         B = ACCOA / KM_ACCOA_CS
         v_cs = vmax * A * B / (1 + A + B + A * B)
     end
-    ## Aconitase
+
+    ## Aconitase (reversible)
     v_aco = KF_ACO * (cit - isoc * rKEQ_ACO)
     ## IDH3 (Isocitrate dehydrogenase, NADH-producing)
     v_idh3 = let
@@ -109,7 +109,7 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
         vmax = ET_KGDH * KCAT_KGDH
         v_kgdh = vmax * f_akg * f_nad * f_mgca / (f_h * f_mgca * f_akg * f_nad + f_akg + f_nad)
     end
-    ## Succinyl-CoA lyase
+    ## Succinyl-CoA lyase (reversible)
     v_sl = let
         if use_mg
             atp4, hatp, _, atp_poly = breakdown_atp(atp_m, h_m, mg_m)
@@ -124,9 +124,9 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
         end
         v_sl = KF_SL * (scoa * adp_m * pi_m - suc * atp * COA * rKEQ_SL)
     end
-    ## Fumarate hydrase
+    ## Fumarate hydrase (reversible)
     v_fh = KF_FH * (fum - mal * rKEQ_FH)
-    ## Malate dehydrogenase
+    ## Malate dehydrogenase (reversible)
     v_mdh = let
         vmax = KCAT_MDH * ET_MDH
         f_ha = K_OFFSET_MDH + (KH1_MDH * KH2_MDH / (KH1_MDH * KH2_MDH + KH2_MDH * h_m + h_m^2))
@@ -138,10 +138,10 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
         f_nadh = nadh_m / KM_NADH_MDH
         v_mdh = f_h * (VF_MDH * f_nad * f_mal - VR_MDH * f_oaa * f_nadh) / (1 + f_nad + f_nad * f_mal + f_oaa * f_nadh + f_nadh)
     end
-    ## AST
+    ## AST (reversible)
     v_aat = KF_AAT * (oaa * GLU - akg * ASP / KEQ_AAT)
 
-    eqs = [
+    eqs_tca = [
         TCA_T ~ cit + isoc + oaa + akg + scoa + suc + fum + mal,
         vCS ~ v_cs,
         vACO ~ v_aco,
@@ -159,5 +159,11 @@ function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
         D(mal) ~ vFH - vMDH,
         D(oaa) ~ vMDH - vCS - vAAT,
     ]
-    return System(eqs, t; name)
+
+    return (; eqs_tca, vIDH, vKGDH, vMDH, vSL, suc, fum, oaa)
+end
+
+function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Molar, pi_m=8mM, mg_m=0.4mM, use_mg=false, name=:tcasys)
+    @unpack eqs_tca = get_tca_eqs(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m, pi_m, mg_m, use_mg)
+    return System(eqs_tca, t; name)
 end
