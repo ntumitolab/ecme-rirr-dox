@@ -449,7 +449,7 @@ function get_etc_eqs(;
     end
 
     eqs_etc = [c1eqs; c2eqs; c4eqs; c3eqs]
-    return (; eqs_etc, vHres, vROS, vSDH, vNADHC1)
+    return (; eqs_etc, vHres, vROS, vSDH, vNADHC1, vO2)
 end
 
 "Electron transport chain (ETC)"

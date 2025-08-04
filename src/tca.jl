@@ -160,7 +160,7 @@ function get_tca_eqs(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
         D(oaa) ~ vMDH - vCS - vAAT,
     ]
 
-    return (; eqs_tca, vIDH, vKGDH, vMDH)
+    return (; eqs_tca, vIDH, vKGDH, vMDH, vSL, suc, fum, oaa)
 end
 
 function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Molar, pi_m=8mM, mg_m=0.4mM, use_mg=false, name=:tcasys)

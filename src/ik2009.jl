@@ -1,4 +1,4 @@
-function get_ik_eqs(; na_i, na_o, k_i, k_o, mg_i, vm, atp_i, adp_i)
+function get_ik_eqs(; na_i, na_o, k_i, k_o, vm, atp_i, adp_i, mg_i=1mM)
     fko = sqrt(k_o / 5.4mM)
     @parameters begin
         G_K1 = 0.75mScm⁻² * fko  # Time-independent

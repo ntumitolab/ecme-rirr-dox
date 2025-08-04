@@ -124,6 +124,9 @@ nernstNaK(k_o, na_o, k_i, na_i, P_NA_K) = nernst(na_o * P_NA_K + k_o, na_i * P_N
 Δp(ΔΨ, h_m, h_i) = ΔΨ + nernst(h_i, h_m)
 Δp(ΔΨ, ΔpH) = ΔΨ - VT * log(10) * ΔpH
 
+"Inverse of calcium buffering power by CMDN or CSQN"
+β_ca(ca, KM, ET) = hil((ca + KM)^2, KM * ET)
+
 """
 GHK flux equation
 

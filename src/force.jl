@@ -78,7 +78,8 @@ function get_force_eqs(; atp_i, adp_i, ca_i)
         Jtrpn ~ D(ltr_ca) + D(htr_ca),
         1 ~ x_p0 + x_p1 + x_p2 + x_p3 + x_n0 + x_n1,
     ]
-    return (; eqs_force = [des; eqs], vAm, Jtrpn)
+    eqs_force = [des; eqs]
+    return (; eqs_force, vAm, Jtrpn)
 end
 
 "Sarcomere force generation and ATP consumption"

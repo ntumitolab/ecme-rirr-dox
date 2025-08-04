@@ -1,6 +1,3 @@
-# Calcium buffering power by CMDN or CSQN
-β_ca(ca, KM, ET) = hil((ca + KM)^2, KM * ET)
-
 function get_jca_eqs(; atp_i, adp_i, ca_i, ca_nsr, ca_o, na_i, na_o, vm)
     @variables begin
         Jup(t)
