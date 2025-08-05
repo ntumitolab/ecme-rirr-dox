@@ -19,11 +19,11 @@ function get_ik_eqs(; na_i, na_o, k_i, k_o, vm, atp_i, adp_i, mg_i=1mM)
     # Time-independent potassium current
     ΔVK = vm - EK
     vk = ΔVK / mV
-    α1 = 1.02 / (1 + exp(0.2385 * (vk - 59.215mV)))
-    β1 = (0.4912 * exp(0.08032 * (vk + 5.476mV)) + exp(0.06175 * (vk - 594.31mV))) / (1 + exp(-0.5143 * (vk + 4.753mV)))
+    α1 = 1.02 / (1 + exp(0.2385/mV * (vk - 59.215mV)))
+    β1 = (0.4912 * exp(0.08032/mV * (vk + 5.476mV)) + exp(0.06175/mV * (vk - 594.31mV))) / (1 + exp(-0.5143/mV * (vk + 4.753mV)))
     # Time-dependent delayed rectifier K current system
-    α = 7.19e-5 / ms / (0.148) * exprel(-0.148 * (vm + 30mV))
-    β = 1.31e-4 / ms / (0.0687) * exprel(0.0687* (vm + 30mV))
+    α = 7.19e-5 / ms / (0.148) * exprel(-0.148/mV * (vm + 30mV))
+    β = 1.31e-4 / ms / (0.0687) * exprel(0.0687/mV * (vm + 30mV))
     E_KNa = nernst(na_o * P_NA_K + k_o, na_i * P_NA_K + k_i)
     x1 = expit(-inv(40mV) * (vm - 40mV))
     # ATP-dependent K channel (KATP) current
