@@ -175,8 +175,8 @@ function c3_semireverse(;
         rhoC3 = 325μM    ## Complex III activity
         Q_T = 4mM        ## Total CoQ pool
         EmQ_C3 = +60mV   ## Ubiquinone redox potential at complex III Qo
-        EmSQp_QH2p = +290mV
-        EmQp_SQp = -170mV
+        EmSQp_QH2p = +390mV
+        EmQp_SQp = -270mV
         EmQn_SQn = +50mV
         EmSQn_QH2n = +150mV
         EmbL_bHo = -40mV
@@ -192,7 +192,7 @@ function c3_semireverse(;
         KEQ4_OX_C3 = exp(iVT * (EmFeS + EmbL_bHo - 2EmQ_C3))
         KEQ4_RD_C3 = exp(iVT * (EmFeS + EmbL_bHr - 2EmQ_C3))
         ## bL- + bH = bL + bH-
-        K06_C3 = 166.67Hz
+        K06_C3 = 10000Hz ## 166.67Hz
         KEQ6_C3 = exp(iVT * (EmbH_bLo - EmbL_bHo)) ## +70mV
         ## bH- + Q = bH + Q-
         K07_OX_C3 = 13.33Hz / mM
@@ -213,11 +213,14 @@ function c3_semireverse(;
         KEQ10_RD_C3 = exp(iVT * (EmQp_SQp - EmbL_bHr)) ## -70mV
         ## Q- + O2 = Q + O2-
         K011_C3 = 100Hz / mM
+        KEQ11_C3 = exp(iVT * (EmO2 - EmQp_SQp))
         ## c1_2+ + c_3+ = c1_3+ + c_2+
         K33_C3 = 2469.13Hz / mM
         KEQ33_C3 = exp(iVT * (Emcytc - Emcytc1)) ## +20mV
     end
 
+    # QSSA for SQp (SQp proportion is very small)
+    # vROS = Qp * ((k11 * O2 * k10 * bL-) - (km11 * sox * km10 * bL)) / (km10 * bL + k11 * O2)
     ## complex III inhibition by DOX and antimycin
     C3_INHIB = 1 - ANTIMYCIN_BLOCK
     C3_CONC = rhoC3 * MT_PROT
@@ -307,7 +310,7 @@ function c3_semireverse(;
     v10rd = k10rd * Q_p * blr_bhr - km10 * SQp * blo_bhr
 
     ## Qp- + O2 = Qp + O2-
-    v11 = K011_C3 * SQp * O2
+    v11 = K011_C3 * (KEQ11_C3 * SQp * O2 - Q_p * sox_m)
 
     eqs = [
         C3_CONC ~ blo_bho + blr_bho + blo_bhr + blr_bhr,
@@ -499,8 +502,8 @@ nsys = c3_repulsion(;dpsi, cytc_ox, cytc_rd, UQ, UQH2, sox_m) |> mtkcompile
 rsys = c3_semireverse(;dpsi, cytc_ox, cytc_rd, UQ, UQH2, sox_m) |> mtkcompile
 #---
 prob_g = SteadyStateProblem(gsys, [])
-prob_n = SteadyStateProblem(nsys, [nsys.EmSQp_QH2p => +400mV, nsys.EmQp => 60mV, nsys.K010_C3 => 33Hz / mM])
-prob_r = SteadyStateProblem(rsys, [rsys.K010_C3 => 4Hz / mM, rsys.K011_C3 => 100Hz / mM, rsys.K04_C3 => 50Hz / mM])
+prob_n = SteadyStateProblem(nsys, [nsys.K010_C3 => 33Hz / mM])
+prob_r = SteadyStateProblem(rsys, [rsys.K010_C3 => 130Hz / mM, rsys.K011_C3 => 10000Hz / mM, rsys.K04_C3 => 50Hz / mM])
 alg = DynamicSS(Rodas5P())
 ealg = EnsembleThreads()
 extract(sim, k) = map(s -> s[k], sim)
@@ -533,12 +536,6 @@ plot!(xs, extract(sim_r, rsys.blr_bho), label="bL(rd)-bH(ox)")
 plot!(xs, extract(sim_r, rsys.blo_bhr), label="bL(ox)-bH(rd)")
 pl2 = plot!(xs, extract(sim_r, rsys.blr_bhr), label="bL(rd)-bH(rd)", ylim=(0, 160))
 plot(pl1, pl2)
-
-#---
-plot(dpsirange, extract(sim_n, nsys.SQp), label="SQp", title="New model", xlabel="mV", ylabel="μM")
-
-#---
-plot(dpsirange, extract(sim_n, nsys.SQn), label="SQn", title="New model", xlabel="mV", ylabel="μM")
 
 #---
 ys = [extract(sim_g, gsys.fracbLrd) extract(sim_n, nsys.fracbLrd) extract(sim_g, gsys.fracbHrd) extract(sim_n, nsys.fracbHrd)]
