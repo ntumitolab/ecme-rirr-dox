@@ -4,15 +4,12 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 6b12984b-1416-4d03-ab7f-e24047155da8
+# ╔═╡ acd4eb16-255d-46ee-b498-7e9787837492
 begin
 	using ModelingToolkit
-	using ModelingToolkit: t_nounits as t, D_nounits as D
-	using SteadyStateDiffEq
-	using OrdinaryDiffEq
-	using ForwardDiff
-	using Plots
 	using PlutoUI
+	using DifferentialEquations
+	using Plots
 end
 
 # ╔═╡ 13270f16-84b6-11f0-033c-a9652a6e1210
@@ -22,35 +19,701 @@ md"""
 Comparing Gauthier's and my complex III models
 """
 
-# ╔═╡ 4d6ade72-7cec-4dff-904b-36c98cb26831
+# ╔═╡ a6e0a7c4-db17-4041-94d3-ec0ae9c31c3c
+begin
+	const mM = 1
+	const Molar = 1000mM
+	const μM = mM / 1000
+	const second = 1
+	const Hz = inv(second)
+	const ms = second / 1000
+	const minute = 60second
+	const Volt = 1
+	const mV = Volt / 1000
+	const RGAS = 8.314 		# Joule / Kelvin / mol
+	const Temp = 310 		# Kelvin
+	const Faraday = 96485  	# Columb / mol
+	const iVT = Faraday / RGAS / Temp
+end
+
+# ╔═╡ a49251d3-c329-4491-91c2-717f54e85bd8
+md"""
+complex III and the Q cycle from Gauthier, 2013 (adapted from Demin, 2001)
+"""
+
+# ╔═╡ 9a284368-7063-4774-a2f1-f3ff892ad6c2
+function c3_gauthier(;
+    dpsi=150mV,
+    MT_PROT=1,
+    O2=6μM,
+    sox_m=0.001μM,
+    h_i=exp10(-7) * Molar,
+    h_m=exp10(-7.6) * Molar,
+    ANTIMYCIN_BLOCK=0,
+    MYXOTHIAZOLE_BLOCK=0,
+    UQ = 3600μM,
+    UQH2 = 400μM,
+    cytc_ox = 208μM,
+    cytc_rd = 325μM - cytc_ox,
+    name = :c3_gauthier
+    )
+	
+	@independent_variables t
+	D = Differential(t)
+
+    @parameters begin
+        rhoC3 = 325μM    ## Complex III activity
+        Q_T = 4mM        ## Total CoQ pool
+        EmSQp_QH2p = +290mV
+        EmQp_SQp = -170mV
+        EmQn_SQn = +50mV
+        EmSQn_QH2n = +150mV
+        EmbL_bHo = -40mV
+        EmbL_bHr = EmbL_bHo - 60mV
+        EmbH_bLo = +20mV
+        EmbH_bLr = EmbH_bLo - 60mV
+        EmFeS = +280mV
+        Emcytc1 = +245mV
+        Emcytc = +265mV
+        EmO2 = -160mV
+        K03_C3 = 1666.63Hz / mM
+        KEQ3_C3 = exp(iVT * (EmFeS - EmSQp_QH2p)) ## -10mV
+        K04_C3 = 50.67Hz / mM
+        KEQ4_OX_C3 = exp(iVT * (EmbL_bHo - EmQp_SQp)) ## +130mV
+        KEQ4_RD_C3 = exp(iVT * (EmbL_bHr - EmQp_SQp)) ## +70mV
+        KD_Q = 22000Hz
+        K06_C3 = 166.67Hz
+        KEQ6_C3 = exp(iVT * (EmbH_bLo - EmbL_bHo)) ## +60mV
+        K07_OX_C3 = 13.33Hz / mM
+        K07_RD_C3 = 1.67Hz / mM
+        KEQ7_OX_C3 = exp(iVT * (EmQn_SQn - EmbH_bLo)) ## +30mV
+        KEQ7_RD_C3 = exp(iVT * (EmQn_SQn - EmbH_bLr)) ## +90mV
+        K08_OX_C3 = 83.33Hz / mM
+        K08_RD_C3 = 8.33Hz / mM
+        KEQ8_OX_C3 = exp(iVT * (EmSQn_QH2n - EmbH_bLo)) ## +130mV
+        KEQ8_RD_C3 = 9.4546   ## +60mV??? should be +190mV?
+        K09_C3 = 832.48Hz / mM
+        KEQ9_C3 = exp(iVT * (Emcytc1 - EmFeS))  ## -35mV
+        K010_C3 = 28.33Hz / mM
+        KEQ10_C3 = exp(iVT * (EmO2 - EmQp_SQp)) ## +10mV
+        K33_C3 = 2469.13Hz / mM
+        KEQ33_C3 = exp(iVT * (Emcytc - Emcytc1)) ## +20mV
+    end
+
+    ## complex III inhibition by DOX and antimycin
+    C3_CONC = rhoC3 * MT_PROT
+
+    @variables begin
+        Q_n(t)
+        QH2_n(t)
+        QH2_p(t)
+        Q_p(t)
+        SQp(t) = 0
+        SQn(t) = 0
+        fes_ox(t) = C3_CONC
+        fes_rd(t) ## Conserved
+        cytc1_ox(t) = C3_CONC
+        cytc1_rd(t) ## Conserved
+        cytb_1(t) = C3_CONC
+        cytb_2(t) = 0
+        cytb_3(t) = 0
+        cytb_4(t) ## Conserved
+        fracbLrd(t)
+        fracbHrd(t)
+        vROSC3(t)
+        vHresC3(t)
+    end
+
+    ## Split of electrical potentials
+    δ₁_C3 = 0.5
+    δ₂_C3 = 0.5
+    δ₃_C3 = 0.5
+    ## Split of the electrical distance across the IMM
+    α_C3 = 0.25
+    β_C3 = 0.5
+    γ_C3 = 0.25
+    fHi = h_i * inv(1E-7Molar)
+    fHm = h_m * inv(1E-7Molar)
+	## v2: QH2 diffusion (n-side -> p-side)
+	v2 = KD_Q * (QH2_n - QH2_p)
+    ## v3: QH2 + FeS = Q- + FeS- + 2H+
+    Qo_avail = (C3_CONC - SQp) / C3_CONC * (1 - MYXOTHIAZOLE_BLOCK)
+    v3 = K03_C3 * (KEQ3_C3 * Qo_avail * fes_ox * QH2_p - fes_rd * SQp * fHi^2)
+    ## v4: Q- + bL = Qp + bL-
+    el4 = exp(-iVT * α_C3 * δ₁_C3 * dpsi)
+    er4 = exp(iVT * α_C3 * (1 - δ₁_C3) * dpsi)
+    v4ox = K04_C3 * (KEQ4_OX_C3 * SQp * el4 * cytb_1 - Q_p * er4 * cytb_2)
+    v4rd = K04_C3 * (KEQ4_RD_C3 * SQp * el4 * cytb_3 - Q_p * er4 * cytb_4)
+    ## v5: Q diffusion (p-side -> n-side)
+    v5 = KD_Q * (Q_p - Q_n)
+    ## v6: ET from bL to bH
+    v6 = K06_C3 * (KEQ6_C3 * cytb_2 * exp(-iVT * β_C3 * δ₂_C3 * dpsi) - cytb_3 * exp(iVT * β_C3 * (1 - δ₂_C3) * dpsi))
+    ## v7: ET from bH to Qn
+	## v8: ET from bH to SQn
+    Qi_avail = (C3_CONC - SQn) / C3_CONC * (1 - ANTIMYCIN_BLOCK)
+    el7 = exp(-iVT * γ_C3 * δ₃_C3 * dpsi)
+    er7 = exp(iVT * γ_C3 * (1 - δ₃_C3) * dpsi)
+    qn = Q_n * Qi_avail
+    qh2n = QH2_n * Qi_avail
+    v7ox = K07_OX_C3 *  (KEQ7_OX_C3 * cytb_3 * qn * el7 - cytb_1 * SQn * er7)
+    v7rd = K07_RD_C3 * (KEQ7_RD_C3 * cytb_4 * qn * el7 - cytb_2 * SQn * er7)
+    v8ox = K08_OX_C3 * (KEQ8_OX_C3 * cytb_3 * SQn * fHm^2 * el7 - cytb_1 * qh2n * er7)
+    v8rd = K08_RD_C3 * (KEQ8_RD_C3 * cytb_4 * SQn * fHm^2 * el7 - cytb_2 * qh2n * er7)
+    ## v9: ET from fes to cytc1
+    v9 = K09_C3 * (KEQ9_C3 * fes_rd * cytc1_ox - fes_ox * cytc1_rd)
+    ## v10: SQp + O2 = O2- + Q(p)
+    v10 = K010_C3 * (KEQ10_C3 * O2 * SQp - sox_m * Q_p)
+    ## v33: ET from cytc1 to cytc
+    v33 = K33_C3 * (KEQ33_C3 * cytc1_rd * cytc_ox - cytc1_ox * cytc_rd)
+
+    eqs = [
+        C3_CONC ~ cytb_1 + cytb_2 + cytb_3 + cytb_4,
+        C3_CONC ~ fes_ox + fes_rd,
+        C3_CONC ~ cytc1_ox + cytc1_rd,
+        Q_n ~ 0.5 * UQ,
+        Q_p ~ 0.5 * UQ,
+        QH2_n ~ 0.5 * UQH2,
+        QH2_p ~ 0.5 * UQH2,
+        fracbLrd ~ (cytb_2 + cytb_4) / C3_CONC,
+        fracbHrd ~ (cytb_3 + cytb_4) / C3_CONC,
+        ## D(UQH2) ~ dQH2n + dQH2p,
+        D(SQn) ~ v7ox + v7rd - v8ox - v8rd,
+        D(SQp) ~ v3 - v10 - v4ox - v4rd,
+        D(cytb_1) ~ v7ox + v8ox - v4ox,
+        D(cytb_2) ~ v4ox + v7rd + v8rd - v6,
+        D(cytb_3) ~ v6 - v4rd - v7ox - v8ox,
+        ## D(cytb_4) = v4rd - v7rd - v8rd
+        D(fes_ox) ~ v9 - v3,
+        D(cytc1_ox) ~ v33 - v9,
+        vHresC3 ~ v6,
+        vROSC3 ~ v10,
+    ]
+    return System(eqs, t; name)
+end
+
+# ╔═╡ e0ca9c48-d9c8-4551-bb67-2bce96e5cf52
+md"""
+Semireverse bc1 complex model adapted from Gauthier, 2013
+
+- Lumped v3 and v4
+- SQ is produced by reduction of Q by reduced bL at the Qo site
+"""
+
+# ╔═╡ 888d06d6-2203-491f-884d-d0e9f031aa9c
+function c3_semireverse(;
+    dpsi=150mV,
+    MT_PROT=1,
+    O2=6μM,
+    sox_m=0.001μM,
+    h_i=exp10(-7) * Molar,
+    h_m=exp10(-7.6) * Molar,
+    ANTIMYCIN_BLOCK=0,
+    MYXOTHIAZOLE_BLOCK=0,
+    UQ = 3600μM,
+    UQH2 = 400μM,
+    cytc_ox = 208μM,
+    cytc_rd = 325μM - cytc_ox,
+    name = :c3_semireverse)
+
+	@independent_variables t
+	D = Differential(t)
+
+    @parameters begin
+        rhoC3 = 325μM    ## Complex III activity
+        Q_T = 4mM        ## Total CoQ pool
+        EmQ_C3 = +65mV   ## Ubiquinone redox potential at complex III Qo
+        EmSQp_QH2p = +390mV
+        EmQp_SQp = -270mV
+        EmQn_SQn = +50mV
+        EmSQn_QH2n = +150mV
+        EmbL_bHo = -40mV
+        EmbL_bHr = EmbL_bHo - 60mV
+        EmbH_bLo = +20mV
+        EmbH_bLr = EmbH_bLo - 60mV
+        EmFeS = +280mV
+        Emcytc1 = +245mV
+        EmO2 = -160mV
+        Emcytc = +265mV
+        ## QH2 + FeS + bL = Q + FeS- + bL- + 2Ho+
+        K04_C3 = 50.67Hz / mM
+        KEQ4_OX_C3 = exp(iVT * (EmFeS + EmbL_bHo - 2EmQ_C3))
+        KEQ4_RD_C3 = exp(iVT * (EmFeS + EmbL_bHr - 2EmQ_C3))
+        ## bL- + bH = bL + bH-
+        K06_C3 = 10000Hz ## 166.67Hz
+        KEQ6_C3 = exp(iVT * (EmbH_bLo - EmbL_bHo)) ## +70mV
+        ## bH- + Q = bH + Q-
+        K07_OX_C3 = 13.33Hz / mM
+        K07_RD_C3 = 1.67Hz / mM
+        KEQ7_OX_C3 = exp(iVT * (EmQn_SQn - EmbH_bLo)) ## +30mV
+        KEQ7_RD_C3 = exp(iVT * (EmQn_SQn - EmbH_bLr)) ## +90mV
+        ## bH- + Q- + 2H+ = bH + QH2
+        K08_OX_C3 = 83.33Hz / mM
+        K08_RD_C3 = 8.33Hz / mM
+        KEQ8_OX_C3 = exp(iVT * (EmSQn_QH2n - EmbH_bLo)) ## +130mV
+        KEQ8_RD_C3 = exp(iVT * (EmSQn_QH2n - EmbH_bLr)) ## +190mV
+        ## FeS- + c1_3+ = FeS + c1_2+
+        K09_C3 = 832.48Hz / mM
+        KEQ9_C3 = exp(iVT * (Emcytc1 - EmFeS))  ## -40mV
+        ## bL- + Q = bL + Q-
+        K010_C3 = 28.33Hz / mM
+        KEQ10_OX_C3 = exp(iVT * (EmQp_SQp - EmbL_bHo)) ## -130mV
+        KEQ10_RD_C3 = exp(iVT * (EmQp_SQp - EmbL_bHr)) ## -70mV
+        ## Q- + O2 = Q + O2-
+        K011_C3 = 1000Hz / mM
+        KEQ11_C3 = exp(iVT * (EmO2 - EmQp_SQp))
+        ## c1_2+ + c_3+ = c1_3+ + c_2+
+        K33_C3 = 2469.13Hz / mM
+        KEQ33_C3 = exp(iVT * (Emcytc - Emcytc1)) ## +10~20mV
+    end
+
+    # QSSA for SQp (SQp proportion is very small)
+    # vROS = Qp * ((k11 * O2 * k10 * bL-) - (km11 * sox * km10 * bL)) / (km10 * bL + k11 * O2)
+    ## complex III inhibition by DOX and antimycin
+    C3_INHIB = 1 - ANTIMYCIN_BLOCK
+    C3_CONC = rhoC3 * MT_PROT
+
+    @variables begin
+        Q_n(t)
+        QH2_n(t)
+        QH2_p(t)
+        Q_p(t)
+        SQn(t) = 0
+        SQp(t)
+        fes_ox(t) = C3_CONC
+        fes_rd(t) ## Conserved
+        cytc1_ox(t) = C3_CONC
+        cytc1_rd(t) ## Conserved
+        blo_bho(t) = C3_CONC
+        blr_bho(t) = 0
+        blo_bhr(t) = 0
+        blr_bhr(t) ## Conserved
+        fracbLrd(t)
+        fracbHrd(t)
+        vROSC3(t)
+        vHresC3(t)
+    end
+
+    ## Split of electrical potentials
+    δ₁_C3 = 0.5
+    δ₂_C3 = 0.5
+    δ₃_C3 = 0.5
+    ## Split of the electrical distance across the IMM
+    α_C3 = 0.25
+    β_C3 = 0.5
+    γ_C3 = 0.25
+    ## pH factors
+    fHi = h_i * inv(1E-7Molar)
+    fHm = h_m * inv(1E-7Molar)
+
+    ## QH2 + FeS + bL = Q + FeS- + bL- + 2Ho+
+    ## Lumped v3 and v4
+    FeS = fes_ox / C3_CONC * (1 - MYXOTHIAZOLE_BLOCK)
+    FeSm = fes_rd / C3_CONC * (1 - MYXOTHIAZOLE_BLOCK)
+    el4 = exp(-iVT * α_C3 * δ₁_C3 * dpsi)
+    er4 = exp(iVT * α_C3 * (1 - δ₁_C3) * dpsi)
+    k4ox = K04_C3 * KEQ4_OX_C3 * el4
+    k4rd = K04_C3 * KEQ4_RD_C3 * el4
+    km4 = K04_C3 * er4 * fHi^2
+    v4ox = k4ox * QH2_p * FeS * blo_bho - km4 * Q_p * FeSm * blr_bho
+    v4rd = k4rd * QH2_p * FeS * blo_bhr - km4 * Q_p * FeSm * blr_bhr
+
+    ## bL- + bH = bL + bH-
+    el6 = exp(-iVT * β_C3 * δ₂_C3 * dpsi)
+    er6 = exp(iVT * β_C3 * (1 - δ₂_C3) * dpsi)
+    k6 = K06_C3 * KEQ6_C3 * el6
+    km6 = K06_C3 * er6
+    v6 = k6 * blr_bho - km6 * blo_bhr
+
+    ## bH- + Q = bH + Q-
+    Qi_avail = (C3_CONC - SQn) / C3_CONC * C3_INHIB
+    el7 = exp(-iVT * γ_C3 * δ₃_C3 * dpsi)
+    er7 = exp(iVT * γ_C3 * (1 - δ₃_C3) * dpsi)
+    qn = Q_n * Qi_avail
+    qh2n = QH2_n * Qi_avail
+    k7ox = K07_OX_C3 * KEQ7_OX_C3 * el7
+    k7rd = K07_RD_C3 * KEQ7_RD_C3 * el7
+    km7ox = K07_OX_C3 * er7
+    km7rd = K07_RD_C3 * er7
+    k8ox = K08_OX_C3 * KEQ8_OX_C3 * el7 * fHm^2
+    k8rd = K08_RD_C3 * KEQ8_RD_C3 * el7 * fHm^2
+    km8ox = K08_OX_C3 * er7
+    km8rd = K08_RD_C3 * er7
+    v7ox = k7ox * blo_bhr * qn - km7ox * blo_bho * SQn
+    v7rd = k7rd * blr_bhr * qn - km7rd * blr_bho * SQn
+    v8ox = k8ox * blo_bhr * SQn - km8ox * blo_bho * qh2n
+    v8rd = k8rd * blr_bhr * SQn - km8rd * blr_bho * qh2n
+
+    ## FeS- + c1_3+ = FeS + c1_2+
+    v9 = K09_C3 * (KEQ9_C3 * fes_rd * cytc1_ox - fes_ox * cytc1_rd)
+
+    ## cytc1_2+  + cytc_3+ = cytc1_3+  + cytc_2+
+    v33 = K33_C3 * (KEQ33_C3 * cytc1_rd * cytc_ox - cytc1_ox * cytc_rd)
+
+    ## bL- + Qp = bL + Qp-
+    k10ox = K010_C3 * KEQ10_OX_C3 * er4
+    k10rd = K010_C3 * KEQ10_RD_C3 * er4
+    km10 = K010_C3 * el4
+    v10ox = k10ox * Q_p * blr_bho - km10 * SQp * blo_bho
+    v10rd = k10rd * Q_p * blr_bhr - km10 * SQp * blo_bhr
+
+    ## Qp- + O2 = Qp + O2-
+    k11 = K011_C3 * KEQ11_C3
+    km11 = K011_C3
+    v11 = k11 * SQp * O2 - km11 * Q_p * sox_m
+
+	sqp_ratio = (k10ox * blr_bho + k10rd * blr_bhr + km11 * sox_m) / (km10 * (blo_bho + blo_bhr) + k11 * O2)
+
+    eqs = [
+        C3_CONC ~ blo_bho + blr_bho + blo_bhr + blr_bhr,
+        C3_CONC ~ fes_ox + fes_rd,
+        C3_CONC ~ cytc1_ox + cytc1_rd,
+        Q_n ~ 0.5 * UQ,
+        Q_p ~ 0.5 * UQ,
+        QH2_n ~ 0.5 * UQH2,
+        QH2_p ~ 0.5 * UQH2,
+        SQp ~ Q_p * sqp_ratio,
+        fracbLrd ~ (blr_bho + blr_bhr) / C3_CONC,
+        fracbHrd ~ (blo_bhr + blr_bhr) / C3_CONC,
+        ## D(UQH2) ~ dQH2n + dQH2p,
+        D(SQn) ~ v7ox + v7rd - v8ox - v8rd,
+        # D(SQp) ~ v10ox + v10rd - v11, ## =0
+        D(blo_bho) ~ v7ox + v8ox - v4ox + v10ox,
+        D(blr_bho) ~ v4ox + v7rd + v8rd - v6 - v10ox,
+        D(blo_bhr) ~ v6 - v4rd - v7ox - v8ox + v10rd,
+        ## D(blr_bhr) = v4rd - v7rd - v8rd - v10rd
+        D(fes_ox) ~ v9 - v4ox - v4rd,
+        D(cytc1_ox) ~ v33 - v9,
+        vHresC3 ~ v6,
+        vROSC3 ~ v11,
+    ]
+    return System(eqs, t; name)
+end
+
+# ╔═╡ 5349e449-a9bd-42ce-8114-e1be9500c33e
+md"""
+Complex III repulsion model
+
+- Reduced heme bL (bL-) blocks QH2 oxidation at Qo site due to repulsion between bL- and Q-
+- SQp is unstable (Em(Q/SQ) = -300mV)
+"""
+
+# ╔═╡ 6fa3d1fb-cf42-4b4d-83fa-724e7f41aae1
+function c3_repulsion(;
+    dpsi=150mV,
+    MT_PROT=1,
+    O2=6μM,
+    sox_m=0.001μM,
+    h_i=exp10(-7) * Molar,
+    h_m=exp10(-7.6) * Molar,
+    ANTIMYCIN_BLOCK=0,
+    MYXOTHIAZOLE_BLOCK=0,
+    UQ = 3600μM,
+    UQH2 = 400μM,
+    cytc_ox = 208μM,
+    cytc_rd = 325μM - cytc_ox,
+    name = :c3_repulse
+    )
+	@independent_variables t
+	D = Differential(t)
+
+    @parameters begin
+        rhoC3 = 325μM    ## Complex III activity
+        Q_T = 4mM        ## Total CoQ pool
+        EmQp = +60mV
+        EmSQp_QH2p = +400mV
+        EmQp_SQp = 2EmQp - EmSQp_QH2p
+        EmQn_SQn = +50mV
+        EmSQn_QH2n = +150mV
+        EmbL_bHo = -40mV
+        EmbL_bHr = EmbL_bHo - 60mV
+        EmbH_bLo = +20mV
+        EmbH_bLr = EmbH_bLo - 60mV
+        EmFeS = +280mV
+        Emcytc1 = +245mV
+        EmO2 = -160mV
+        Emcytc = +265mV
+        K03_C3 = 2E5Hz / mM ## 1666.63Hz / mM
+        KEQ3_C3 = exp(iVT * (EmFeS - EmSQp_QH2p)) ## ~ 0.01
+        K04_C3 = 50.67Hz / mM
+        KEQ4_OX_C3 = exp(iVT * (EmbL_bHo - EmQp_SQp))
+        KEQ4_RD_C3 = exp(iVT * (EmbL_bHr - EmQp_SQp))
+        KD_Q = 22000Hz
+        K06_C3 = 10000Hz ## from 166.67Hz
+        KEQ6_C3 = exp(iVT * (EmbH_bLo - EmbL_bHo))
+        K07_OX_C3 = 13.33Hz / mM
+        K07_RD_C3 = 1.67Hz / mM
+        KEQ7_OX_C3 = exp(iVT * (EmQn_SQn - EmbH_bLo))
+        KEQ7_RD_C3 = exp(iVT * (EmQn_SQn - EmbH_bLr))
+        K08_OX_C3 = 83.33Hz / mM
+        K08_RD_C3 = 8.33Hz / mM
+        KEQ8_OX_C3 = exp(iVT * (EmSQn_QH2n - EmbH_bLo))
+        KEQ8_RD_C3 = exp(iVT * (EmSQn_QH2n - EmbH_bLr))
+        K09_C3 = 832.48Hz / mM
+        KEQ9_C3 = exp(iVT * (Emcytc1 - EmFeS))
+        K010_C3 = 28.33Hz / mM
+        KEQ10_C3 = exp(iVT * (EmO2 - EmQp_SQp))
+        K33_C3 = 2469.13Hz / mM
+        KEQ33_C3 = exp(iVT * (Emcytc - Emcytc1))
+    end
+
+    ## complex III inhibition by DOX and antimycin
+    C3_CONC = rhoC3 * MT_PROT
+
+    @variables begin
+        Q_n(t)
+        QH2_n(t)
+        QH2_p(t)
+        Q_p(t)
+        SQp(t) = 0
+        SQn(t) = 0
+        fes_ox(t) = C3_CONC
+        fes_rd(t) ## Conserved
+        cytc1_ox(t) = C3_CONC
+        cytc1_rd(t) ## Conserved
+        blo_bho(t) = C3_CONC
+        blo_bhr(t) = 0
+        blr_bho(t) = 0
+        blr_bhr(t) ## Conserved
+        fracbLrd(t)
+        fracbHrd(t)
+        vROSC3(t)
+        vHresC3(t)
+    end
+
+    ## Split of electrical potentials
+    δ₁_C3 = 0.5
+    δ₂_C3 = 0.5
+    δ₃_C3 = 0.5
+    ## Split of the electrical distance across the IMM
+    α_C3 = 0.25
+    β_C3 = 0.5
+    γ_C3 = 0.25
+    fHi = h_i * inv(1E-7Molar)
+    fHm = h_m * inv(1E-7Molar)
+    ## QH2 + FeS = Q- + FeS- + 2H+
+    Qo_avail = (C3_CONC - SQp) / C3_CONC * (1 - fracbLrd) * (1 - MYXOTHIAZOLE_BLOCK)
+    v3 = K03_C3 * (KEQ3_C3 * Qo_avail * fes_ox * QH2_p - fes_rd * SQp * fHi^2)
+    ## Q- + bL = Qp + bL-
+    el4 = exp(-iVT * α_C3 * δ₁_C3 * dpsi)
+    er4 = exp(iVT * α_C3 * (1 - δ₁_C3) * dpsi)
+    v4ox = K04_C3 * (KEQ4_OX_C3 * SQp * el4 * blo_bho - Q_p * er4 * blr_bho)
+    v4rd = K04_C3 * (KEQ4_RD_C3 * SQp * el4 * blo_bhr - Q_p * er4 * blr_bhr)
+    ## v5 = Q diffusion (p-side -> n-side)
+    v5 = KD_Q * (Q_p - Q_n)
+    ## v6 = bL to bH
+    el6 = exp(-iVT * β_C3 * δ₂_C3 * dpsi)
+    er6 = exp(iVT * β_C3 * (1 - δ₂_C3) * dpsi)
+    v6 = K06_C3 * (KEQ6_C3 * blr_bho * el6 - blo_bhr * er6)
+    ## v7 = bH to Qn; v8: bH to SQn
+    Qi_avail = (C3_CONC - SQn) / C3_CONC * (1 - ANTIMYCIN_BLOCK)
+    el7 = exp(-iVT * γ_C3 * δ₃_C3 * dpsi)
+    er7 = exp(iVT * γ_C3 * (1 - δ₃_C3) * dpsi)
+    qn = Q_n * Qi_avail
+    qh2n = QH2_n * Qi_avail
+    v7ox = K07_OX_C3 * (KEQ7_OX_C3 * blo_bhr * qn * el7 - blo_bho * SQn * er7)
+    v7rd = K07_RD_C3 * (KEQ7_RD_C3 * blr_bhr * qn * el7 - blr_bho * SQn * er7)
+    v8ox = K08_OX_C3 * (KEQ8_OX_C3 * blo_bhr * SQn * fHm^2 * el7 - blo_bho * qh2n * er7)
+    v8rd = K08_RD_C3 * (KEQ8_RD_C3 * blr_bhr * SQn * fHm^2 * el7 - blr_bho * qh2n * er7)
+    ## v9 = fes -> cytc1
+    v9 = K09_C3 * (KEQ9_C3 * fes_rd * cytc1_ox - fes_ox * cytc1_rd)
+    ## SQp + O2 -> O2- + Q
+    v10 = K010_C3 * (KEQ10_C3 * O2 * SQp - sox_m * Q_p)
+    ## cytc1_2+  + cytc_3+ = cytc1_3+  + cytc_2+
+    v33 = K33_C3 * (KEQ33_C3 * cytc1_rd * cytc_ox - cytc1_ox * cytc_rd)
+
+    eqs = [
+        C3_CONC ~ blo_bho + blr_bho + blo_bhr + blr_bhr,
+        C3_CONC ~ fes_ox + fes_rd,
+        C3_CONC ~ cytc1_ox + cytc1_rd,
+        Q_n ~ 0.5 * UQ,
+        Q_p ~ 0.5 * UQ,
+        QH2_n ~ 0.5 * UQH2,
+        QH2_p ~ 0.5 * UQH2,
+        fracbLrd ~ (blr_bho + blr_bhr) / C3_CONC,
+        fracbHrd ~ (blo_bhr + blr_bhr) / C3_CONC,
+        ## D(UQH2) ~ dQH2n + dQH2p,
+        D(SQn) ~ v7ox + v7rd - v8ox - v8rd,
+        D(SQp) ~ v3 - v10 - v4ox - v4rd,
+        D(blo_bho) ~ v7ox + v8ox - v4ox,
+        D(blr_bho) ~ v4ox + v7rd + v8rd - v6,
+        D(blo_bhr) ~ v6 - v4rd - v7ox - v8ox,
+        ## D(blr_bhr) = v4rd - v7rd - v8rd
+        D(fes_ox) ~ v9 - v3,
+        D(cytc1_ox) ~ v33 - v9,
+        vHresC3 ~ v6,
+        vROSC3 ~ v10,
+    ]
+    return System(eqs, t; name)
+end
+
+# ╔═╡ 2345cb6e-668b-4f36-82fb-a9fcb72775c7
+@parameters begin
+    UQ = 3600μM
+    UQH2 = 400μM
+    dpsi = 150mV
+    cytc_ox = 208μM
+    cytc_rd = 325μM - cytc_ox
+    sox_m = 0.01μM
+end
+
+# ╔═╡ 5eecad75-cb22-4dea-ab84-0bc670d402b8
+gsys = c3_gauthier(;dpsi, cytc_ox, cytc_rd, UQ, UQH2, sox_m) |> mtkcompile
+
+# ╔═╡ 21ecac6c-f4a2-4754-b671-fad8f7b88788
+prob_g = SteadyStateProblem(gsys, [])
+
+# ╔═╡ fe78a3d5-6d9d-4b51-bf07-c899a6536f66
+rsys = c3_repulsion(;dpsi, cytc_ox, cytc_rd, UQ, UQH2, sox_m) |> mtkcompile
+
+# ╔═╡ 9c74298a-80ae-43bb-96cd-d9e86129cb7f
+prob_r = SteadyStateProblem(rsys, [rsys.K010_C3 => 33Hz / mM])
+
+# ╔═╡ 8e76757c-6bd4-430b-a15b-430db05f5271
+ssys = c3_semireverse(;dpsi, cytc_ox, cytc_rd, UQ, UQH2, sox_m) |> mtkcompile
+
+# ╔═╡ 99a4b73f-a0b2-4125-8da6-daff6f8ad80f
+prob_s = SteadyStateProblem(ssys, [ssys.K010_C3 => 130Hz / mM, ssys.K011_C3 => 10000Hz / mM, ssys.K04_C3 => 50Hz / mM])
+
+# ╔═╡ 118cf64a-dcf6-4f3f-9b3a-bd3ab9f88d66
+alg = DynamicSS(KenCarp47())
+
+# ╔═╡ 31f75bf3-c8d0-48eb-9091-5a7e4ea0c994
+ealg = EnsembleThreads()
+
+# ╔═╡ 44257bde-ba49-48d7-b025-d8ed2a2568e6
+# Utility function
+extract(sim, k) = map(s -> s[k], sim)
+
+# ╔═╡ 8d5d8eef-f210-4c67-af6e-82e3ef29771a
+md"""
+## Varying MMP
+"""
+
+# ╔═╡ df83f7f4-3ffd-4285-8ef2-94fad068855b
+dpsirange = 100:1:200
+
+# ╔═╡ 8b5a16cb-a40f-4115-a476-9474890e053e
+alter_dpsi = (prob, i, repeat) -> begin
+    prob.ps[dpsi] = dpsirange[i] * mV
+    prob
+end
+
+# ╔═╡ 64fb2d71-2613-4a9a-b34d-c66f00289e54
+eprob_g = EnsembleProblem(prob_g; prob_func=alter_dpsi)
+
+# ╔═╡ d50dfab5-1bb3-49fd-bff7-e3721b42d93c
+@time sim_g = solve(eprob_g, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
+
+# ╔═╡ 21b2880b-2724-4d62-9ea4-1ab77797525d
+eprob_r = EnsembleProblem(prob_r; prob_func=alter_dpsi)
+
+# ╔═╡ 82ee477e-da1b-4732-abbf-1ec32739fd80
+@time sim_r = solve(eprob_r, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
+
+# ╔═╡ 53c8dcfc-bfe1-46e3-871d-50a0af14ebf3
+eprob_s = EnsembleProblem(prob_s; prob_func=alter_dpsi)
+
+# ╔═╡ f447d5c4-c9e1-4c19-bd1c-5218ba9810e7
+@time sim_s = solve(eprob_s, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
+
+# ╔═╡ 947c932f-d3aa-4c81-840b-85b73e138980
+let
+	xs = dpsirange
+	ys = [extract(sim_g, gsys.vHresC3) extract(sim_s, ssys.vHresC3) extract(sim_r,rsys.vHresC3)]
+	plot(xs, ys, xlabel="MMP (mV)", ylabel="Resp. Rate (mM/s)", label=["Semiforward" "Semireverse" "Repulsion"])
+end
+
+# ╔═╡ e03b75a1-056e-49be-b374-4b1cdd88c14a
+let
+	xs = dpsirange
+	plot(xs, extract(sim_r, rsys.blo_bho), label="bL(ox)-bH(ox)", title="Repulsion")
+	plot!(xs, extract(sim_r, rsys.blr_bho), label="bL(rd)-bH(ox)")
+	plot!(xs, extract(sim_r, rsys.blo_bhr), label="bL(ox)-bH(rd)")
+	pl1 = plot!(xs, extract(sim_r, rsys.blr_bhr), label="bL(rd)-bH(rd)", ylim=(0, 160μM))
+	plot(xs, extract(sim_s, ssys.blo_bho), label="bL(ox)-bH(ox)", title = "Semireverse")
+	plot!(xs, extract(sim_s, ssys.blr_bho), label="bL(rd)-bH(ox)")
+	plot!(xs, extract(sim_s, ssys.blo_bhr), label="bL(ox)-bH(rd)")
+	pl2 = plot!(xs, extract(sim_s, ssys.blr_bhr), label="bL(rd)-bH(rd)", ylim=(0, 160μM))
+	plot(pl1, pl2)
+end
+
+# ╔═╡ 3d48bba5-6f3e-4e47-b2ce-5d7a98dae55d
+let
+	xs = dpsirange
+	ys = [extract(sim_g, gsys.fracbLrd) extract(sim_r, rsys.fracbLrd) extract(sim_g, gsys.fracbHrd) extract(sim_r, rsys.fracbHrd)]
+	plot(xs, ys, xlabel="MMP (mV)", ylabel="Reduced fraction", label=["G (bL)" "R (bL)" "G (bH)" "R (bH)"], line=[:solid :dash :solid :dash])	
+end
+
+# ╔═╡ 8ec0a9f7-f94b-4eb0-a5db-bca292531fa5
+let
+	xs = dpsirange
+	ys = [extract(sim_g, gsys.vROSC3) extract(sim_s, ssys.vROSC3) extract(sim_r, rsys.vROSC3)]
+	plot(xs, ys, xlabel="MMP (mV)", ylabel="ROS Rate (mM/s)", label=["G" "S" "R"])
+end
+
+# ╔═╡ 06244f1e-049e-4486-903d-f0bcdbb94dcb
+md"""
+## Varying UQH2
+"""
+
+# ╔═╡ a0a5c6fb-3591-4b3f-b575-5deec1893c2e
+qh2range = 10:10:3990
+
+# ╔═╡ 7bdd4656-d836-4cd4-8471-e0755553bb11
+alter_qh2 = (prob, i, repeat) -> begin
+    prob.ps[UQH2] = qh2range[i] * μM
+    prob.ps[UQ] = 4000μM - prob.ps[UQH2]
+    prob
+end
+
+# ╔═╡ 6ffcafd2-5647-4444-83c3-f8d1b966cc45
+@time qh2_g = solve(EnsembleProblem(prob_g; prob_func=alter_qh2), alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
+
+# ╔═╡ 439454e4-32e2-4b59-b62a-2bb591ea9ea2
+@time qh2_r = solve(EnsembleProblem(prob_r; prob_func=alter_qh2), alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
+
+# ╔═╡ 2979d921-a0c0-42c0-a1f0-27ffe9793fb8
+@time qh2_s = solve(EnsembleProblem(prob_s; prob_func=alter_qh2), alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
+
+# ╔═╡ 337076c9-3e11-4641-b3b7-d35f18ccb2b0
+let
+	xs = qh2range ./ 4000 .* 100
+	ys = [extract(qh2_g, gsys.vHresC3) extract(qh2_s, ssys.vHresC3) extract(qh2_r, rsys.vHresC3)]
+	plot(xs, ys, xlabel="QH2 (%)", ylabel="Resp. Rate (mM/s)", label=["G" "S" "R"])
+end
+
+# ╔═╡ 24422da1-2f02-4133-abbb-8e693dc4a4f5
+let 
+	xs = qh2range ./ 4000 .* 100
+	ys = [extract(qh2_g, gsys.vROSC3) extract(qh2_s, ssys.vROSC3) extract(qh2_r, rsys.vROSC3)]
+	plot(xs, ys, xlabel="QH2 (%)", ylabel="ROS Rate (mM/s)", label=["G" "SR" "Rep"])
+end
+
+# ╔═╡ 2c626178-3103-4ee3-b338-6ec78aa633a8
 
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
-ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
-OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-SteadyStateDiffEq = "9672c7b4-1e72-59bd-8a11-6ac3964bc41f"
 
 [compat]
-ForwardDiff = "~1.1.0"
+DifferentialEquations = "~7.16.1"
 ModelingToolkit = "~10.21.0"
-OrdinaryDiffEq = "~6.102.0"
 Plots = "~1.40.19"
 PlutoUI = "~0.7.71"
-SteadyStateDiffEq = "~2.5.0"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.10.10"
+julia_version = "1.11.6"
 manifest_format = "2.0"
-project_hash = "429580b34d273610ce1051e7950a524ef4b3e88d"
+project_hash = "5ebda1834c69a87b8546f5280a93d75e71524c46"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "60665b326b75db6517939d0e1875850bc4a54368"
@@ -115,9 +778,15 @@ git-tree-sha1 = "9876e1e164b144ca45e9e3198d0b689cadfed9ff"
 uuid = "66dad0bd-aa9a-41b7-9441-69ab47430ed8"
 version = "1.1.3"
 
+[[deps.AlmostBlockDiagonals]]
+deps = ["ConcreteStructs"]
+git-tree-sha1 = "743abe5e5fe8cff96dad4123f263c0d8eee281c0"
+uuid = "a95523ee-d6da-40b5-98cc-27bc505739d5"
+version = "0.1.10"
+
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
-version = "1.1.1"
+version = "1.1.2"
 
 [[deps.ArnoldiMethod]]
 deps = ["LinearAlgebra", "Random", "StaticArrays"]
@@ -169,9 +838,25 @@ weakdeps = ["SparseArrays"]
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
+version = "1.11.0"
+
+[[deps.BandedMatrices]]
+deps = ["ArrayLayouts", "FillArrays", "LinearAlgebra", "PrecompileTools"]
+git-tree-sha1 = "e35c672b239c5105f597963c33e740eeb46cf0ab"
+uuid = "aae01518-5342-5314-be14-df237901396f"
+version = "1.9.4"
+
+    [deps.BandedMatrices.extensions]
+    BandedMatricesSparseArraysExt = "SparseArrays"
+    CliqueTreesExt = "CliqueTrees"
+
+    [deps.BandedMatrices.weakdeps]
+    CliqueTrees = "60701a23-6482-424a-84db-faee86b9b1f8"
+    SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
+version = "1.11.0"
 
 [[deps.Bijections]]
 git-tree-sha1 = "a2d308fcd4c2fb90e943cf9cd2fbfa9c32b69733"
@@ -194,14 +879,59 @@ deps = ["ArrayLayouts", "FillArrays", "LinearAlgebra"]
 git-tree-sha1 = "84a4360c718e7473fec971ae27f409a2f24befc8"
 uuid = "8e7c35d0-a365-5155-bbbb-fb81a777f24e"
 version = "1.7.1"
+weakdeps = ["Adapt", "BandedMatrices"]
 
     [deps.BlockArrays.extensions]
     BlockArraysAdaptExt = "Adapt"
     BlockArraysBandedMatricesExt = "BandedMatrices"
 
-    [deps.BlockArrays.weakdeps]
-    Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-    BandedMatrices = "aae01518-5342-5314-be14-df237901396f"
+[[deps.BoundaryValueDiffEq]]
+deps = ["ADTypes", "BoundaryValueDiffEqAscher", "BoundaryValueDiffEqCore", "BoundaryValueDiffEqFIRK", "BoundaryValueDiffEqMIRK", "BoundaryValueDiffEqMIRKN", "BoundaryValueDiffEqShooting", "DiffEqBase", "FastClosures", "ForwardDiff", "LinearAlgebra", "Reexport", "SciMLBase"]
+git-tree-sha1 = "d6ec33e4516b2e790a64128afdb54f3b536667a7"
+uuid = "764a87c0-6b3e-53db-9096-fe964310641d"
+version = "5.18.0"
+
+    [deps.BoundaryValueDiffEq.extensions]
+    BoundaryValueDiffEqODEInterfaceExt = "ODEInterface"
+
+    [deps.BoundaryValueDiffEq.weakdeps]
+    ODEInterface = "54ca160b-1b9f-5127-a996-1867f4bc2a2c"
+
+[[deps.BoundaryValueDiffEqAscher]]
+deps = ["ADTypes", "AlmostBlockDiagonals", "BoundaryValueDiffEqCore", "ConcreteStructs", "DiffEqBase", "DifferentiationInterface", "FastClosures", "ForwardDiff", "LinearAlgebra", "PreallocationTools", "RecursiveArrayTools", "Reexport", "SciMLBase", "Setfield"]
+git-tree-sha1 = "47c833c459738a3f27c5b458ecf7832a4731ef4d"
+uuid = "7227322d-7511-4e07-9247-ad6ff830280e"
+version = "1.8.0"
+
+[[deps.BoundaryValueDiffEqCore]]
+deps = ["ADTypes", "Adapt", "ArrayInterface", "ConcreteStructs", "DiffEqBase", "ForwardDiff", "LineSearch", "LinearAlgebra", "Logging", "NonlinearSolveFirstOrder", "PreallocationTools", "RecursiveArrayTools", "Reexport", "SciMLBase", "Setfield", "SparseArrays", "SparseConnectivityTracer", "SparseMatrixColorings"]
+git-tree-sha1 = "b7b4d8cc80f116eab2eb6124dba58ea7aef31b85"
+uuid = "56b672f2-a5fe-4263-ab2d-da677488eb3a"
+version = "1.11.1"
+
+[[deps.BoundaryValueDiffEqFIRK]]
+deps = ["ADTypes", "ArrayInterface", "BandedMatrices", "BoundaryValueDiffEqCore", "ConcreteStructs", "DiffEqBase", "DifferentiationInterface", "FastAlmostBandedMatrices", "FastClosures", "ForwardDiff", "LinearAlgebra", "PreallocationTools", "PrecompileTools", "Preferences", "RecursiveArrayTools", "Reexport", "SciMLBase", "Setfield", "SparseArrays"]
+git-tree-sha1 = "325e6981a414cfa5181218936c23f0e16dee8f08"
+uuid = "85d9eb09-370e-4000-bb32-543851f73618"
+version = "1.9.0"
+
+[[deps.BoundaryValueDiffEqMIRK]]
+deps = ["ADTypes", "ArrayInterface", "BandedMatrices", "BoundaryValueDiffEqCore", "ConcreteStructs", "DiffEqBase", "DifferentiationInterface", "FastAlmostBandedMatrices", "FastClosures", "ForwardDiff", "LinearAlgebra", "PreallocationTools", "PrecompileTools", "Preferences", "RecursiveArrayTools", "Reexport", "SciMLBase", "Setfield", "SparseArrays"]
+git-tree-sha1 = "da6ae5e564ad06ced4d7504929c58130558007dd"
+uuid = "1a22d4ce-7765-49ea-b6f2-13c8438986a6"
+version = "1.9.0"
+
+[[deps.BoundaryValueDiffEqMIRKN]]
+deps = ["ADTypes", "ArrayInterface", "BandedMatrices", "BoundaryValueDiffEqCore", "ConcreteStructs", "DiffEqBase", "DifferentiationInterface", "FastAlmostBandedMatrices", "FastClosures", "ForwardDiff", "LinearAlgebra", "PreallocationTools", "PrecompileTools", "Preferences", "RecursiveArrayTools", "Reexport", "SciMLBase", "Setfield", "SparseArrays"]
+git-tree-sha1 = "609c2d03ea024df0d475fee483b93cf0e87c29d6"
+uuid = "9255f1d6-53bf-473e-b6bd-23f1ff009da4"
+version = "1.8.0"
+
+[[deps.BoundaryValueDiffEqShooting]]
+deps = ["ADTypes", "ArrayInterface", "BandedMatrices", "BoundaryValueDiffEqCore", "ConcreteStructs", "DiffEqBase", "DifferentiationInterface", "FastAlmostBandedMatrices", "FastClosures", "ForwardDiff", "LinearAlgebra", "PreallocationTools", "PrecompileTools", "Preferences", "RecursiveArrayTools", "Reexport", "SciMLBase", "Setfield", "SparseArrays"]
+git-tree-sha1 = "ba9bd1f31b58bfd5e48a56da0a426bcbd3462546"
+uuid = "ed55bfe0-3725-4db6-871e-a1dc9f42a757"
+version = "1.9.0"
 
 [[deps.BracketingNonlinearSolve]]
 deps = ["CommonSolve", "ConcreteStructs", "NonlinearSolveBase", "PrecompileTools", "Reexport", "SciMLBase"]
@@ -219,6 +949,11 @@ deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "1b96ea4a01afe0ea4090c5c8039690672dd13f2e"
 uuid = "6e34b625-4abd-537c-b88f-471c36dfa7a0"
 version = "1.0.9+0"
+
+[[deps.CEnum]]
+git-tree-sha1 = "389ad5c84de1ae7cf0e28e381131c98ea87d54fc"
+uuid = "fa961155-64e5-5f13-b03f-caf6b980ea82"
+version = "0.5.0"
 
 [[deps.CPUSummary]]
 deps = ["CpuId", "IfElse", "PrecompileTools", "Preferences", "Static"]
@@ -265,12 +1000,10 @@ deps = ["FixedPointNumbers", "Random"]
 git-tree-sha1 = "67e11ee83a43eb71ddc950302c53bf33f0690dfe"
 uuid = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
 version = "0.12.1"
+weakdeps = ["StyledStrings"]
 
     [deps.ColorTypes.extensions]
     StyledStringsExt = "StyledStrings"
-
-    [deps.ColorTypes.weakdeps]
-    StyledStrings = "f489334b-da3d-4c2e-b8f0-e476e12c162b"
 
 [[deps.ColorVectorSpace]]
 deps = ["ColorTypes", "FixedPointNumbers", "LinearAlgebra", "Requires", "Statistics", "TensorCore"]
@@ -391,12 +1124,19 @@ version = "0.18.22"
 [[deps.Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
+version = "1.11.0"
 
 [[deps.Dbus_jll]]
 deps = ["Artifacts", "Expat_jll", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "473e9afc9cf30814eb67ffa5f2db7df82c3ad9fd"
 uuid = "ee1fde0b-3d02-5ea6-8484-8dfef6360eab"
 version = "1.16.2+0"
+
+[[deps.DelayDiffEq]]
+deps = ["ArrayInterface", "DataStructures", "DiffEqBase", "FastBroadcast", "ForwardDiff", "LinearAlgebra", "Logging", "OrdinaryDiffEq", "OrdinaryDiffEqCore", "OrdinaryDiffEqDefault", "OrdinaryDiffEqDifferentiation", "OrdinaryDiffEqFunctionMap", "OrdinaryDiffEqNonlinearSolve", "OrdinaryDiffEqRosenbrock", "Printf", "RecursiveArrayTools", "Reexport", "SciMLBase", "SimpleNonlinearSolve", "SimpleUnPack", "SymbolicIndexingInterface"]
+git-tree-sha1 = "d9b1e66070ce15bc2b9c3d5af6b94f693fc03ba4"
+uuid = "bcd4f6db-9728-5f36-b5f7-82caef46ccdb"
+version = "5.58.0"
 
 [[deps.DelimitedFiles]]
 deps = ["Mmap"]
@@ -405,15 +1145,14 @@ uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 version = "1.9.1"
 
 [[deps.DiffEqBase]]
-deps = ["ArrayInterface", "ConcreteStructs", "DataStructures", "DocStringExtensions", "EnumX", "EnzymeCore", "FastBroadcast", "FastClosures", "FastPower", "FunctionWrappers", "FunctionWrappersWrappers", "LinearAlgebra", "Logging", "Markdown", "MuladdMacro", "Parameters", "PrecompileTools", "Printf", "RecursiveArrayTools", "Reexport", "SciMLBase", "SciMLOperators", "SciMLStructures", "Setfield", "Static", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface", "TruncatedStacktraces"]
-git-tree-sha1 = "1b1e070e57681d1176d99a5ec455717e24686612"
+deps = ["ArrayInterface", "ConcreteStructs", "DocStringExtensions", "EnzymeCore", "FastBroadcast", "FastClosures", "FastPower", "FunctionWrappers", "FunctionWrappersWrappers", "LinearAlgebra", "Logging", "Markdown", "MuladdMacro", "PrecompileTools", "Printf", "RecursiveArrayTools", "Reexport", "SciMLBase", "SciMLOperators", "SciMLStructures", "Setfield", "Static", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface", "TruncatedStacktraces"]
+git-tree-sha1 = "50fe8e2c583a899506d2b8d777a0bd5beed9a33f"
 uuid = "2b5f629d-d688-5b77-993f-72d75c75574e"
-version = "6.183.2"
+version = "6.185.0"
 
     [deps.DiffEqBase.extensions]
     DiffEqBaseCUDAExt = "CUDA"
     DiffEqBaseChainRulesCoreExt = "ChainRulesCore"
-    DiffEqBaseDistributionsExt = "Distributions"
     DiffEqBaseEnzymeExt = ["ChainRulesCore", "Enzyme"]
     DiffEqBaseForwardDiffExt = ["ForwardDiff"]
     DiffEqBaseGTPSAExt = "GTPSA"
@@ -473,6 +1212,12 @@ deps = ["IrrationalConstants", "LogExpFunctions", "NaNMath", "Random", "SpecialF
 git-tree-sha1 = "23163d55f885173722d1e4cf0f6110cdbaf7e272"
 uuid = "b552c78f-8df3-52c6-915a-8e097449b14b"
 version = "1.15.1"
+
+[[deps.DifferentialEquations]]
+deps = ["BoundaryValueDiffEq", "DelayDiffEq", "DiffEqBase", "DiffEqCallbacks", "DiffEqNoiseProcess", "JumpProcesses", "LinearAlgebra", "LinearSolve", "NonlinearSolve", "OrdinaryDiffEq", "Random", "RecursiveArrayTools", "Reexport", "SciMLBase", "SteadyStateDiffEq", "StochasticDiffEq", "Sundials"]
+git-tree-sha1 = "afdc7dfee475828b4f0286d63ffe66b97d7a3fa7"
+uuid = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
+version = "7.16.1"
 
 [[deps.DifferentiationInterface]]
 deps = ["ADTypes", "LinearAlgebra"]
@@ -535,9 +1280,21 @@ weakdeps = ["ChainRulesCore", "EnzymeCore"]
     DispatchDoctorChainRulesCoreExt = "ChainRulesCore"
     DispatchDoctorEnzymeCoreExt = "EnzymeCore"
 
+[[deps.Distances]]
+deps = ["LinearAlgebra", "Statistics", "StatsAPI"]
+git-tree-sha1 = "c7e3a542b999843086e2f29dac96a618c105be1d"
+uuid = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
+version = "0.10.12"
+weakdeps = ["ChainRulesCore", "SparseArrays"]
+
+    [deps.Distances.extensions]
+    DistancesChainRulesCoreExt = "ChainRulesCore"
+    DistancesSparseArraysExt = "SparseArrays"
+
 [[deps.Distributed]]
 deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
+version = "1.11.0"
 
 [[deps.Distributions]]
 deps = ["AliasTables", "FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SpecialFunctions", "Statistics", "StatsAPI", "StatsBase", "StatsFuns"]
@@ -673,6 +1430,12 @@ git-tree-sha1 = "3a948313e7a41eb1db7a1e733e6335f17b4ab3c4"
 uuid = "b22a6f82-2f65-5046-a5b2-351ab43fb4e5"
 version = "7.1.1+0"
 
+[[deps.FastAlmostBandedMatrices]]
+deps = ["ArrayInterface", "ArrayLayouts", "BandedMatrices", "ConcreteStructs", "LazyArrays", "LinearAlgebra", "MatrixFactorizations", "PrecompileTools", "Reexport"]
+git-tree-sha1 = "9482a2b4face8ade73792c23a54796c79ed1bcbf"
+uuid = "9d29842c-ecb8-4973-b1e9-a27b1157504e"
+version = "0.1.5"
+
 [[deps.FastBroadcast]]
 deps = ["ArrayInterface", "LinearAlgebra", "Polyester", "Static", "StaticArrayInterface", "StrideArraysCore"]
 git-tree-sha1 = "ab1b34570bcdf272899062e1a56285a53ecaae08"
@@ -715,6 +1478,7 @@ version = "1.1.3"
 
 [[deps.FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
+version = "1.11.0"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra"]
@@ -810,6 +1574,7 @@ version = "0.5.2"
 [[deps.Future]]
 deps = ["Random"]
 uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
+version = "1.11.0"
 
 [[deps.GLFW_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Xorg_libXcursor_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll", "libdecor_jll", "xkbcommon_jll"]
@@ -941,6 +1706,7 @@ version = "2025.2.0+0"
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+version = "1.11.0"
 
 [[deps.IntervalSets]]
 git-tree-sha1 = "5fbb102dcb8b1a858111ae81d56682376130517d"
@@ -1108,6 +1874,13 @@ version = "2.6.2"
 [[deps.LazyArtifacts]]
 deps = ["Artifacts", "Pkg"]
 uuid = "4af54fe1-eca0-43a8-85a7-787d91b784e3"
+version = "1.11.0"
+
+[[deps.LevyArea]]
+deps = ["LinearAlgebra", "Random", "SpecialFunctions"]
+git-tree-sha1 = "56513a09b8e0ae6485f34401ea9e2f31357958ec"
+uuid = "2d8b4e74-eb68-11e8-0fb9-d5eb67b50637"
+version = "1.0.0"
 
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
@@ -1117,16 +1890,17 @@ version = "0.6.4"
 [[deps.LibCURL_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll", "Zlib_jll", "nghttp2_jll"]
 uuid = "deac9b47-8bc7-5906-a0fe-35ac56dc84c0"
-version = "8.4.0+0"
+version = "8.6.0+0"
 
 [[deps.LibGit2]]
 deps = ["Base64", "LibGit2_jll", "NetworkOptions", "Printf", "SHA"]
 uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
+version = "1.11.0"
 
 [[deps.LibGit2_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll"]
 uuid = "e37daf67-58a4-590a-8e99-b0245dd2ffc5"
-version = "1.6.4+0"
+version = "1.7.2+0"
 
 [[deps.LibSSH2_jll]]
 deps = ["Artifacts", "Libdl", "MbedTLS_jll"]
@@ -1135,6 +1909,7 @@ version = "1.11.0+1"
 
 [[deps.Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+version = "1.11.0"
 
 [[deps.Libffi_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
@@ -1191,12 +1966,13 @@ version = "7.4.0"
 [[deps.LinearAlgebra]]
 deps = ["Libdl", "OpenBLAS_jll", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+version = "1.11.0"
 
 [[deps.LinearSolve]]
-deps = ["ArrayInterface", "ChainRulesCore", "ConcreteStructs", "DocStringExtensions", "EnumX", "GPUArraysCore", "InteractiveUtils", "Krylov", "LazyArrays", "Libdl", "LinearAlgebra", "MKL_jll", "Markdown", "PrecompileTools", "Preferences", "RecursiveArrayTools", "Reexport", "SciMLBase", "SciMLOperators", "Setfield", "StaticArraysCore", "UnPack"]
-git-tree-sha1 = "1c597eceb5ead73dae17ffa4dcc1160e3e4da1f3"
+deps = ["ArrayInterface", "ChainRulesCore", "ConcreteStructs", "DocStringExtensions", "EnumX", "GPUArraysCore", "InteractiveUtils", "Krylov", "LazyArrays", "Libdl", "LinearAlgebra", "MKL_jll", "Markdown", "OpenBLAS_jll", "PrecompileTools", "Preferences", "RecursiveArrayTools", "Reexport", "SciMLBase", "SciMLOperators", "Setfield", "StaticArraysCore", "UnPack"]
+git-tree-sha1 = "0f1a02cea457a2e26b67e105aa7ee549419c2550"
 uuid = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
-version = "3.28.0"
+version = "3.37.0"
 
     [deps.LinearSolve.extensions]
     LinearSolveAMDGPUExt = "AMDGPU"
@@ -1206,6 +1982,7 @@ version = "3.28.0"
     LinearSolveCUDAExt = "CUDA"
     LinearSolveCUDSSExt = "CUDSS"
     LinearSolveCUSOLVERRFExt = ["CUSOLVERRF", "SparseArrays"]
+    LinearSolveCliqueTreesExt = ["CliqueTrees", "SparseArrays"]
     LinearSolveEnzymeExt = "EnzymeCore"
     LinearSolveFastAlmostBandedMatricesExt = "FastAlmostBandedMatrices"
     LinearSolveFastLapackInterfaceExt = "FastLapackInterface"
@@ -1227,6 +2004,7 @@ version = "3.28.0"
     CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
     CUDSS = "45b445bb-4962-46a0-9369-b4df9d0f772e"
     CUSOLVERRF = "a8cc9031-bad2-4722-94f5-40deabb4245c"
+    CliqueTrees = "60701a23-6482-424a-84db-faee86b9b1f8"
     EnzymeCore = "f151be2c-9106-41f4-ab19-57ee4f262869"
     FastAlmostBandedMatrices = "9d29842c-ecb8-4973-b1e9-a27b1157504e"
     FastLapackInterface = "29a986be-02c6-4525-aec4-84b980013641"
@@ -1261,6 +2039,7 @@ version = "0.3.29"
 
 [[deps.Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
+version = "1.11.0"
 
 [[deps.LoggingExtras]]
 deps = ["Dates", "Logging"]
@@ -1297,6 +2076,17 @@ version = "0.1.8"
 [[deps.Markdown]]
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
+version = "1.11.0"
+
+[[deps.MatrixFactorizations]]
+deps = ["ArrayLayouts", "LinearAlgebra", "Printf", "Random"]
+git-tree-sha1 = "16a726dba99685d9e94c8d0a8f655383121fc608"
+uuid = "a3b82374-2e81-5b9e-98ce-41277c0e4c87"
+version = "3.0.1"
+weakdeps = ["BandedMatrices"]
+
+    [deps.MatrixFactorizations.extensions]
+    MatrixFactorizationsBandedMatricesExt = "BandedMatrices"
 
 [[deps.MaybeInplace]]
 deps = ["ArrayInterface", "LinearAlgebra", "MacroTools"]
@@ -1317,7 +2107,7 @@ version = "1.1.9"
 [[deps.MbedTLS_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
-version = "2.28.2+1"
+version = "2.28.6+0"
 
 [[deps.Measures]]
 git-tree-sha1 = "c13304c81eec1ed3af7fc20e75fb6b26092a1102"
@@ -1332,6 +2122,7 @@ version = "1.2.0"
 
 [[deps.Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
+version = "1.11.0"
 
 [[deps.ModelingToolkit]]
 deps = ["ADTypes", "AbstractTrees", "ArrayInterface", "BlockArrays", "ChainRulesCore", "Combinatorics", "CommonSolve", "Compat", "ConstructionBase", "DataStructures", "DiffEqBase", "DiffEqCallbacks", "DiffEqNoiseProcess", "DiffRules", "DifferentiationInterface", "Distributed", "Distributions", "DocStringExtensions", "DomainSets", "DynamicQuantities", "EnumX", "ExprTools", "FindFirstFunctions", "ForwardDiff", "FunctionWrappers", "FunctionWrappersWrappers", "Graphs", "ImplicitDiscreteSolve", "InteractiveUtils", "JuliaFormatter", "JumpProcesses", "Latexify", "Libdl", "LinearAlgebra", "MLStyle", "Moshi", "NaNMath", "OffsetArrays", "OrderedCollections", "OrdinaryDiffEqCore", "PrecompileTools", "RecursiveArrayTools", "Reexport", "RuntimeGeneratedFunctions", "SCCNonlinearSolve", "SciMLBase", "SciMLPublic", "SciMLStructures", "Serialization", "Setfield", "SimpleNonlinearSolve", "SparseArrays", "SpecialFunctions", "StaticArrays", "SymbolicIndexingInterface", "SymbolicUtils", "Symbolics", "URIs", "UnPack", "Unitful"]
@@ -1365,7 +2156,7 @@ version = "0.3.7"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
-version = "2023.1.10"
+version = "2023.12.12"
 
 [[deps.MuladdMacro]]
 git-tree-sha1 = "cac9cc5499c25554cba55cd3c30543cff5ca4fab"
@@ -1389,6 +2180,12 @@ deps = ["ADTypes", "DifferentiationInterface", "Distributed", "FiniteDiff", "For
 git-tree-sha1 = "25a6638571a902ecfb1ae2a18fc1575f86b1d4df"
 uuid = "d41bc354-129a-5804-8e4c-c37616107c6c"
 version = "7.10.0"
+
+[[deps.NLsolve]]
+deps = ["Distances", "LineSearches", "LinearAlgebra", "NLSolversBase", "Printf", "Reexport"]
+git-tree-sha1 = "019f12e9a1a7880459d0173c182e6a99365d7ac1"
+uuid = "2774e3e8-f4cf-5e23-947b-6d7e65073b56"
+version = "4.5.1"
 
 [[deps.NaNMath]]
 deps = ["OpenLibm_jll"]
@@ -1437,6 +2234,7 @@ deps = ["ADTypes", "Adapt", "ArrayInterface", "CommonSolve", "Compat", "Concrete
 git-tree-sha1 = "1d42a315ba627ca0027d49d0efb44e3d88db24aa"
 uuid = "be0214bd-f91f-a760-ac4e-3421ce2b2da0"
 version = "1.14.0"
+weakdeps = ["BandedMatrices", "DiffEqBase", "ForwardDiff", "LineSearch", "LinearSolve", "SparseArrays", "SparseMatrixColorings"]
 
     [deps.NonlinearSolveBase.extensions]
     NonlinearSolveBaseBandedMatricesExt = "BandedMatrices"
@@ -1446,15 +2244,6 @@ version = "1.14.0"
     NonlinearSolveBaseLinearSolveExt = "LinearSolve"
     NonlinearSolveBaseSparseArraysExt = "SparseArrays"
     NonlinearSolveBaseSparseMatrixColoringsExt = "SparseMatrixColorings"
-
-    [deps.NonlinearSolveBase.weakdeps]
-    BandedMatrices = "aae01518-5342-5314-be14-df237901396f"
-    DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
-    ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
-    LineSearch = "87fe0de2-c867-4266-b59a-2f0a94fc965b"
-    LinearSolve = "7ed4a6bd-45f5-4d41-b270-4a48e9bafcae"
-    SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
-    SparseMatrixColorings = "0a514795-09f3-496d-8182-132a7b665d35"
 
 [[deps.NonlinearSolveFirstOrder]]
 deps = ["ADTypes", "ArrayInterface", "CommonSolve", "ConcreteStructs", "DiffEqBase", "FiniteDiff", "ForwardDiff", "LineSearch", "LinearAlgebra", "LinearSolve", "MaybeInplace", "NonlinearSolveBase", "PrecompileTools", "Reexport", "SciMLBase", "SciMLJacobianOperators", "Setfield", "StaticArraysCore"]
@@ -1500,7 +2289,7 @@ version = "1.3.6+0"
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
-version = "0.3.23+4"
+version = "0.3.27+1"
 
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -1696,9 +2485,9 @@ version = "1.5.0"
 
 [[deps.OrdinaryDiffEqRosenbrock]]
 deps = ["ADTypes", "DiffEqBase", "DifferentiationInterface", "FastBroadcast", "FiniteDiff", "ForwardDiff", "LinearAlgebra", "LinearSolve", "MacroTools", "MuladdMacro", "OrdinaryDiffEqCore", "OrdinaryDiffEqDifferentiation", "Polyester", "PrecompileTools", "Preferences", "RecursiveArrayTools", "Reexport", "SciMLBase", "Static"]
-git-tree-sha1 = "a06c1263d71ea42a1881b4d49c8a087035d4a3ff"
+git-tree-sha1 = "d0b4e34792fb64c3815fc79ad3adc300b1e35588"
 uuid = "43230ef6-c299-4910-a778-202eb28ce4ce"
-version = "1.16.1"
+version = "1.17.0"
 
 [[deps.OrdinaryDiffEqSDIRK]]
 deps = ["ADTypes", "DiffEqBase", "FastBroadcast", "LinearAlgebra", "MacroTools", "MuladdMacro", "OrdinaryDiffEqCore", "OrdinaryDiffEqDifferentiation", "OrdinaryDiffEqNonlinearSolve", "RecursiveArrayTools", "Reexport", "SciMLBase", "TruncatedStacktraces"]
@@ -1778,9 +2567,13 @@ uuid = "30392449-352a-5448-841d-b1acce4e97dc"
 version = "0.44.2+0"
 
 [[deps.Pkg]]
-deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
+deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "Random", "SHA", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-version = "1.10.0"
+version = "1.11.0"
+weakdeps = ["REPL"]
+
+    [deps.Pkg.extensions]
+    REPLExt = "REPL"
 
 [[deps.PlotThemes]]
 deps = ["PlotUtils", "Statistics"]
@@ -1881,6 +2674,7 @@ version = "0.5.7"
 [[deps.Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+version = "1.11.0"
 
 [[deps.PtrArrays]]
 git-tree-sha1 = "1d36ef11a9aaf1e8b74dacc6a731dd1de8fd493d"
@@ -1924,12 +2718,14 @@ version = "2.11.2"
     Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 
 [[deps.REPL]]
-deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
+deps = ["InteractiveUtils", "Markdown", "Sockets", "StyledStrings", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
+version = "1.11.0"
 
 [[deps.Random]]
 deps = ["SHA"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+version = "1.11.0"
 
 [[deps.Random123]]
 deps = ["Random", "RandomNumbers"]
@@ -2119,6 +2915,7 @@ version = "1.3.0"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
+version = "1.11.0"
 
 [[deps.Setfield]]
 deps = ["ConstructionBase", "Future", "MacroTools", "StaticArraysCore"]
@@ -2129,6 +2926,7 @@ version = "1.1.2"
 [[deps.SharedArrays]]
 deps = ["Distributed", "Mmap", "Random", "Serialization"]
 uuid = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
+version = "1.11.0"
 
 [[deps.Showoff]]
 deps = ["Dates", "Grisu"]
@@ -2172,6 +2970,7 @@ version = "1.1.0"
 
 [[deps.Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
+version = "1.11.0"
 
 [[deps.SortingAlgorithms]]
 deps = ["DataStructures"]
@@ -2182,7 +2981,25 @@ version = "1.2.2"
 [[deps.SparseArrays]]
 deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
-version = "1.10.0"
+version = "1.11.0"
+
+[[deps.SparseConnectivityTracer]]
+deps = ["ADTypes", "DocStringExtensions", "FillArrays", "LinearAlgebra", "Random", "SparseArrays"]
+git-tree-sha1 = "339efef69fda0cccf14c06a483561527e9169b8f"
+uuid = "9f842d2f-2579-4b1d-911e-f412cf18a3f5"
+version = "1.0.1"
+
+    [deps.SparseConnectivityTracer.extensions]
+    SparseConnectivityTracerLogExpFunctionsExt = "LogExpFunctions"
+    SparseConnectivityTracerNNlibExt = "NNlib"
+    SparseConnectivityTracerNaNMathExt = "NaNMath"
+    SparseConnectivityTracerSpecialFunctionsExt = "SpecialFunctions"
+
+    [deps.SparseConnectivityTracer.weakdeps]
+    LogExpFunctions = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
+    NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
+    NaNMath = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
+    SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
 [[deps.SparseMatrixColorings]]
 deps = ["ADTypes", "DocStringExtensions", "LinearAlgebra", "PrecompileTools", "Random", "SparseArrays"]
@@ -2235,9 +3052,9 @@ weakdeps = ["OffsetArrays", "StaticArrays"]
 
 [[deps.StaticArrays]]
 deps = ["LinearAlgebra", "PrecompileTools", "Random", "StaticArraysCore"]
-git-tree-sha1 = "cbea8a6bd7bed51b1619658dec70035e07b8502f"
+git-tree-sha1 = "b8693004b385c842357406e3af647701fe783f98"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.9.14"
+version = "1.9.15"
 weakdeps = ["ChainRulesCore", "Statistics"]
 
     [deps.StaticArrays.extensions]
@@ -2250,9 +3067,14 @@ uuid = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
 version = "1.4.3"
 
 [[deps.Statistics]]
-deps = ["LinearAlgebra", "SparseArrays"]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "ae3bb1eb3bba077cd276bc5cfc337cc65c3075c0"
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
-version = "1.10.0"
+version = "1.11.1"
+weakdeps = ["SparseArrays"]
+
+    [deps.Statistics.extensions]
+    SparseArraysExt = ["SparseArrays"]
 
 [[deps.StatsAPI]]
 deps = ["LinearAlgebra"]
@@ -2283,11 +3105,21 @@ git-tree-sha1 = "66a028f9a2bb44d0f6de0814a2b9840af548143a"
 uuid = "9672c7b4-1e72-59bd-8a11-6ac3964bc41f"
 version = "2.5.0"
 
+[[deps.StochasticDiffEq]]
+deps = ["ADTypes", "Adapt", "ArrayInterface", "DataStructures", "DiffEqBase", "DiffEqNoiseProcess", "DocStringExtensions", "FastPower", "FiniteDiff", "ForwardDiff", "JumpProcesses", "LevyArea", "LinearAlgebra", "Logging", "MuladdMacro", "NLsolve", "OrdinaryDiffEqCore", "OrdinaryDiffEqDifferentiation", "OrdinaryDiffEqNonlinearSolve", "Random", "RandomNumbers", "RecursiveArrayTools", "Reexport", "SciMLBase", "SciMLOperators", "SparseArrays", "StaticArrays", "UnPack"]
+git-tree-sha1 = "c3a55a2a1e180e249a0550d30a58c700487aa7ef"
+uuid = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
+version = "6.81.0"
+
 [[deps.StrideArraysCore]]
 deps = ["ArrayInterface", "CloseOpenIntervals", "IfElse", "LayoutPointers", "LinearAlgebra", "ManualMemory", "SIMDTypes", "Static", "StaticArrayInterface", "ThreadingUtilities"]
 git-tree-sha1 = "83151ba8065a73f53ca2ae98bc7274d817aa30f2"
 uuid = "7792a7ef-975c-4747-a70f-980b88e8d1da"
 version = "0.5.8"
+
+[[deps.StyledStrings]]
+uuid = "f489334b-da3d-4c2e-b8f0-e476e12c162b"
+version = "1.11.0"
 
 [[deps.SuiteSparse]]
 deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]
@@ -2296,7 +3128,19 @@ uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 [[deps.SuiteSparse_jll]]
 deps = ["Artifacts", "Libdl", "libblastrampoline_jll"]
 uuid = "bea87d4a-7f5b-5778-9afe-8cc45184846c"
-version = "7.2.1+1"
+version = "7.7.0+0"
+
+[[deps.Sundials]]
+deps = ["CEnum", "DataStructures", "DiffEqBase", "Libdl", "LinearAlgebra", "Logging", "PrecompileTools", "Reexport", "SciMLBase", "SparseArrays", "Sundials_jll"]
+git-tree-sha1 = "7c7a7ee705724b3c80d5451ac49779db36c6f758"
+uuid = "c3572dad-4567-51f8-b174-8c6c989267f4"
+version = "4.28.0"
+
+[[deps.Sundials_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "SuiteSparse_jll", "libblastrampoline_jll"]
+git-tree-sha1 = "91db7ed92c66f81435fe880947171f1212936b14"
+uuid = "fb77eaff-e24c-56d4-86b1-d163f2edb164"
+version = "5.2.3+0"
 
 [[deps.SymbolicIndexingInterface]]
 deps = ["Accessors", "ArrayInterface", "RuntimeGeneratedFunctions", "StaticArraysCore"]
@@ -2385,6 +3229,7 @@ version = "2.0.0"
 [[deps.Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+version = "1.11.0"
 
 [[deps.TestItems]]
 git-tree-sha1 = "42fd9023fef18b9b78c8343a4e2f3813ffbcefcb"
@@ -2433,6 +3278,7 @@ version = "1.6.1"
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
+version = "1.11.0"
 
 [[deps.UnPack]]
 git-tree-sha1 = "387c1f73762231e86e0c9c5443ce3b4a0a9a0c2b"
@@ -2441,6 +3287,7 @@ version = "1.0.2"
 
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
+version = "1.11.0"
 
 [[deps.UnicodeFun]]
 deps = ["REPL"]
@@ -2719,7 +3566,7 @@ version = "1.1.7+0"
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
-version = "1.52.0+1"
+version = "1.59.0+0"
 
 [[deps.oneTBB_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
@@ -2753,7 +3600,45 @@ version = "1.9.2+0"
 
 # ╔═╡ Cell order:
 # ╠═13270f16-84b6-11f0-033c-a9652a6e1210
-# ╠═6b12984b-1416-4d03-ab7f-e24047155da8
-# ╠═4d6ade72-7cec-4dff-904b-36c98cb26831
+# ╠═acd4eb16-255d-46ee-b498-7e9787837492
+# ╠═a6e0a7c4-db17-4041-94d3-ec0ae9c31c3c
+# ╠═a49251d3-c329-4491-91c2-717f54e85bd8
+# ╠═9a284368-7063-4774-a2f1-f3ff892ad6c2
+# ╠═e0ca9c48-d9c8-4551-bb67-2bce96e5cf52
+# ╠═888d06d6-2203-491f-884d-d0e9f031aa9c
+# ╠═5349e449-a9bd-42ce-8114-e1be9500c33e
+# ╠═6fa3d1fb-cf42-4b4d-83fa-724e7f41aae1
+# ╠═2345cb6e-668b-4f36-82fb-a9fcb72775c7
+# ╠═5eecad75-cb22-4dea-ab84-0bc670d402b8
+# ╠═21ecac6c-f4a2-4754-b671-fad8f7b88788
+# ╠═fe78a3d5-6d9d-4b51-bf07-c899a6536f66
+# ╠═9c74298a-80ae-43bb-96cd-d9e86129cb7f
+# ╠═8e76757c-6bd4-430b-a15b-430db05f5271
+# ╠═99a4b73f-a0b2-4125-8da6-daff6f8ad80f
+# ╠═118cf64a-dcf6-4f3f-9b3a-bd3ab9f88d66
+# ╠═31f75bf3-c8d0-48eb-9091-5a7e4ea0c994
+# ╠═44257bde-ba49-48d7-b025-d8ed2a2568e6
+# ╠═8d5d8eef-f210-4c67-af6e-82e3ef29771a
+# ╠═df83f7f4-3ffd-4285-8ef2-94fad068855b
+# ╠═8b5a16cb-a40f-4115-a476-9474890e053e
+# ╠═64fb2d71-2613-4a9a-b34d-c66f00289e54
+# ╠═d50dfab5-1bb3-49fd-bff7-e3721b42d93c
+# ╠═21b2880b-2724-4d62-9ea4-1ab77797525d
+# ╠═82ee477e-da1b-4732-abbf-1ec32739fd80
+# ╠═53c8dcfc-bfe1-46e3-871d-50a0af14ebf3
+# ╠═f447d5c4-c9e1-4c19-bd1c-5218ba9810e7
+# ╠═947c932f-d3aa-4c81-840b-85b73e138980
+# ╠═e03b75a1-056e-49be-b374-4b1cdd88c14a
+# ╠═3d48bba5-6f3e-4e47-b2ce-5d7a98dae55d
+# ╠═8ec0a9f7-f94b-4eb0-a5db-bca292531fa5
+# ╠═06244f1e-049e-4486-903d-f0bcdbb94dcb
+# ╠═a0a5c6fb-3591-4b3f-b575-5deec1893c2e
+# ╠═7bdd4656-d836-4cd4-8471-e0755553bb11
+# ╠═6ffcafd2-5647-4444-83c3-f8d1b966cc45
+# ╠═439454e4-32e2-4b59-b62a-2bb591ea9ea2
+# ╠═2979d921-a0c0-42c0-a1f0-27ffe9793fb8
+# ╠═337076c9-3e11-4641-b3b7-d35f18ccb2b0
+# ╠═24422da1-2f02-4133-abbb-8e693dc4a4f5
+# ╠═2c626178-3103-4ee3-b338-6ec78aa633a8
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
