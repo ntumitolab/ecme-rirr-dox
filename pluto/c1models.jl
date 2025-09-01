@@ -743,8 +743,8 @@ md"""
 let
 	xs = dpsirange
 	ys = hcat(extract(mmp_g, sys_g.vNADHC1), extract(mmp_m, sys_m.vNADHC1), extract(mmp_q, sys_q.vNADHC1))
-	plot(xs, ys, xlabel="MMP (mV)", ylabel="NADH rate (mM/s)", label=["Gauthier" "Markevich" "Q site"]) |> PNG
-end
+	plot(xs, ys, xlabel="MMP (mV)", ylabel="NADH rate (mM/s)", label=["Gauthier" "Markevich" "Q site"]) 
+end |> PNG
 
 # ╔═╡ 681583a3-f37a-4eb2-aa68-3a8686e3de3d
 md"""
@@ -758,8 +758,8 @@ let
 	pl1 = plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "I_C1"], title="Q site model", legend=:left, ylims=(0, 17μM))
 	ys2 = stack(extract.(Ref(mmp_m), [sys_m.Q_C1, sys_m.SQ_C1, sys_m.QH2_C1, sys_m.Iq_C1]), dims=2)
 	pl2 = plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "I_C1"], title="M model", ylims=(0, 17μM))
-	plot(pl1, pl2) |> PNG
-end
+	plot(pl1, pl2)
+end |> PNG
 
 # ╔═╡ 7c7a793a-befb-443b-9af9-051a217b5646
 md"""
@@ -775,8 +775,8 @@ let
 	ys = stack(extract.(Ref(mmp_m), [sys_m.FMN, sys_m.FMNsq, sys_m.FMNH, sys_m.FMN_NAD, sys_m.FMNH_NADH, sys_m.FMN_NADH, sys_m.FMNH_NAD]), dims=2)
 	pl2 = plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH" "FMN_NADH" "FMNH_NAD"], title="M model", legend=:right)
 	
-	plot(pl1, pl2) |> PNG
-end
+	plot(pl1, pl2) 
+end |> PNG
 
 # ╔═╡ 077bc541-a191-4171-8a30-a7881ece3f7e
 md"""
@@ -790,7 +790,7 @@ let
 	ys_m = extract(mmp_m, sys_m.vROSC1)
 	ys_q = extract(mmp_q, sys_q.vROSC1)
 	plot(xs, [ys_g ys_m ys_q], xlabel="MMP (mV)", ylabel="ROS production (mM/s)", label=["Gauthier" "Markevich" "Q site"])
-end
+end |> PNG
 
 # ╔═╡ 646b8cbb-24f3-4319-a537-2e3a645d97bb
 md"""
@@ -828,15 +828,15 @@ let
 	ys_m = extract(nad_m, sys_m.vNADHC1)
 	ys_q = extract(nad_q, sys_q.vNADHC1)
 	
-	plot(xs, [ys_g ys_m ys_q], xlabel="NADH (μM)", ylabel="NADH rate (mM/s)", label=["Gauthier" "Markevich" "Q site"])
-end
+	plot(xs, [ys_g ys_m ys_q], xlabel="NADH (μM)", ylabel="NADH rate (mM/s)", label=["Gauthier" "Markevich" "Q site"]) 
+end |> PNG
 
 # ╔═╡ cdd88f99-d491-479d-a44d-c7d164af0792
 let
 	xs = nadhrange
 	ys = [extract(nad_m, sys_m.N2r_C1) extract(nad_q, sys_q.N2r_C1)] ./ μM
 	plot(xs, ys, xlabel="NADH (μM)", ylabel="Reduced N2 (μM)", label=["Markevich" "Q site"])
-end
+end |> PNG
 
 # ╔═╡ b59c9225-b585-4572-a277-0fef35ceb4f5
 md"""
@@ -848,7 +848,7 @@ let
 	xs = nadhrange
 	ys = [extract(nad_g, sys_g.vROSC1) extract(nad_m, sys_m.vROSC1) extract(nad_q, sys_q.vROSC1)]
 	plot(xs, ys, xlabel="NADH (μM)", ylabel="ROS production (mM/s)", label=["Gauthier" "Markevich" "Q site"])
-end
+end |> PNG
 
 # ╔═╡ 95b38367-025f-46d7-a695-0ce3cb4c4228
 let
@@ -860,7 +860,7 @@ let
 	pl2 = plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "I_C1"], title="M model", ylims=(0, 17))
 	
 	plot(pl1, pl2)
-end
+end |> PNG
 
 # ╔═╡ 2e506373-1fc3-4494-b155-17f4b8228693
 md"""
@@ -896,7 +896,7 @@ let
 	xs = qh2range
 	ys = [extract(qh2_g, sys_g.vNADHC1) extract(qh2_m, sys_m.vNADHC1) extract(qh2_q, sys_q.vNADHC1)]
 	plot(xs, ys, xlabel="QH2 (μM)", ylabel="NADH rate (mM/s)", label=["Gauthier" "Markevich" "Q site"])
-end
+end |> PNG
 
 # ╔═╡ ba831dcf-3986-4c2d-8687-f3f31c00dd8f
 md"""
@@ -908,7 +908,7 @@ let
 	xs = qh2range
 	ys = [extract(qh2_g, sys_g.vROSC1) extract(qh2_m, sys_m.vROSC1) extract(qh2_q, sys_q.vROSC1)]
 	plot(xs, ys, xlabel="QH2 (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "Q site"])
-end
+end |> PNG
 
 # ╔═╡ fd238756-307d-42fa-87fd-e7d5d41f670b
 let
@@ -920,7 +920,7 @@ let
 	pl2 = plot(xs, ys, xlabel="QH2 (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "I_C1"], title="Markevich", legend=:top, ylims=(0, 17))
 	
 	plot(pl1, pl2)
-end
+end |> PNG
 
 # ╔═╡ 2772584f-c7d3-4051-bc26-700c75b97070
 md"""
@@ -933,7 +933,7 @@ let
 	xs = qh2range
 	ys = stack(extract.(Ref(qh2_g), [C1_3, C1_4]), dims=2) .* 1000
 	plot(xs, ys, xlabel="QH2 (μM)", ylabel="Conc (μM)", label=["C1_3" "C1_4"], lw=1.5)
-end
+end |> PNG
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
