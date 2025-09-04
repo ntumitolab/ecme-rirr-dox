@@ -631,14 +631,6 @@ function c3_equlibrium(;
         rbL_bHr = exp(iVT * EmbL_bHr)
         rbH_bLo = exp(iVT * EmbH_bLo)
         rbH_bLr = exp(iVT * EmbH_bLr)
-		## Split of electrical potentials
-	    δ₁_C3 = 0.5
-	    δ₂_C3 = 0.5
-	    δ₃_C3 = 0.5
-	    ## Split of the electrical distance across the IMM
-	    α_C3 = 0.25
-	    β_C3 = 0.5
-	    γ_C3 = 0.25
 		## v3: QH2 + FeS + bL = SQbL + FeS- + 2H+
 		K03_C3 = 1666.63Hz / mM
         KEQ3_C3 = exp(iVT * (EmFeS - EmSQp_QH2p)) ## -10mV
@@ -655,6 +647,15 @@ function c3_equlibrium(;
         KEQ33_C3 = exp(iVT * (Emcytc - Emcytc1)) ## +20mV
 	end
 
+	## Split of electrical potentials
+	δ₁_C3 = 0.5
+	δ₂_C3 = 0.5
+	δ₃_C3 = 0.5
+	## Split of the electrical distance across the IMM
+	α_C3 = 0.25
+	β_C3 = 0.5
+	γ_C3 = 0.25
+	fdpsi = exp(iVT * dpsi / 8)
 	## Normalized proton concentration
     fHo = h_i * inv(1E-7Molar)
     fHi = h_m * inv(1E-7Molar)
@@ -663,9 +664,9 @@ function c3_equlibrium(;
 	fQH2o = QH2_p * KA_Qo
 	fQi = Q_n * KA_Qi
 	fQH2i = QH2_n * KA_Qi
-
 	## Complex 3 content
 	C3_CONC = rhoC3 * MT_PROT
+	
 	@variables begin
 		Q_n(t)
         QH2_n(t)
@@ -734,25 +735,21 @@ function c3_equlibrium(;
         vHresC3(t)
 	end
 
-	# electrical distance across the IMM and MMP effect
-	# TODO: check correctness
-	el4 = exp(-iVT * α_C3 * δ₁_C3 * dpsi)
-    er4 = exp(iVT * α_C3 * (1 - δ₁_C3) * dpsi)
-	el6 = exp(-iVT * β_C3 * δ₂_C3 * dpsi)
-	er6 = exp(iVT * β_C3 * (1 - δ₂_C3) * dpsi)
-	el7 = exp(-iVT * γ_C3 * δ₃_C3 * dpsi)
-    er7 = exp(iVT * γ_C3 * (1 - δ₃_C3) * dpsi)
+	## electrical distance across the IMM
+	## Qo-bL-bH-Qi = (0.25, 0.5, 0.25)
+	## Unit of MMP effect
+	fdpsi = exp(iVT * dpsi / 4)
 
-	# State occupancy weights
-	# (Qo, bL, bH, Qi) = (n/0/1, 0/1, 0/1, n/0/1)
+	## State occupancy weights
+	## (Qo, bL, bH, Qi) = (n/0/1, 0/1, 0/1, n/0/1)
 	w = fill(Num(1), 3, 2, 2, 3)
 	w[2:3, :, :, :] .*= fQo
-	w[3, :, :, :] .*= exp(iVT * (EmQp_SQp + dpsi * α_C3 * (1 - δ₁_C3)))
+	w[3, :, :, :] .*= rQp_SQp * fdpsi^2
 	w[:, :, :, 2:3] .*= fQi
-	w[:, :, :, 3] .*= exp(iVT * (EmQn_SQn - dpsi * γ_C3 * δ₃_C3))
-	w[:, 2, 1, :] .*= exp(iVT * (EmbL_bHo + dpsi * (-α_C3 * δ₁_C3 + β_C3 * (1 - δ₂_C3))))
-	w[:, 1, 2, :] .*= exp(iVT * (EmbH_bLo + dpsi * (-β_C3 * δ₂_C3 + γ_C3 * (1 - δ₃_C3))))
-	w[:, 2, 2, :] .*= exp(iVT * (EmbL_bHr + EmbH_bLr + dpsi * (-α_C3 * δ₁_C3))) * rbL_bHr * rbH_bLr * el4 * er6 * el6 * er7
+	w[:, :, :, 3] .*= rQn_SQn / fdpsi^2
+	w[:, 2, 1, :] .*= rbL_bHo * fdpsi
+	w[:, 1, 2, :] .*= rbH_bLo / fdpsi
+	w[:, 2, 2, :] .*= rbL_bHr * rbH_bLr
 
 	## Denominators
 	den = fill(Num(0), 5)
@@ -791,6 +788,9 @@ function c3_equlibrium(;
 	v32 = K010_C3 * (KEQ10_C3 * (C3_111n + C3_1110 + C3_1101 + C3_1011) * O2 - (C3_011n + C3_0110 + C3_0101 + C3_0011) * sox_m)
 	
 	eqs = [
+		D(C3_0) ~ -v01 + v10 + v20ox,
+		D(C3_1) ~ v01 - v12 + v31ox + v31rd - v10 + v21,
+		D(C3_2) ~ v12 - v23 - v20ox - v21 + v32,
 		C3_CONC ~ C3_0 + C3_1 + C3_2 + C3_3,
 		C3_CONC ~ fes_ox + fes_rd,
 		C3_CONC ~ cytc1_ox + cytc1_rd,
