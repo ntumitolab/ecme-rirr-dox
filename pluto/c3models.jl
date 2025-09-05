@@ -68,6 +68,9 @@ md"""
 Complex III and the Q cycle from Gauthier, 2013 (adapted from Demin, 2001)
 """
 
+# ╔═╡ 74aa85da-4c62-4e95-a7c9-e4f7ad91e85b
+8.33 * exp(60/26.7)
+
 # ╔═╡ 9a284368-7063-4774-a2f1-f3ff892ad6c2
 function c3_gauthier(;
     dpsi=150mV,
@@ -225,7 +228,7 @@ md"""
 Semireverse bc1 complex model adapted from Gauthier, 2013
 
 - Lumped v3 and v4
-- SQ is produced by reduction of Q by reduced bL at the Qo site
+- SQp is produced by reduction of Q by reduced bL at the Qo site
 """
 
 # ╔═╡ 888d06d6-2203-491f-884d-d0e9f031aa9c
@@ -423,7 +426,7 @@ md"""
 ### Repulsion model
 
 - Reduced heme bL (bL-) blocks QH2 oxidation at Qo site due to repulsion between bL- and Q-
-- SQp is unstable (Em(Q/SQ) = -300mV)
+- SQp less unstable than that in the Gauthier model (Em(Q/SQ) = -300mV)
 """
 
 # ╔═╡ 6fa3d1fb-cf42-4b4d-83fa-724e7f41aae1
@@ -609,13 +612,16 @@ function c3_equlibrium(;
 	@parameters begin
 		rhoC3 = 325μM    ## Complex III activity
         Q_T = 4mM        ## Total CoQ pool
-		KA_Qo = inv(1mM) ## Association constant of Q/QH2 at the Qo site
-		KA_Qi = inv(45μM)## Association constant of Q/QH2 at the Qi site
+		## Association constant of Q/QH2 at the Qo site
+		KA_Qo = inv(1mM) 
+		## Association constant of Q/QH2 at the Qi site
+		KA_Qi = inv(45μM)
 		## Redox potentials
 		EmQp = +60mV
 		EmSQp_QH2p = +290mV
-		EmQp_SQp = -170mV
+		EmQp_SQp = 2EmQp - EmSQp_QH2p 
 		EmQn_SQn = +50mV
+		EmSQn_QH2n = +150mV
 		EmbL_bHo = -40mV
         EmbL_bHr = EmbL_bHo - 60mV
         EmbH_bLo = +20mV
@@ -624,49 +630,31 @@ function c3_equlibrium(;
         Emcytc1 = +245mV
         Emcytc = +265mV
         EmO2 = -160mV
-		## Precalulated values
-		rQp_SQp = exp(iVT * EmQp_SQp)
+		## Precalulated fractions from redox potentials
+		rQp_SQp = exp(iVT * EmQp_SQp) 
 		rQn_SQn = exp(iVT * EmQn_SQn)
 		rbL_bHo = exp(iVT * EmbL_bHo)
         rbL_bHr = exp(iVT * EmbL_bHr)
         rbH_bLo = exp(iVT * EmbH_bLo)
         rbH_bLr = exp(iVT * EmbH_bLr)
 		## v3: QH2 + FeS + bL = SQbL + FeS- + 2H+
-		K03_C3 = 1666.63Hz / mM
-        KEQ3_C3 = exp(iVT * (EmFeS - EmSQp_QH2p)) ## -10mV
+		K03_C3 = 60Hz / mM
+        KEQ3_C3 = exp(iVT * (EmFeS - EmSQp_QH2p)) # -10mV
 		## v8: bH- + Q- + 2H+ = bH + QH2
         K08_OX_C3 = 83.33Hz / mM
         K08_RD_C3 = 8.33Hz / mM
-        KEQ8_OX_C3 = exp(iVT * (EmSQn_QH2n - EmbH_bLo)) ## +130mV
-        KEQ8_RD_C3 = exp(iVT * (EmSQn_QH2n - EmbH_bLr)) ## +190mV
+        KEQ8_OX_C3 = exp(iVT * (EmSQn_QH2n - EmbH_bLo)) # +130mV
+        KEQ8_RD_C3 = exp(iVT * (EmSQn_QH2n - EmbH_bLr)) # +190mV
 		K09_C3 = 832.48Hz / mM
-        KEQ9_C3 = exp(iVT * (Emcytc1 - EmFeS))  ## -35mV
+        KEQ9_C3 = exp(iVT * (Emcytc1 - EmFeS))  # -35mV
         K010_C3 = 28.33Hz / mM
-        KEQ10_C3 = exp(iVT * (EmO2 - EmQp_SQp)) ## +10mV
+        KEQ10_C3 = exp(iVT * (EmO2 - EmQp_SQp)) # +10mV
         K33_C3 = 2469.13Hz / mM
-        KEQ33_C3 = exp(iVT * (Emcytc - Emcytc1)) ## +20mV
+        KEQ33_C3 = exp(iVT * (Emcytc - Emcytc1)) # +20mV
 	end
-
-	## Split of electrical potentials
-	δ₁_C3 = 0.5
-	δ₂_C3 = 0.5
-	δ₃_C3 = 0.5
-	## Split of the electrical distance across the IMM
-	α_C3 = 0.25
-	β_C3 = 0.5
-	γ_C3 = 0.25
-	fdpsi = exp(iVT * dpsi / 8)
-	## Normalized proton concentration
-    fHo = h_i * inv(1E-7Molar)
-    fHi = h_m * inv(1E-7Molar)
-	## Normalized ubiquinone (with affinity)
-	fQo = Q_p * KA_Qo
-	fQH2o = QH2_p * KA_Qo
-	fQi = Q_n * KA_Qi
-	fQH2i = QH2_n * KA_Qi
+	
 	## Complex 3 content
 	C3_CONC = rhoC3 * MT_PROT
-	
 	@variables begin
 		Q_n(t)
         QH2_n(t)
@@ -674,13 +662,13 @@ function c3_equlibrium(;
         Q_p(t)
 		## States use the format (Qo,bL,bH,Qi)
 		## 0-electron states
-		C3_0(t) = C3_CONC
+		C3_0(t)
 		C3_n00n(t)
 		C3_000n(t)
 		C3_n000(t)
 		C3_0000(t)
 		## 1-electron states
-		C3_1(t) = 0
+		C3_1(t)
 		C3_n10n(t)
 		C3_n01n(t)
 		C3_010n(t)
@@ -694,7 +682,7 @@ function c3_equlibrium(;
 		C3_0010(t)
 		C3_0001(t)
 		## 2-electron states
-		C3_2(t) = 0
+		C3_2(t)
 		C3_n11n(t)
 		C3_110n(t)
 		C3_101n(t)
@@ -717,17 +705,17 @@ function c3_equlibrium(;
 		C3_1011(t)
 		C3_0111(t)
 		## 4 -electron state (?)
-		C3_1(t) ## N/A
+		C3_4(t) ## N/A
 		C3_1111(t) ## N/A
 		## Bound ubiquinone in C3
 		C3_Qo(t)
 		C3_Qi(t)
 		C3_SQo(t)
 		C3_SQi(t)
-		
-        fes_ox(t) = C3_CONC
+		fdpsiC3(t) ## Unit of MMP effect
+        fes_ox(t)
         fes_rd(t) ## Conserved
-        cytc1_ox(t) = C3_CONC
+        cytc1_ox(t)
         cytc1_rd(t) ## Conserved
         fracbLrd(t)
         fracbHrd(t)
@@ -735,20 +723,24 @@ function c3_equlibrium(;
         vHresC3(t)
 	end
 
-	## electrical distance across the IMM
-	## Qo-bL-bH-Qi = (0.25, 0.5, 0.25)
-	## Unit of MMP effect
-	fdpsi = exp(iVT * dpsi / 4)
+	## Normalized proton concentration
+    fHo = h_i * inv(1E-7Molar)
+    fHi = h_m * inv(1E-7Molar)
+	## Normalized ubiquinone (with affinity)
+	fQo = Q_p * KA_Qo
+	fQH2o = QH2_p * KA_Qo
+	fQi = Q_n * KA_Qi
+	fQH2i = QH2_n * KA_Qi
 
 	## State occupancy weights
 	## (Qo, bL, bH, Qi) = (n/0/1, 0/1, 0/1, n/0/1)
 	w = fill(Num(1), 3, 2, 2, 3)
 	w[2:3, :, :, :] .*= fQo
-	w[3, :, :, :] .*= rQp_SQp * fdpsi^2
+	w[3, :, :, :] .*= rQp_SQp * fdpsiC3^2
 	w[:, :, :, 2:3] .*= fQi
-	w[:, :, :, 3] .*= rQn_SQn / fdpsi^2
-	w[:, 2, 1, :] .*= rbL_bHo * fdpsi
-	w[:, 1, 2, :] .*= rbH_bLo / fdpsi
+	w[:, :, :, 3] .*= rQn_SQn / fdpsiC3^2
+	w[:, 2, 1, :] .*= rbL_bHo * fdpsiC3
+	w[:, 1, 2, :] .*= rbH_bLo / fdpsiC3
 	w[:, 2, 2, :] .*= rbL_bHr * rbH_bLr
 
 	## Denominators
@@ -765,7 +757,7 @@ function c3_equlibrium(;
 
 	## Reaction 1: QH2 oxidation at Qo
 	## QH2 + n0xx + FeS = 10xx + FeS- + 2H+
-	## Only oxidized bL are eligible
+	## Only oxidized bL are eligible for the reaction
 	v01 = K03_C3 * (KEQ3_C3 * fQH2o * (C3_n00n + C3_n000) * fes_ox - (C3_100n + C3_1000) * fes_rd * fHo^2) * (1 - MYXOTHIAZOLE_BLOCK)
 	v12 = K03_C3 * (KEQ3_C3 * fQH2o * (C3_n01n + C3_n010 + C3_n001) * fes_ox - (C3_101n + C3_1010 + C3_1001) * fes_rd * fHo^2) * (1 - MYXOTHIAZOLE_BLOCK)
 	v23 = K03_C3 * (KEQ3_C3 * fQH2o * (C3_n011) * fes_ox - (C3_1011) * fes_rd * fHo^2) * (1 - MYXOTHIAZOLE_BLOCK)
@@ -773,6 +765,8 @@ function c3_equlibrium(;
 	## Reaction 2: QH2 release from Qi site
 	## x011 + 2H+ = x00n + QH2
 	## x111 + 2H+ = x10n + QH2
+	el7 = exp(-iVT * 0.25 * 0.5 * dpsi)
+    er7 = exp(iVT * 0.25 * (1 - 0.5) * dpsi)
 	k8ox = K08_OX_C3 * KEQ8_OX_C3 * el7 * fHi^2 * (1 - ANTIMYCIN_BLOCK)
 	km8ox = K08_OX_C3 * er7 * (1 - ANTIMYCIN_BLOCK)
 	k8rd = K08_RD_C3 * KEQ8_RD_C3 * el7 * fHi^2 * (1 - ANTIMYCIN_BLOCK)
@@ -786,11 +780,19 @@ function c3_equlibrium(;
 	v10 = K010_C3 * (KEQ10_C3 * (C3_100n + C3_1000) * O2 - (C3_000n + C3_0000) * sox_m)
 	v21 = K010_C3 * (KEQ10_C3 * (C3_110n + C3_101n + C3_1100 + C3_1010 + C3_1001) * O2 - (C3_010n + C3_001n + C3_0100 + C3_0010 + C3_0001) * sox_m)
 	v32 = K010_C3 * (KEQ10_C3 * (C3_111n + C3_1110 + C3_1101 + C3_1011) * O2 - (C3_011n + C3_0110 + C3_0101 + C3_0011) * sox_m)
+
+	## v9: ET from fes to cytc1
+    v9 = K09_C3 * (KEQ9_C3 * fes_rd * cytc1_ox - fes_ox * cytc1_rd)
+    ## v33: ET from cytc1 to cytc
+    v33 = K33_C3 * (KEQ33_C3 * cytc1_rd * cytc_ox - cytc1_ox * cytc_rd)
 	
 	eqs = [
-		D(C3_0) ~ -v01 + v10 + v20ox,
+		# D(C3_0) ~ -v01 + v10 + v20ox,
 		D(C3_1) ~ v01 - v12 + v31ox + v31rd - v10 + v21,
 		D(C3_2) ~ v12 - v23 - v20ox - v21 + v32,
+		D(C3_3) ~ v23 - v31ox - v31rd - v32, 
+		D(fes_ox) ~ v9 - (v01 + v12 + v23),
+        D(cytc1_ox) ~ v33 - v9,
 		C3_CONC ~ C3_0 + C3_1 + C3_2 + C3_3,
 		C3_CONC ~ fes_ox + fes_rd,
 		C3_CONC ~ cytc1_ox + cytc1_rd,
@@ -798,6 +800,7 @@ function c3_equlibrium(;
 		Q_p ~ 0.5 * UQ,
 		QH2_n ~ 0.5 * UQH2,
 		QH2_p ~ 0.5 * UQH2,
+		fdpsiC3 ~ exp(iVT * dpsi / 4), 
 		C3_n00n ~ f0 * w[1, 1, 1, 1],
 		C3_000n ~ f0 * w[2, 1, 1, 1],
 		C3_n000 ~ f0 * w[1, 1, 1, 2],
@@ -840,12 +843,17 @@ function c3_equlibrium(;
 		C3_SQi ~ C3_n001 + C3_0001 + C3_n101 + C3_n011 + C3_1001 + C3_0101 + C3_0011 + C3_n111 + C3_1101 + C3_1011 + C3_0111,
 		fracbLrd ~ (C3_n10n + C3_010n + C3_n100 + C3_0100 + C3_n11n + C3_110n + C3_011n + C3_n110 + C3_n101 + C3_1100 + C3_0110 + C3_0101 + C3_111n + C3_n111 + C3_1110 + C3_1101 + C3_0111) / C3_CONC,
 		fracbHrd ~ (C3_n01n + C3_001n + C3_n010 + C3_0010 + C3_n11n + C3_101n + C3_011n + C3_n110 + C3_n011 + C3_1010 + C3_0110 + C3_0011 + C3_111n + C3_n111 + C3_1110 + C3_1011 + C3_0111) / C3_CONC,
+		vROSC3 ~ v10 + v21 + v32,
+        vHresC3 ~ 2 * (v20ox + v31ox + v31rd),
 	]
 	
+	return System(eqs, t; name, defaults=[C3_1=>0, C3_2=>0, C3_3=>0, fes_ox=>C3_CONC, cytc1_ox=>C3_CONC])
 end
 
-# ╔═╡ 2db371a5-a41d-4fce-96ec-d0ab1909742e
-
+# ╔═╡ 621e719a-719c-47c8-b2a5-1debd82bc470
+md"""
+### Setup the ODE problem
+"""
 
 # ╔═╡ 2345cb6e-668b-4f36-82fb-a9fcb72775c7
 @parameters begin
@@ -855,22 +863,26 @@ end
     cytc_ox = 208μM
     cytc_rd = 325μM - cytc_ox
     sox_m = 0.01μM
+	O2 = 6μM
 end
 
 # ╔═╡ 5eecad75-cb22-4dea-ab84-0bc670d402b8
-gsys = c3_gauthier(;dpsi, cytc_ox, cytc_rd, UQ, UQH2, sox_m) |> mtkcompile
+gsys = c3_gauthier(;dpsi, cytc_ox, cytc_rd, UQ, UQH2, sox_m, O2) |> mtkcompile
 
 # ╔═╡ 21ecac6c-f4a2-4754-b671-fad8f7b88788
 prob_g = SteadyStateProblem(gsys, [])
 
+# ╔═╡ 8de17909-61e3-40a3-91d8-7af48a26a1bd
+esys = c3_equlibrium(; dpsi, cytc_ox, cytc_rd, UQ, UQH2, sox_m, O2) |> mtkcompile
+
 # ╔═╡ fe78a3d5-6d9d-4b51-bf07-c899a6536f66
-rsys = c3_repulsion(;dpsi, cytc_ox, cytc_rd, UQ, UQH2, sox_m) |> mtkcompile
+rsys = c3_repulsion(;dpsi, cytc_ox, cytc_rd, UQ, UQH2, sox_m, O2) |> mtkcompile
 
 # ╔═╡ 9c74298a-80ae-43bb-96cd-d9e86129cb7f
 prob_r = SteadyStateProblem(rsys, [rsys.K010_C3 => 33Hz / mM])
 
 # ╔═╡ 8e76757c-6bd4-430b-a15b-430db05f5271
-ssys = c3_semireverse(;dpsi, cytc_ox, cytc_rd, UQ, UQH2, sox_m) |> mtkcompile
+ssys = c3_semireverse(;dpsi, cytc_ox, cytc_rd, UQ, UQH2, sox_m, O2) |> mtkcompile
 
 # ╔═╡ 99a4b73f-a0b2-4125-8da6-daff6f8ad80f
 prob_s = SteadyStateProblem(ssys, [ssys.K010_C3 => 130Hz / mM, ssys.K011_C3 => 10000Hz / mM, ssys.K04_C3 => 50Hz / mM])
@@ -917,11 +929,20 @@ eprob_s = EnsembleProblem(prob_s; prob_func=alter_dpsi)
 # ╔═╡ f447d5c4-c9e1-4c19-bd1c-5218ba9810e7
 @time sim_s = solve(eprob_s, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
 
+# ╔═╡ 0cd9400e-b458-41a5-86db-ab0687c0b973
+prob_e = SteadyStateProblem(esys, [esys.K03_C3 => 6Hz / mM])
+
+# ╔═╡ 5d4ec8b9-9aa7-45e2-a3c5-78d350ab34af
+eprob_e = EnsembleProblem(prob_e; prob_func=alter_dpsi)
+
+# ╔═╡ ef63cdf5-0ae6-490f-8f67-2aa64adbeabe
+@time sim_e = solve(eprob_e, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
+
 # ╔═╡ 947c932f-d3aa-4c81-840b-85b73e138980
 let
 	xs = dpsirange
-	ys = [extract(sim_g, gsys.vHresC3) extract(sim_s, ssys.vHresC3) extract(sim_r,rsys.vHresC3)]
-	plot(xs, ys, xlabel="MMP (mV)", ylabel="Resp. Rate (mM/s)", label=["Semiforward" "Semireverse" "Repulsion"])
+	ys = [extract(sim_g, gsys.vHresC3) extract(sim_s, ssys.vHresC3) extract(sim_r,rsys.vHresC3) extract(sim_e, esys.vHresC3)]
+	plot(xs, ys, xlabel="MMP (mV)", ylabel="Resp. Rate (mM/s)", label=["Semiforward" "Semireverse" "Repulsion" "Eqilibrium"])
 end
 
 # ╔═╡ e03b75a1-056e-49be-b374-4b1cdd88c14a
@@ -3774,6 +3795,7 @@ version = "1.9.2+0"
 # ╠═9061f18a-31ad-46ac-b0fa-aa632d63147c
 # ╠═a6e0a7c4-db17-4041-94d3-ec0ae9c31c3c
 # ╠═a49251d3-c329-4491-91c2-717f54e85bd8
+# ╠═74aa85da-4c62-4e95-a7c9-e4f7ad91e85b
 # ╠═9a284368-7063-4774-a2f1-f3ff892ad6c2
 # ╟─e0ca9c48-d9c8-4551-bb67-2bce96e5cf52
 # ╟─888d06d6-2203-491f-884d-d0e9f031aa9c
@@ -3781,10 +3803,11 @@ version = "1.9.2+0"
 # ╟─6fa3d1fb-cf42-4b4d-83fa-724e7f41aae1
 # ╠═a486b939-b40a-414f-b065-728063523748
 # ╠═0c97fae0-034c-4d61-b3ea-90bcef259715
-# ╠═2db371a5-a41d-4fce-96ec-d0ab1909742e
+# ╠═621e719a-719c-47c8-b2a5-1debd82bc470
 # ╠═2345cb6e-668b-4f36-82fb-a9fcb72775c7
 # ╠═5eecad75-cb22-4dea-ab84-0bc670d402b8
 # ╠═21ecac6c-f4a2-4754-b671-fad8f7b88788
+# ╠═8de17909-61e3-40a3-91d8-7af48a26a1bd
 # ╠═fe78a3d5-6d9d-4b51-bf07-c899a6536f66
 # ╠═9c74298a-80ae-43bb-96cd-d9e86129cb7f
 # ╠═8e76757c-6bd4-430b-a15b-430db05f5271
@@ -3801,6 +3824,9 @@ version = "1.9.2+0"
 # ╠═82ee477e-da1b-4732-abbf-1ec32739fd80
 # ╠═53c8dcfc-bfe1-46e3-871d-50a0af14ebf3
 # ╠═f447d5c4-c9e1-4c19-bd1c-5218ba9810e7
+# ╠═5d4ec8b9-9aa7-45e2-a3c5-78d350ab34af
+# ╠═ef63cdf5-0ae6-490f-8f67-2aa64adbeabe
+# ╠═0cd9400e-b458-41a5-86db-ab0687c0b973
 # ╠═947c932f-d3aa-4c81-840b-85b73e138980
 # ╠═e03b75a1-056e-49be-b374-4b1cdd88c14a
 # ╠═3d48bba5-6f3e-4e47-b2ce-5d7a98dae55d
