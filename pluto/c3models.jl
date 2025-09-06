@@ -68,9 +68,6 @@ md"""
 Complex III and the Q cycle from Gauthier, 2013 (adapted from Demin, 2001)
 """
 
-# ╔═╡ 74aa85da-4c62-4e95-a7c9-e4f7ad91e85b
-8.33 * exp(60/26.7)
-
 # ╔═╡ 9a284368-7063-4774-a2f1-f3ff892ad6c2
 function c3_gauthier(;
     dpsi=150mV,
@@ -738,10 +735,10 @@ function c3_equlibrium(;
 	w[2:3, :, :, :] .*= fQo
 	w[3, :, :, :] .*= rQp_SQp * fdpsiC3^2
 	w[:, :, :, 2:3] .*= fQi
-	w[:, :, :, 3] .*= rQn_SQn / fdpsiC3^2
-	w[:, 2, 1, :] .*= rbL_bHo * fdpsiC3
-	w[:, 1, 2, :] .*= rbH_bLo / fdpsiC3
-	w[:, 2, 2, :] .*= rbL_bHr * rbH_bLr
+	w[:, :, :, 3] .*= rQn_SQn
+	w[:, 2, 1, :] .*= rbL_bHo * fdpsiC3^2
+	w[:, 1, 2, :] .*= rbH_bLo * fdpsiC3
+	w[:, 2, 2, :] .*= rbL_bHr * rbH_bLr * fdpsiC3^3
 
 	## Denominators
 	den = fill(Num(0), 5)
@@ -750,10 +747,11 @@ function c3_equlibrium(;
 		den[nelectrons + 1] += w[i, j, k, l]
 	end
 
-	f0 = C3_0 * den[1]
-	f1 = C3_1 * den[2]
-	f2 = C3_2 * den[3]
-	f3 = C3_3 * den[4]
+	## Normalize the weights
+	for i=1:3, j=1:2, k=1:2, l=1:3
+		nelectrons = (i==3) + (j==2) + (k==2) + (l==3)
+		w[i, j, k, l] /= den[nelectrons + 1]
+	end
 
 	## Reaction 1: QH2 oxidation at Qo
 	## QH2 + n0xx + FeS = 10xx + FeS- + 2H+
@@ -800,42 +798,42 @@ function c3_equlibrium(;
 		Q_p ~ 0.5 * UQ,
 		QH2_n ~ 0.5 * UQH2,
 		QH2_p ~ 0.5 * UQH2,
-		fdpsiC3 ~ exp(iVT * dpsi / 4), 
-		C3_n00n ~ f0 * w[1, 1, 1, 1],
-		C3_000n ~ f0 * w[2, 1, 1, 1],
-		C3_n000 ~ f0 * w[1, 1, 1, 2],
-		C3_0000 ~ f0 * w[2, 1, 1, 2],
-		C3_n10n ~ f1 * w[1, 2, 1, 1],
-		C3_n01n ~ f1 * w[1, 1, 2, 1],
-		C3_010n ~ f1 * w[2, 2, 1, 1],
-		C3_001n ~ f1 * w[2, 1, 2, 1],
-		C3_100n ~ f1 * w[3, 1, 1, 1],
-		C3_n100 ~ f1 * w[1, 2, 1, 2],
-		C3_n010 ~ f1 * w[1, 1, 2, 2],
-		C3_n001 ~ f1 * w[1, 1, 1, 3],
-		C3_1000 ~ f1 * w[3, 1, 1, 2],
-		C3_0100 ~ f1 * w[2, 2, 1, 2],
-		C3_0010 ~ f1 * w[2, 1, 2, 2],
-		C3_0001 ~ f1 * w[2, 1, 1, 3],
-		C3_n11n ~ f2 * w[1, 2, 2, 1],
-		C3_110n ~ f2 * w[3, 2, 1, 1],
-		C3_101n ~ f2 * w[3, 1, 2, 1],
-		C3_011n ~ f2 * w[2, 2, 2, 1],
-		C3_n110 ~ f2 * w[1, 2, 2, 2],
-		C3_n101 ~ f2 * w[1, 2, 1, 3],
-		C3_n011 ~ f2 * w[1, 1, 2, 3],
-		C3_1100 ~ f2 * w[3, 2, 1, 2],
-		C3_1010 ~ f2 * w[3, 1, 2, 2],
-		C3_1001 ~ f2 * w[3, 1, 1, 3],
-		C3_0110 ~ f2 * w[2, 2, 2, 2],
-		C3_0101 ~ f2 * w[2, 2, 1, 3],
-		C3_0011 ~ f2 * w[2, 1, 2, 3],
-		C3_111n ~ f3 * w[3, 2, 2, 1],
-		C3_n111 ~ f3 * w[1, 2, 2, 3],
-		C3_1110 ~ f3 * w[3, 2, 2, 2],
-		C3_1101 ~ f3 * w[3, 2, 1, 3],
-		C3_1011 ~ f3 * w[3, 1, 2, 3],
-		C3_0111 ~ f3 * w[2, 2, 2, 3],
+		fdpsiC3 ~ exp(iVT * dpsi / 2), 
+		C3_n00n ~ C3_0 * w[1, 1, 1, 1],
+		C3_000n ~ C3_0 * w[2, 1, 1, 1],
+		C3_n000 ~ C3_0 * w[1, 1, 1, 2],
+		C3_0000 ~ C3_0 * w[2, 1, 1, 2],
+		C3_n10n ~ C3_1 * w[1, 2, 1, 1],
+		C3_n01n ~ C3_1 * w[1, 1, 2, 1],
+		C3_010n ~ C3_1 * w[2, 2, 1, 1],
+		C3_001n ~ C3_1 * w[2, 1, 2, 1] ,
+		C3_100n ~ C3_1 * w[3, 1, 1, 1],
+		C3_n100 ~ C3_1 * w[1, 2, 1, 2],
+		C3_n010 ~ C3_1 * w[1, 1, 2, 2],
+		C3_n001 ~ C3_1 * w[1, 1, 1, 3],
+		C3_1000 ~ C3_1 * w[3, 1, 1, 2],
+		C3_0100 ~ C3_1 * w[2, 2, 1, 2],
+		C3_0010 ~ C3_1 * w[2, 1, 2, 2],
+		C3_0001 ~ C3_1 * w[2, 1, 1, 3],
+		C3_n11n ~ C3_2 * w[1, 2, 2, 1],
+		C3_110n ~ C3_2 * w[3, 2, 1, 1],
+		C3_101n ~ C3_2 * w[3, 1, 2, 1],
+		C3_011n ~ C3_2 * w[2, 2, 2, 1],
+		C3_n110 ~ C3_2 * w[1, 2, 2, 2],
+		C3_n101 ~ C3_2 * w[1, 2, 1, 3],
+		C3_n011 ~ C3_2 * w[1, 1, 2, 3],
+		C3_1100 ~ C3_2 * w[3, 2, 1, 2],
+		C3_1010 ~ C3_2 * w[3, 1, 2, 2],
+		C3_1001 ~ C3_2 * w[3, 1, 1, 3],
+		C3_0110 ~ C3_2 * w[2, 2, 2, 2],
+		C3_0101 ~ C3_2 * w[2, 2, 1, 3],
+		C3_0011 ~ C3_2 * w[2, 1, 2, 3],
+		C3_111n ~ C3_3 * w[3, 2, 2, 1],
+		C3_n111 ~ C3_3 * w[1, 2, 2, 3],
+		C3_1110 ~ C3_3 * w[3, 2, 2, 2],
+		C3_1101 ~ C3_3 * w[3, 2, 1, 3],
+		C3_1011 ~ C3_3 * w[3, 1, 2, 3],
+		C3_0111 ~ C3_3 * w[2, 2, 2, 3],
 		
 		C3_Qo ~ C3_000n + C3_0000 + C3_010n + C3_001n + C3_0100 + C3_0010 + C3_0001 + C3_011n + C3_0110 + C3_0101 + C3_0011 + C3_0111,
 		C3_Qi ~ C3_n000 + C3_0000 + C3_n100 + C3_n010 + C3_1000 + C3_0100 + C3_0010 + C3_n110 + C3_1100 + C3_1010 + C3_0110 + C3_1110,
@@ -874,6 +872,9 @@ prob_g = SteadyStateProblem(gsys, [])
 
 # ╔═╡ 8de17909-61e3-40a3-91d8-7af48a26a1bd
 esys = c3_equlibrium(; dpsi, cytc_ox, cytc_rd, UQ, UQH2, sox_m, O2) |> mtkcompile
+
+# ╔═╡ da9d74b7-2b41-4ab0-9cc7-d822c6d12753
+observed(esys)
 
 # ╔═╡ fe78a3d5-6d9d-4b51-bf07-c899a6536f66
 rsys = c3_repulsion(;dpsi, cytc_ox, cytc_rd, UQ, UQH2, sox_m, O2) |> mtkcompile
@@ -930,7 +931,15 @@ eprob_s = EnsembleProblem(prob_s; prob_func=alter_dpsi)
 @time sim_s = solve(eprob_s, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
 
 # ╔═╡ 0cd9400e-b458-41a5-86db-ab0687c0b973
-prob_e = SteadyStateProblem(esys, [esys.K03_C3 => 6Hz / mM])
+prob_e = SteadyStateProblem(esys, [
+	esys.K03_C3 => 3900Hz / mM,
+	esys.EmQp => 65mV,
+	esys.EmSQp_QH2p => +290mV,
+	esys.K08_OX_C3 => 83.33Hz / mM,  ## 83.33
+    esys.K08_RD_C3 => 8.33Hz / mM,   ## 8.33
+	esys.EmbH_bLo => +20mV,
+	esys.K010_C3 => 400Hz / mM,
+])
 
 # ╔═╡ 5d4ec8b9-9aa7-45e2-a3c5-78d350ab34af
 eprob_e = EnsembleProblem(prob_e; prob_func=alter_dpsi)
@@ -945,32 +954,18 @@ let
 	plot(xs, ys, xlabel="MMP (mV)", ylabel="Resp. Rate (mM/s)", label=["Semiforward" "Semireverse" "Repulsion" "Eqilibrium"])
 end
 
-# ╔═╡ e03b75a1-056e-49be-b374-4b1cdd88c14a
-let
-	xs = dpsirange
-	plot(xs, extract(sim_r, rsys.blo_bho), label="bL(ox)-bH(ox)", title="Repulsion")
-	plot!(xs, extract(sim_r, rsys.blr_bho), label="bL(rd)-bH(ox)")
-	plot!(xs, extract(sim_r, rsys.blo_bhr), label="bL(ox)-bH(rd)")
-	pl1 = plot!(xs, extract(sim_r, rsys.blr_bhr), label="bL(rd)-bH(rd)", ylim=(0, 160μM))
-	plot(xs, extract(sim_s, ssys.blo_bho), label="bL(ox)-bH(ox)", title = "Semireverse")
-	plot!(xs, extract(sim_s, ssys.blr_bho), label="bL(rd)-bH(ox)")
-	plot!(xs, extract(sim_s, ssys.blo_bhr), label="bL(ox)-bH(rd)")
-	pl2 = plot!(xs, extract(sim_s, ssys.blr_bhr), label="bL(rd)-bH(rd)", ylim=(0, 160μM))
-	plot(pl1, pl2)
-end
-
 # ╔═╡ 3d48bba5-6f3e-4e47-b2ce-5d7a98dae55d
 let
 	xs = dpsirange
-	ys = [extract(sim_g, gsys.fracbLrd) extract(sim_r, rsys.fracbLrd) extract(sim_g, gsys.fracbHrd) extract(sim_r, rsys.fracbHrd)]
-	plot(xs, ys, xlabel="MMP (mV)", ylabel="Reduced fraction", label=["G (bL)" "R (bL)" "G (bH)" "R (bH)"], line=[:solid :dash :solid :dash])	
+	ys = [extract(sim_s, ssys.fracbLrd) extract(sim_e, esys.fracbLrd) extract(sim_s, ssys.fracbHrd) extract(sim_e, esys.fracbHrd)]
+	plot(xs, ys, xlabel="MMP (mV)", ylabel="Reduced fraction", label=["Semireverse (bL)" "E (bL)" "Semireverse (bH)" "E (bH)"], line=[:solid :dash :solid :dash])	
 end
 
 # ╔═╡ 8ec0a9f7-f94b-4eb0-a5db-bca292531fa5
 let
 	xs = dpsirange
-	ys = [extract(sim_g, gsys.vROSC3) extract(sim_s, ssys.vROSC3) extract(sim_r, rsys.vROSC3)]
-	plot(xs, ys, xlabel="MMP (mV)", ylabel="ROS Rate (mM/s)", label=["G" "S" "R"])
+	ys = [extract(sim_g, gsys.vROSC3) extract(sim_s, ssys.vROSC3) extract(sim_r, rsys.vROSC3) extract(sim_e, esys.vROSC3)]
+	plot(xs, ys, xlabel="MMP (mV)", ylabel="ROS Rate (mM/s)", label=["G" "S" "R" "E"])
 end
 
 # ╔═╡ 06244f1e-049e-4486-903d-f0bcdbb94dcb
@@ -3795,7 +3790,6 @@ version = "1.9.2+0"
 # ╠═9061f18a-31ad-46ac-b0fa-aa632d63147c
 # ╠═a6e0a7c4-db17-4041-94d3-ec0ae9c31c3c
 # ╠═a49251d3-c329-4491-91c2-717f54e85bd8
-# ╠═74aa85da-4c62-4e95-a7c9-e4f7ad91e85b
 # ╠═9a284368-7063-4774-a2f1-f3ff892ad6c2
 # ╟─e0ca9c48-d9c8-4551-bb67-2bce96e5cf52
 # ╟─888d06d6-2203-491f-884d-d0e9f031aa9c
@@ -3808,6 +3802,7 @@ version = "1.9.2+0"
 # ╠═5eecad75-cb22-4dea-ab84-0bc670d402b8
 # ╠═21ecac6c-f4a2-4754-b671-fad8f7b88788
 # ╠═8de17909-61e3-40a3-91d8-7af48a26a1bd
+# ╠═da9d74b7-2b41-4ab0-9cc7-d822c6d12753
 # ╠═fe78a3d5-6d9d-4b51-bf07-c899a6536f66
 # ╠═9c74298a-80ae-43bb-96cd-d9e86129cb7f
 # ╠═8e76757c-6bd4-430b-a15b-430db05f5271
@@ -3826,11 +3821,10 @@ version = "1.9.2+0"
 # ╠═f447d5c4-c9e1-4c19-bd1c-5218ba9810e7
 # ╠═5d4ec8b9-9aa7-45e2-a3c5-78d350ab34af
 # ╠═ef63cdf5-0ae6-490f-8f67-2aa64adbeabe
-# ╠═0cd9400e-b458-41a5-86db-ab0687c0b973
 # ╠═947c932f-d3aa-4c81-840b-85b73e138980
-# ╠═e03b75a1-056e-49be-b374-4b1cdd88c14a
 # ╠═3d48bba5-6f3e-4e47-b2ce-5d7a98dae55d
 # ╠═8ec0a9f7-f94b-4eb0-a5db-bca292531fa5
+# ╠═0cd9400e-b458-41a5-86db-ab0687c0b973
 # ╠═06244f1e-049e-4486-903d-f0bcdbb94dcb
 # ╠═a0a5c6fb-3591-4b3f-b575-5deec1893c2e
 # ╠═7bdd4656-d836-4cd4-8471-e0755553bb11
