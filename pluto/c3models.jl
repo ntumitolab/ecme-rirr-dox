@@ -4,18 +4,6 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ acd4eb16-255d-46ee-b498-7e9787837492
-begin
-	using ModelingToolkit
-	using PlutoUI
-	using OrdinaryDiffEq
-	using SteadyStateDiffEq
-	using Plots
-	using NaNMath
-	using DisplayAs: PNG
-	md"Import packages"
-end
-
 # ╔═╡ 13270f16-84b6-11f0-033c-a9652a6e1210
 md"""
 # Complex III model
@@ -39,6 +27,18 @@ Reference redox potetials:
 | O2/SOX    	| -160    	|
 
 """
+
+# ╔═╡ acd4eb16-255d-46ee-b498-7e9787837492
+begin
+	using ModelingToolkit
+	using PlutoUI
+	using OrdinaryDiffEq
+	using SteadyStateDiffEq
+	using Plots
+	using NaNMath
+	using DisplayAs: PNG
+	md"Import packages"
+end
 
 # ╔═╡ 9061f18a-31ad-46ac-b0fa-aa632d63147c
 PlutoUI.TableOfContents()
@@ -616,7 +616,7 @@ function c3_equlibrium(;
 		## Redox potentials
 		EmQp = +60mV
 		EmSQp_QH2p = +290mV
-		EmQp_SQp = 2EmQp - EmSQp_QH2p 
+		EmQp_SQp = 2EmQp - EmSQp_QH2p ## -170mV
 		EmQn_SQn = +50mV
 		EmSQn_QH2n = +150mV
 		EmbL_bHo = -40mV
@@ -629,7 +629,6 @@ function c3_equlibrium(;
         EmO2 = -160mV
 		## Precalulated fractions from redox potentials
 		rQp_SQp = exp(iVT * EmQp_SQp) 
-		rQn_SQn = exp(iVT * EmQn_SQn)
 		rbL_bHo = exp(iVT * EmbL_bHo)
         rbL_bHr = exp(iVT * EmbL_bHr)
         rbH_bLo = exp(iVT * EmbH_bLo)
@@ -637,6 +636,11 @@ function c3_equlibrium(;
 		## v3: QH2 + FeS + bL = SQbL + FeS- + 2H+
 		K03_C3 = 60Hz / mM
         KEQ3_C3 = exp(iVT * (EmFeS - EmSQp_QH2p)) # -10mV
+		## v7: bH- + Q = bH + Q-
+		K07_OX_C3 = 13.33Hz / mM
+        K07_RD_C3 = 1.67Hz / mM
+        KEQ7_OX_C3 = exp(iVT * (EmQn_SQn - EmbH_bLo)) ## +30mV
+        KEQ7_RD_C3 = exp(iVT * (EmQn_SQn - EmbH_bLr)) ## +90mV
 		## v8: bH- + Q- + 2H+ = bH + QH2
         K08_OX_C3 = 83.33Hz / mM
         K08_RD_C3 = 8.33Hz / mM
@@ -650,65 +654,36 @@ function c3_equlibrium(;
         KEQ33_C3 = exp(iVT * (Emcytc - Emcytc1)) # +20mV
 	end
 	
-	## Complex 3 content
-	C3_CONC = rhoC3 * MT_PROT
 	@variables begin
 		Q_n(t)
         QH2_n(t)
         QH2_p(t)
         Q_p(t)
-		## States use the format (Qo, bL, bH, Qi)
+		## States use the format (Qo, bL, bH)
 		## 0-electron states
 		C3_0(t)
-		C3_n00n(t)
-		C3_000n(t)
-		C3_n000(t)
-		C3_0000(t)
+		C3_0Q(t)
+		C3_n00(t)
+		C3_000(t)
 		## 1-electron states
 		C3_1(t)
-		C3_n10n(t)
-		C3_n01n(t)
-		C3_010n(t)
-		C3_001n(t)
-		C3_100n(t)
-		C3_n100(t)
-		C3_n010(t)
-		C3_n001(t)
-		C3_1000(t)
-		C3_0100(t)
-		C3_0010(t)
-		C3_0001(t)
+		C3_1Q(t)
+		C3_n10(t)
+		C3_n01(t)
+		C3_100(t)
+		C3_010(t)
+		C3_001(t)
 		## 2-electron states
 		C3_2(t)
-		C3_n11n(t)
-		C3_110n(t)
-		C3_101n(t)
-		C3_011n(t)
-		C3_n110(t)
-		C3_n101(t)
-		C3_n011(t)
-		C3_1100(t)
-		C3_1010(t)
-		C3_1001(t)
-		C3_0110(t)
-		C3_0101(t)
-		C3_0011(t)
-		## 3-electron states
-		C3_3(t) ## C3_CONC - C3_0 - C3_1 - C3_2
-		C3_111n(t)
-		C3_n111(t)
-		C3_1110(t)
-		C3_1101(t)
-		C3_1011(t)
-		C3_0111(t)
-		## 4 -electron state (?)
-		C3_4(t) ## N/A
-		C3_1111(t) ## N/A
+		C3_2Q(t)
+		C3_n11(t)
+		C3_110(t)
+		C3_101(t)
+		C3_011(t)
 		## Bound ubiquinone in C3
-		C3_Qo(t)
-		C3_Qi(t)
-		C3_SQo(t)
-		C3_SQi(t)
+		C3_Qp(t)
+		SQp(t)
+		SQn(t)
 		fdpsiC3(t) ## Unit of MMP effect
         fes_ox(t)
         fes_rd(t) ## Conserved
@@ -720,45 +695,37 @@ function c3_equlibrium(;
         vHresC3(t)
 	end
 
+	## Complex 3 content
+	C3_CONC = rhoC3 * MT_PROT
+
 	## Normalized proton concentration
     fHo = h_i * inv(1E-7Molar)
     fHi = h_m * inv(1E-7Molar)
-	## Normalized ubiquinone (with affinity)
-	fQo = Q_p * KA_Qo
-	fQH2o = QH2_p * KA_Qo
-	fQi = Q_n * KA_Qi
-	fQH2i = QH2_n * KA_Qi
 
 	## State occupancy weights
-	## (Qo, bL, bH, Qi) = (n/0/1, 0/1, 0/1, n/0/1)
+	## (Qo, bL, bH) = (n/0/1, 0/1, 0/1)
 	## The dielectric distance is (0.25, 0.5, 0.25)
-	w = fill(Num(1), 3, 2, 2, 3)
-	w[2:3, :, :, :] .*= fQo
-	w[3, :, :, :] .*= rQp_SQp * fdpsiC3^2
-	w[:, :, :, 2:3] .*= fQi
-	w[:, :, :, 3] .*= rQn_SQn / fdpsiC3^2
-	w[:, 2, 1, :] .*= rbL_bHo * fdpsiC3
-	w[:, 1, 2, :] .*= rbH_bLo / fdpsiC3
-	w[:, 2, 2, :] .*= rbL_bHr * rbH_bLr
+	w_n00 = 1
+	w_000 = 1
+	w_n10 = rbL_bHo * fdpsiC3^2
+	w_n01 = rbH_bLo
+	w_100 = rQp_SQp * fdpsiC3^3
+	w_010 = rbL_bHo * fdpsiC3^2
+	w_001 = rbH_bLo
+	w_n11 = 1
+	w_110 = rQp_SQp * rbL_bHo * fdpsiC3^(3) # * fdpsiC3^(2+3-2)
+	w_101 = rQp_SQp * rbH_bLo * fdpsiC3^(1) # * fdpsiC3^(3-2)
+	w_011 = rbL_bHr * rbH_bLr # * fdpsiC3^(2-2)
 
-	## Denominators
-	den = fill(Num(0), 5)
-	for i=1:3, j=1:2, k=1:2, l=1:3
-		nelectrons = (i==3) + (j==2) + (k==2) + (l==3)
-		den[nelectrons + 1] += w[i, j, k, l]
-	end
-
-	## Normalize the weights
-	for i=1:3, j=1:2, k=1:2, l=1:3
-		nelectrons = (i==3) + (j==2) + (k==2) + (l==3)
-		w[i, j, k, l] /= den[nelectrons + 1]
-	end
+	den1 = w_n10 + w_n01
+	den1q = w_100 + w_010 + w_001
+	den2q = w_110 + w_101 + w_011
 
 	## Reaction 1: QH2 oxidation at Qo
-	## QH2 + n0xx + FeS = 10xx + FeS- + 2H+
+	## QH2 + n0x + FeS = 10x + FeS- + 2H+
 	## Only oxidized bL are eligible for the reaction
-	v01 = K03_C3 * (KEQ3_C3 * fQH2o * (C3_n00n + C3_n000) * fes_ox - (C3_100n + C3_1000) * fes_rd * fHo^2) * (1 - MYXOTHIAZOLE_BLOCK)
-	v12 = K03_C3 * (KEQ3_C3 * fQH2o * (C3_n01n + C3_n010 + C3_n001) * fes_ox - (C3_101n + C3_1010 + C3_1001) * fes_rd * fHo^2) * (1 - MYXOTHIAZOLE_BLOCK)
+	v0_1q = K03_C3 * (KEQ3_C3 * QH2_p * KA_Qo * C3_n00 * fes_ox - C3_100 * fes_rd * fHo^2) * (1 - MYXOTHIAZOLE_BLOCK)
+	v1_2q = K03_C3 * (KEQ3_C3 * fQH2o * (C3_n01n + C3_n010 + C3_n001) * fes_ox - (C3_101n + C3_1010 + C3_1001) * fes_rd * fHo^2) * (1 - MYXOTHIAZOLE_BLOCK)
 	v23 = K03_C3 * (KEQ3_C3 * fQH2o * (C3_n011) * fes_ox - (C3_1011) * fes_rd * fHo^2) * (1 - MYXOTHIAZOLE_BLOCK)
 
 	## Reaction 2: QH2 release from Qi site
@@ -931,17 +898,6 @@ eprob_s = EnsembleProblem(prob_s; prob_func=alter_dpsi)
 # ╔═╡ f447d5c4-c9e1-4c19-bd1c-5218ba9810e7
 @time sim_s = solve(eprob_s, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
 
-# ╔═╡ 0cd9400e-b458-41a5-86db-ab0687c0b973
-prob_e = SteadyStateProblem(esys, [
-	esys.K03_C3 => 3900Hz / mM,
-	esys.EmQp => 65mV,
-	esys.EmSQp_QH2p => +290mV,
-	esys.K08_OX_C3 => 83.33Hz / mM,  ## 83.33
-    esys.K08_RD_C3 => 8.33Hz / mM,   ## 8.33
-	esys.EmbH_bLo => +20mV,
-	esys.K010_C3 => 500Hz / mM,
-])
-
 # ╔═╡ 5d4ec8b9-9aa7-45e2-a3c5-78d350ab34af
 eprob_e = EnsembleProblem(prob_e; prob_func=alter_dpsi)
 
@@ -968,6 +924,17 @@ let
 	ys = [extract(sim_g, gsys.vROSC3) extract(sim_s, ssys.vROSC3) extract(sim_r, rsys.vROSC3) extract(sim_e, esys.vROSC3)]
 	plot(xs, ys, xlabel="MMP (mV)", ylabel="ROS Rate (mM/s)", label=["G" "S" "R" "E"])
 end
+
+# ╔═╡ 0cd9400e-b458-41a5-86db-ab0687c0b973
+prob_e = SteadyStateProblem(esys, [
+	esys.K03_C3 => 3900Hz / mM,
+	esys.EmQp => 65mV,
+	esys.EmSQp_QH2p => +290mV,
+	esys.K08_OX_C3 => 83.33Hz / mM,  ## 83.33
+    esys.K08_RD_C3 => 8.33Hz / mM,   ## 8.33
+	esys.EmbH_bLo => +20mV,
+	esys.K010_C3 => 500Hz / mM,
+])
 
 # ╔═╡ 06244f1e-049e-4486-903d-f0bcdbb94dcb
 md"""
@@ -1038,9 +1005,9 @@ SteadyStateDiffEq = "~2.5.0"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.10.10"
+julia_version = "1.11.6"
 manifest_format = "2.0"
-project_hash = "30ad0f0ac53f0f395bea421176e841beb9f11b01"
+project_hash = "9df09c07c37b65fe6f1562323a30e7630a2578cf"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "60665b326b75db6517939d0e1875850bc4a54368"
@@ -1107,7 +1074,7 @@ version = "1.1.3"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
-version = "1.1.1"
+version = "1.1.2"
 
 [[deps.ArnoldiMethod]]
 deps = ["LinearAlgebra", "Random", "StaticArrays"]
@@ -1161,9 +1128,11 @@ weakdeps = ["SparseArrays"]
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
+version = "1.11.0"
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
+version = "1.11.0"
 
 [[deps.Bijections]]
 git-tree-sha1 = "a2d308fcd4c2fb90e943cf9cd2fbfa9c32b69733"
@@ -1257,12 +1226,10 @@ deps = ["FixedPointNumbers", "Random"]
 git-tree-sha1 = "67e11ee83a43eb71ddc950302c53bf33f0690dfe"
 uuid = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
 version = "0.12.1"
+weakdeps = ["StyledStrings"]
 
     [deps.ColorTypes.extensions]
     StyledStringsExt = "StyledStrings"
-
-    [deps.ColorTypes.weakdeps]
-    StyledStrings = "f489334b-da3d-4c2e-b8f0-e476e12c162b"
 
 [[deps.ColorVectorSpace]]
 deps = ["ColorTypes", "FixedPointNumbers", "LinearAlgebra", "Requires", "Statistics", "TensorCore"]
@@ -1383,6 +1350,7 @@ version = "0.18.22"
 [[deps.Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
+version = "1.11.0"
 
 [[deps.Dbus_jll]]
 deps = ["Artifacts", "Expat_jll", "JLLWrappers", "Libdl"]
@@ -1534,6 +1502,7 @@ version = "0.1.6"
 [[deps.Distributed]]
 deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
+version = "1.11.0"
 
 [[deps.Distributions]]
 deps = ["AliasTables", "FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SpecialFunctions", "Statistics", "StatsAPI", "StatsBase", "StatsFuns"]
@@ -1711,6 +1680,7 @@ version = "1.1.3"
 
 [[deps.FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
+version = "1.11.0"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra"]
@@ -1806,6 +1776,7 @@ version = "0.5.2"
 [[deps.Future]]
 deps = ["Random"]
 uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
+version = "1.11.0"
 
 [[deps.GLFW_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Xorg_libXcursor_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll", "libdecor_jll", "xkbcommon_jll"]
@@ -1943,6 +1914,7 @@ version = "2025.2.0+0"
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+version = "1.11.0"
 
 [[deps.IntervalSets]]
 git-tree-sha1 = "5fbb102dcb8b1a858111ae81d56682376130517d"
@@ -2110,6 +2082,7 @@ version = "2.6.2"
 [[deps.LazyArtifacts]]
 deps = ["Artifacts", "Pkg"]
 uuid = "4af54fe1-eca0-43a8-85a7-787d91b784e3"
+version = "1.11.0"
 
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
@@ -2119,16 +2092,17 @@ version = "0.6.4"
 [[deps.LibCURL_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll", "Zlib_jll", "nghttp2_jll"]
 uuid = "deac9b47-8bc7-5906-a0fe-35ac56dc84c0"
-version = "8.4.0+0"
+version = "8.6.0+0"
 
 [[deps.LibGit2]]
 deps = ["Base64", "LibGit2_jll", "NetworkOptions", "Printf", "SHA"]
 uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
+version = "1.11.0"
 
 [[deps.LibGit2_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll"]
 uuid = "e37daf67-58a4-590a-8e99-b0245dd2ffc5"
-version = "1.6.4+0"
+version = "1.7.2+0"
 
 [[deps.LibSSH2_jll]]
 deps = ["Artifacts", "Libdl", "MbedTLS_jll"]
@@ -2137,6 +2111,7 @@ version = "1.11.0+1"
 
 [[deps.Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+version = "1.11.0"
 
 [[deps.Libffi_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
@@ -2193,6 +2168,7 @@ version = "7.4.0"
 [[deps.LinearAlgebra]]
 deps = ["Libdl", "OpenBLAS_jll", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+version = "1.11.0"
 
 [[deps.LinearSolve]]
 deps = ["ArrayInterface", "ChainRulesCore", "ConcreteStructs", "DocStringExtensions", "EnumX", "GPUArraysCore", "InteractiveUtils", "Krylov", "LazyArrays", "Libdl", "LinearAlgebra", "MKL_jll", "Markdown", "OpenBLAS_jll", "PrecompileTools", "Preferences", "RecursiveArrayTools", "Reexport", "SciMLBase", "SciMLOperators", "Setfield", "StaticArraysCore", "UnPack"]
@@ -2265,6 +2241,7 @@ version = "0.3.29"
 
 [[deps.Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
+version = "1.11.0"
 
 [[deps.LoggingExtras]]
 deps = ["Dates", "Logging"]
@@ -2301,6 +2278,7 @@ version = "0.1.8"
 [[deps.Markdown]]
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
+version = "1.11.0"
 
 [[deps.MaybeInplace]]
 deps = ["ArrayInterface", "LinearAlgebra", "MacroTools"]
@@ -2321,7 +2299,7 @@ version = "1.1.9"
 [[deps.MbedTLS_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
-version = "2.28.2+1"
+version = "2.28.6+0"
 
 [[deps.Measures]]
 git-tree-sha1 = "c13304c81eec1ed3af7fc20e75fb6b26092a1102"
@@ -2336,6 +2314,7 @@ version = "1.2.0"
 
 [[deps.Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
+version = "1.11.0"
 
 [[deps.ModelingToolkit]]
 deps = ["ADTypes", "AbstractTrees", "ArrayInterface", "BlockArrays", "ChainRulesCore", "Combinatorics", "CommonSolve", "Compat", "ConstructionBase", "DataStructures", "DiffEqBase", "DiffEqCallbacks", "DiffEqNoiseProcess", "DiffRules", "DifferentiationInterface", "Distributed", "Distributions", "DocStringExtensions", "DomainSets", "DynamicQuantities", "EnumX", "ExprTools", "FindFirstFunctions", "ForwardDiff", "FunctionWrappers", "FunctionWrappersWrappers", "Graphs", "ImplicitDiscreteSolve", "InteractiveUtils", "JuliaFormatter", "JumpProcesses", "Latexify", "Libdl", "LinearAlgebra", "MLStyle", "Moshi", "NaNMath", "OffsetArrays", "OrderedCollections", "OrdinaryDiffEqCore", "PrecompileTools", "RecursiveArrayTools", "Reexport", "RuntimeGeneratedFunctions", "SCCNonlinearSolve", "SciMLBase", "SciMLPublic", "SciMLStructures", "Serialization", "Setfield", "SimpleNonlinearSolve", "SparseArrays", "SpecialFunctions", "StaticArrays", "SymbolicIndexingInterface", "SymbolicUtils", "Symbolics", "URIs", "UnPack", "Unitful"]
@@ -2369,7 +2348,7 @@ version = "0.3.7"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
-version = "2023.1.10"
+version = "2023.12.12"
 
 [[deps.MuladdMacro]]
 git-tree-sha1 = "cac9cc5499c25554cba55cd3c30543cff5ca4fab"
@@ -2504,7 +2483,7 @@ version = "1.3.6+0"
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
-version = "0.3.23+4"
+version = "0.3.27+1"
 
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -2592,9 +2571,9 @@ version = "1.8.0"
 
 [[deps.OrdinaryDiffEqDifferentiation]]
 deps = ["ADTypes", "ArrayInterface", "ConcreteStructs", "ConstructionBase", "DiffEqBase", "DifferentiationInterface", "FastBroadcast", "FiniteDiff", "ForwardDiff", "FunctionWrappersWrappers", "LinearAlgebra", "LinearSolve", "OrdinaryDiffEqCore", "SciMLBase", "SciMLOperators", "SparseMatrixColorings", "StaticArrayInterface", "StaticArrays"]
-git-tree-sha1 = "8d8060757106fc57eb4f177fd2f911a390c564a4"
+git-tree-sha1 = "1fff7356ccb79ca1b1ff3276135fda68d4d661be"
 uuid = "4302a76b-040a-498a-8c04-15b101fed76b"
-version = "1.15.0"
+version = "1.16.0"
 weakdeps = ["SparseArrays"]
 
     [deps.OrdinaryDiffEqDifferentiation.extensions]
@@ -2786,9 +2765,13 @@ uuid = "30392449-352a-5448-841d-b1acce4e97dc"
 version = "0.44.2+0"
 
 [[deps.Pkg]]
-deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
+deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "Random", "SHA", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-version = "1.10.0"
+version = "1.11.0"
+weakdeps = ["REPL"]
+
+    [deps.Pkg.extensions]
+    REPLExt = "REPL"
 
 [[deps.PlotThemes]]
 deps = ["PlotUtils", "Statistics"]
@@ -2889,6 +2872,7 @@ version = "0.5.7"
 [[deps.Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+version = "1.11.0"
 
 [[deps.PtrArrays]]
 git-tree-sha1 = "1d36ef11a9aaf1e8b74dacc6a731dd1de8fd493d"
@@ -2932,12 +2916,14 @@ version = "2.11.2"
     Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 
 [[deps.REPL]]
-deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
+deps = ["InteractiveUtils", "Markdown", "Sockets", "StyledStrings", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
+version = "1.11.0"
 
 [[deps.Random]]
 deps = ["SHA"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+version = "1.11.0"
 
 [[deps.Random123]]
 deps = ["Random", "RandomNumbers"]
@@ -3053,13 +3039,14 @@ version = "0.1.0"
 
 [[deps.SciMLBase]]
 deps = ["ADTypes", "Accessors", "Adapt", "ArrayInterface", "CommonSolve", "ConstructionBase", "Distributed", "DocStringExtensions", "EnumX", "FunctionWrappersWrappers", "IteratorInterfaceExtensions", "LinearAlgebra", "Logging", "Markdown", "Moshi", "PreallocationTools", "PrecompileTools", "Preferences", "Printf", "RecipesBase", "RecursiveArrayTools", "Reexport", "RuntimeGeneratedFunctions", "SciMLOperators", "SciMLStructures", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface"]
-git-tree-sha1 = "3796862d75d9c5c5542bde5bf52ea932320c88f4"
+git-tree-sha1 = "b15e35effcb277ae68dbc446250789fcc1b306a8"
 uuid = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
-version = "2.116.3"
+version = "2.117.0"
 
     [deps.SciMLBase.extensions]
     SciMLBaseChainRulesCoreExt = "ChainRulesCore"
     SciMLBaseDistributionsExt = "Distributions"
+    SciMLBaseEnzymeExt = "Enzyme"
     SciMLBaseForwardDiffExt = "ForwardDiff"
     SciMLBaseMLStyleExt = "MLStyle"
     SciMLBaseMakieExt = "Makie"
@@ -3078,6 +3065,7 @@ version = "2.116.3"
     ChainRules = "082447d4-558c-5d27-93f4-14fc19e9eca2"
     ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
     Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+    Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
     ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
     MLStyle = "d8e11817-5142-5d16-987a-aa16d5891078"
     Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
@@ -3128,6 +3116,7 @@ version = "1.3.0"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
+version = "1.11.0"
 
 [[deps.Setfield]]
 deps = ["ConstructionBase", "Future", "MacroTools", "StaticArraysCore"]
@@ -3138,6 +3127,7 @@ version = "1.1.2"
 [[deps.SharedArrays]]
 deps = ["Distributed", "Mmap", "Random", "Serialization"]
 uuid = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
+version = "1.11.0"
 
 [[deps.Showoff]]
 deps = ["Dates", "Grisu"]
@@ -3181,6 +3171,7 @@ version = "1.1.0"
 
 [[deps.Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
+version = "1.11.0"
 
 [[deps.SortingAlgorithms]]
 deps = ["DataStructures"]
@@ -3191,7 +3182,7 @@ version = "1.2.2"
 [[deps.SparseArrays]]
 deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
-version = "1.10.0"
+version = "1.11.0"
 
 [[deps.SparseMatrixColorings]]
 deps = ["ADTypes", "DocStringExtensions", "LinearAlgebra", "PrecompileTools", "Random", "SparseArrays"]
@@ -3259,9 +3250,14 @@ uuid = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
 version = "1.4.3"
 
 [[deps.Statistics]]
-deps = ["LinearAlgebra", "SparseArrays"]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "ae3bb1eb3bba077cd276bc5cfc337cc65c3075c0"
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
-version = "1.10.0"
+version = "1.11.1"
+weakdeps = ["SparseArrays"]
+
+    [deps.Statistics.extensions]
+    SparseArraysExt = ["SparseArrays"]
 
 [[deps.StatsAPI]]
 deps = ["LinearAlgebra"]
@@ -3298,6 +3294,10 @@ git-tree-sha1 = "83151ba8065a73f53ca2ae98bc7274d817aa30f2"
 uuid = "7792a7ef-975c-4747-a70f-980b88e8d1da"
 version = "0.5.8"
 
+[[deps.StyledStrings]]
+uuid = "f489334b-da3d-4c2e-b8f0-e476e12c162b"
+version = "1.11.0"
+
 [[deps.SuiteSparse]]
 deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]
 uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
@@ -3305,7 +3305,7 @@ uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 [[deps.SuiteSparse_jll]]
 deps = ["Artifacts", "Libdl", "libblastrampoline_jll"]
 uuid = "bea87d4a-7f5b-5778-9afe-8cc45184846c"
-version = "7.2.1+1"
+version = "7.7.0+0"
 
 [[deps.SymbolicIndexingInterface]]
 deps = ["Accessors", "ArrayInterface", "RuntimeGeneratedFunctions", "StaticArraysCore"]
@@ -3394,6 +3394,7 @@ version = "2.0.0"
 [[deps.Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+version = "1.11.0"
 
 [[deps.TestItems]]
 git-tree-sha1 = "42fd9023fef18b9b78c8343a4e2f3813ffbcefcb"
@@ -3442,6 +3443,7 @@ version = "1.6.1"
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
+version = "1.11.0"
 
 [[deps.UnPack]]
 git-tree-sha1 = "387c1f73762231e86e0c9c5443ce3b4a0a9a0c2b"
@@ -3450,6 +3452,7 @@ version = "1.0.2"
 
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
+version = "1.11.0"
 
 [[deps.UnicodeFun]]
 deps = ["REPL"]
@@ -3728,7 +3731,7 @@ version = "1.1.7+0"
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
-version = "1.52.0+1"
+version = "1.59.0+0"
 
 [[deps.oneTBB_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
