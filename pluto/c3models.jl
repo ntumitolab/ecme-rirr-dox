@@ -940,7 +940,7 @@ prob_e = SteadyStateProblem(esys, [
 	esys.K08_OX_C3 => 83.33Hz / mM,  ## 83.33
     esys.K08_RD_C3 => 8.33Hz / mM,   ## 8.33
 	esys.EmbH_bLo => +20mV,
-	esys.K010_C3 => 200Hz / mM,
+	esys.K010_C3 => 250Hz / mM,
 ])
 
 # ╔═╡ 5d4ec8b9-9aa7-45e2-a3c5-78d350ab34af
@@ -954,21 +954,21 @@ let
 	xs = dpsirange
 	ys = [extract(sim_g, gsys.vHresC3) extract(sim_s, ssys.vHresC3) extract(sim_r,rsys.vHresC3) extract(sim_e, esys.vHresC3)]
 	plot(xs, ys, xlabel="MMP (mV)", ylabel="Resp. Rate (mM/s)", label=["Semiforward" "Semireverse" "Repulsion" "Eqilibrium"])
-end
+end |> PNG
 
 # ╔═╡ 3d48bba5-6f3e-4e47-b2ce-5d7a98dae55d
 let
 	xs = dpsirange
 	ys = [extract(sim_s, ssys.fracbLrd) extract(sim_e, esys.fracbLrd) extract(sim_s, ssys.fracbHrd) extract(sim_e, esys.fracbHrd)]
 	plot(xs, ys, xlabel="MMP (mV)", ylabel="Reduced fraction", label=["Semireverse (bL)" "E (bL)" "Semireverse (bH)" "E (bH)"], line=[:solid :dash :solid :dash])	
-end
+end |> PNG
 
 # ╔═╡ 8ec0a9f7-f94b-4eb0-a5db-bca292531fa5
 let
 	xs = dpsirange
 	ys = [extract(sim_g, gsys.vROSC3) extract(sim_s, ssys.vROSC3) extract(sim_r, rsys.vROSC3) extract(sim_e, esys.vROSC3)]
 	plot(xs, ys, xlabel="MMP (mV)", ylabel="ROS Rate (mM/s)", label=["G" "S" "R" "E"])
-end
+end |> PNG
 
 # ╔═╡ 06244f1e-049e-4486-903d-f0bcdbb94dcb
 md"""
@@ -1002,14 +1002,21 @@ let
 	xs = qh2range ./ 4000 .* 100
 	ys = [extract(qh2_g, gsys.vHresC3) extract(qh2_s, ssys.vHresC3) extract(qh2_r, rsys.vHresC3) extract(qh2_e, esys.vHresC3)]
 	plot(xs, ys, xlabel="QH2 (%)", ylabel="Resp. Rate (mM/s)", label=["G" "S" "R" "E"])
-end
+end |> PNG
 
 # ╔═╡ 24422da1-2f02-4133-abbb-8e693dc4a4f5
 let 
 	xs = qh2range ./ 4000 .* 100
 	ys = [extract(qh2_g, gsys.vROSC3) extract(qh2_s, ssys.vROSC3) extract(qh2_r, rsys.vROSC3) extract(qh2_e, esys.vROSC3)]
 	plot(xs, ys, xlabel="QH2 (%)", ylabel="ROS Rate (mM/s)", label=["G" "S" "R" "E"])
-end
+end |> PNG
+
+# ╔═╡ 2de8ad2d-21d2-4033-9b4d-870e4d07856f
+let
+	xs = qh2range ./ 4000 .* 100
+	ys = [extract(qh2_s, ssys.fracbLrd) extract(qh2_e, esys.fracbLrd) extract(qh2_s, ssys.fracbHrd) extract(qh2_e, esys.fracbHrd)]
+	plot(xs, ys, xlabel="QH2 (%)", ylabel="Reduced fraction", label=["Semireverse (bL)" "E (bL)" "Semireverse (bH)" "E (bH)"], line=[:solid :dash :solid :dash])	
+end |> PNG
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -3846,5 +3853,6 @@ version = "1.9.2+0"
 # ╠═9ca0dc68-d53a-4c14-9e0e-1eabe0f7681a
 # ╠═337076c9-3e11-4641-b3b7-d35f18ccb2b0
 # ╠═24422da1-2f02-4133-abbb-8e693dc4a4f5
+# ╠═2de8ad2d-21d2-4033-9b4d-870e4d07856f
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
