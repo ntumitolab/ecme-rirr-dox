@@ -153,7 +153,7 @@ function add_raw_rate!(lut, rate, substrates, products)
     for p in products
         lut[p] = get(lut, p, 0) + rate
     end
-    return lut
+    return rate
 end
 
 "Accumulate chemical reaction rates with law of mass action into a look-up table"

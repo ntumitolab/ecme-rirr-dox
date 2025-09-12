@@ -1,20 +1,65 @@
-# # Complex I model
-# Comparing Gauthier, Markevich, and simplified complex I models
-using ModelingToolkit
-using ModelingToolkit: t_nounits as t, D_nounits as D
-using SteadyStateDiffEq
-using OrdinaryDiffEq
-using NaNMath
-using Plots
-using ECMEDox
-using ECMEDox: mM, μM, iVT, mV, Hz, ms, Molar
+### A Pluto.jl notebook ###
+# v0.20.17
 
+using Markdown
+using InteractiveUtils
+
+# ╔═╡ 6e998cd6-a007-45aa-b05b-4439da7c371d
+begin
+	import Pkg
+    # activate the shared project environment
+    Pkg.activate(Base.current_project())
+    # instantiate, i.e. make sure that all packages are downloaded
+    Pkg.instantiate()
+	using ModelingToolkit
+	using PlutoUI
+	using OrdinaryDiffEq
+	using SteadyStateDiffEq
+	using Plots
+	using NaNMath
+	using DisplayAs: PNG
+	md"Import packages"
+end
+
+# ╔═╡ edece65e-8635-11f0-39b5-c5c17d0ad6f0
+md"""
+# Complex I model
+
+Comparing Gauthier, Markevich, and simplified complex I models
+"""
+
+# ╔═╡ a43f0927-bc4d-45d4-bdf8-626de501c8cf
+PlutoUI.TableOfContents()
+
+# ╔═╡ 9e16194f-f20c-41f5-a271-b8aee964b0df
+begin
+	const mM = 1
+	const Molar = 1000mM
+	const μM = mM / 1000
+	const second = 1
+	const Hz = inv(second)
+	const ms = second / 1000
+	const minute = 60second
+	const Volt = 1
+	const mV = Volt / 1000
+	const RGAS = 8.314 		# Joule / Kelvin / mol
+	const Temp = 310 		# Kelvin
+	const Faraday = 96485  	# Columb / mol
+	const iVT = Faraday / RGAS / Temp
+	md"Constants"
+end
+
+# ╔═╡ f01351ba-e5d6-42e1-90b3-aed341352f3e
 # Gauthier 2012 7-state QSSA model
 function c1_gauthier(; name=:c1gauthier,
     Q_n=1800μM, QH2_n=200μM, nad=500μM, nadh=500μM,
     dpsi=150mV, O2=6μM, sox_m=0.01μM,
     h_i=exp10(-7) * Molar, h_m=exp10(-7.6) * Molar,
     C1_INHIB=1)
+
+	@independent_variables t
+	D = Differential(t)
+	
     @parameters begin
         ET_C1 = 8.85mM      ## Activity of complex I
         dpsi_B_C1 = 50mV    ## Phase boundary potential
@@ -119,6 +164,7 @@ function c1_gauthier(; name=:c1gauthier,
     return System(eqs, t; name)
 end
 
+# ╔═╡ 91e8801e-0aaa-454f-8a52-7fbf7f70072c
 # Markevich 2015 mass action law model
 # https://pmc.ncbi.nlm.nih.gov/articles/PMC4426091/
 function c1_markevich_full(; name=:c1markevich_full,
@@ -127,6 +173,10 @@ function c1_markevich_full(; name=:c1markevich_full,
     dpsi=150mV, O2=6μM, sox_m=0.01μM,
     h_i=exp10(-7) * Molar, h_m=exp10(-7.6) * Molar,
     DOX=0μM, ROTENONE_BLOCK=0)
+
+	@independent_variables t
+	D = Differential(t)
+	
     @parameters begin
         Em_O2_SOX = -160mV        ## O2/Superoxide redox potential
         Em_FMN_FMNsq = -387mV     ## FMN/FMNH- avg redox potential
@@ -291,6 +341,7 @@ function c1_markevich_full(; name=:c1markevich_full,
     return System(eqs, t; name)
 end
 
+# ╔═╡ 68cf8251-063d-4130-abef-a931172d6b1f
 # Simplified Markevich complex I model
 # Rapid equlibrium in the flavin site
 # QSSA for the catalytic cycle in the quinone site
@@ -300,6 +351,9 @@ function c1_markevich_s(; name=:c1s,
     dpsi=150mV, O2=6μM, sox_m=0.01μM,
     h_i=exp10(-7) * Molar, h_m=exp10(-7.6) * Molar,
     DOX=0μM, ROTENONE_BLOCK=0, MT_PROT=1)
+
+	@independent_variables t
+	D = Differential(t)
 
     @parameters begin
         ET_C1 = 17μM                ## Activity of complex I
@@ -463,6 +517,7 @@ function c1_markevich_s(; name=:c1s,
     return System(eqs, t; name)
 end
 
+# ╔═╡ a793d5fe-64f8-4fbe-9297-df7ee8ba96e1
 # Quinone site complex I model, assuming N2 at equlibrium with the flavin site
 # Adapted from the simplified Markevich complex I model
 function c1_q(; name=:c1q,
@@ -471,6 +526,9 @@ function c1_q(; name=:c1q,
     dpsi=150mV, O2=6μM, sox_m=0.01μM,
     h_i=exp10(-7) * Molar, h_m=exp10(-7.6) * Molar,
     DOX=0μM, ROTENONE_BLOCK=0, MT_PROT=1)
+
+	@independent_variables t
+	D = Differential(t)
 
     @parameters begin
         ET_C1 = 17μM              ## Activity of complex I
@@ -604,7 +662,7 @@ function c1_q(; name=:c1q,
     return System(eqs, t; name)
 end
 
-#---
+# ╔═╡ a235d169-0f16-442b-b8d3-0c6990e702d0
 @parameters begin
     Q_n = 1.8mM
     QH2_n = 0.2mM
@@ -614,172 +672,329 @@ end
     sox_m = 0.01μM
 end
 
+# ╔═╡ a5cdf926-3462-4445-b647-cb808486f242
 # Helper function
 extract(sim, k) = map(s -> s[k], sim)
 
-#---
-sys = c1_q(; Q_n, QH2_n, nad, nadh, dpsi, sox_m) |> mtkcompile
-markevich = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi, sox_m) |> mtkcompile
-gauthier = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi, sox_m) |> mtkcompile
+# ╔═╡ 848ab4e3-d35a-4696-97e1-c78a24f1b400
+sys_q = c1_q(; Q_n, QH2_n, nad, nadh, dpsi, sox_m) |> mtkcompile
 
-# The parameter for ROS generation is adjusted (x10000) to be comparable to ROS generation from complex III
-prob_q = SteadyStateProblem(sys, [
-    sys.ET_C1 => 17μM,
-    sys.kf8_C1 => 5Hz / μM,
-    sys.kf9_C1 => 1000Hz / μM,
-    sys.kf13_C1 => 10000Hz / μM,
-    sys.kf16_C1 => 20Hz / μM,
-    sys.kf17_C1 => 0.4Hz / μM,
+# ╔═╡ d20a3185-b1d8-4eca-ac3a-b5cad7ce929a
+sys_m = c1_markevich_full(; Q_n, QH2_n, nad, nadh, dpsi, sox_m) |> mtkcompile
+
+# ╔═╡ a588058f-cbbc-4e71-ac78-f9f78648586e
+sys_g = c1_gauthier(; Q_n, QH2_n, nad, nadh, dpsi, sox_m) |> mtkcompile
+
+# ╔═╡ 144490e3-7e81-4ea4-946c-1198acfabe47
+# The parameter for ROS generation rate is adjusted (x10000) to be comparable to ROS generation from complex III
+prob_g = SteadyStateProblem(sys_g, [
+	sys_g.K42_C1 => 6.0318Hz / mM * 10000
 ])
-prob_m = SteadyStateProblem(markevich, [
-    markevich.ET_C1 => 17μM,
-    markevich.kf16_C1 => 20Hz / μM,
-    markevich.kf17_C1 => 0.4Hz / μM,
+
+# ╔═╡ 14fc9ce7-085d-4679-a868-9f2d2cb8124a
+prob_q = SteadyStateProblem(sys_q, [
+    sys_q.ET_C1 => 17μM,
+    sys_q.kf8_C1 => 5Hz / μM,
+    sys_q.kf9_C1 => 1000Hz / μM,
+    sys_q.kf13_C1 => 10000Hz / μM,
+    sys_q.kf16_C1 => 20Hz / μM,
+    sys_q.kf17_C1 => 0.4Hz / μM,
 ])
-prob_g = SteadyStateProblem(gauthier, [gauthier.K42_C1 => 6.0318Hz / mM * 10000])
-alg = DynamicSS(Rodas5P())
+
+# ╔═╡ 10c4c6a4-adba-43f9-8b19-0a5af2bd6ceb
+# The redox potential of N2 is adjusted to -150mV in B. taurus mitochondria
+# instead of -80mV in E. coli(?)
+prob_m = SteadyStateProblem(sys_m, [
+    sys_m.ET_C1 => 17μM,
+    sys_m.kf16_C1 => 20Hz / μM,
+    sys_m.kf17_C1 => 0.4Hz / μM,
+])
+
+# ╔═╡ 25f1b5ca-fa1b-4d3b-ac5b-53a51d025eae
+alg = DynamicSS(TRBDF2())
+
+# ╔═╡ 0f7aa8de-c7fc-4b00-b76f-e598e7ea1beb
 ealg = EnsembleThreads()
 
-# ## Varying MMP
-dpsirange = 100mV:2mV:200mV
+# ╔═╡ 80b2e8ac-857b-4f5d-883a-89587d06ff13
+md"""
+## Varying MMP
+"""
+
+# ╔═╡ 1fca3b81-1811-4596-9640-df0bac1907c2
+dpsirange = 100:1:200
+
+# ╔═╡ 9d52ce00-9edb-42f1-8036-ea8262623d74
 alter_dpsi = (prob, i, repeat) -> begin
-    prob.ps[dpsi] = dpsirange[i]
+    prob.ps[dpsi] = dpsirange[i] * mV
     prob
 end
 
-eprob_q = EnsembleProblem(prob_q; prob_func=alter_dpsi)
-@time sim_q = solve(eprob_q, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
+# ╔═╡ 1d7b6c29-2f8c-4115-b76c-c71c4fbe63ae
+@time mmp_q = solve(EnsembleProblem(prob_q; prob_func=alter_dpsi), alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
 
-eprob_m = EnsembleProblem(prob_m; prob_func=alter_dpsi)
-@time sim_m = solve(eprob_m, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
+# ╔═╡ 7ab2c8ac-4376-4fa4-8f80-b1f91547d5f1
+@time mmp_m = solve(EnsembleProblem(prob_m; prob_func=alter_dpsi), alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
 
-eprob_g = EnsembleProblem(prob_g; prob_func=alter_dpsi)
-@time sim_g = solve(eprob_g, alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
+# ╔═╡ 2d841c84-a71c-4cee-8557-03c0e8e6faff
+@time mmp_g = solve(EnsembleProblem(prob_g; prob_func=alter_dpsi), alg, ealg; trajectories=length(dpsirange), abstol=1e-8, reltol=1e-8)
 
-# MMP vs NADH turnover
-xs = dpsirange
-ys = hcat(extract(sim_g, gauthier.vNADHC1), extract(sim_m, markevich.vNADHC1), extract(sim_q, sys.vNADHC1))
-plot(dpsirange, ys, xlabel="MMP (mV)", ylabel="NADH rate (mM/s)", label=["Gauthier" "Markevich" "Q site"])
+# ╔═╡ 95765fe6-a0ee-4938-8a1e-c968839a8500
+md"""
+### MMP vs NADH turnover
+"""
 
-#---
-ys = stack(extract.(Ref(sim_q), [sys.Q_C1, sys.SQ_C1, sys.QH2_C1, sys.I_C1]), dims=2)
-pl1 = plot(dpsirange, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "I_C1"], title="Q site", legend=:left, ylims=(0, 17))
+# ╔═╡ 0a187444-73b1-48fb-8a6a-5a59d1f2ef8a
+let
+	xs = dpsirange
+	ys = hcat(extract(mmp_g, sys_g.vNADHC1), extract(mmp_m, sys_m.vNADHC1), extract(mmp_q, sys_q.vNADHC1))
+	plot(xs, ys, xlabel="MMP (mV)", ylabel="NADH rate (mM/s)", label=["Gauthier" "Markevich" "Q site"]) 
+end |> PNG
 
-#---
-ys = stack(extract.(Ref(sim_m), [markevich.Q_C1, markevich.SQ_C1, markevich.QH2_C1, markevich.Iq_C1]), dims=2)
-pl2 = plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "I_C1"], title="M model", ylims=(0, 17))
+# ╔═╡ 681583a3-f37a-4eb2-aa68-3a8686e3de3d
+md"""
+### MMP vs Q site status
+"""
 
-#---
-plot(pl1, pl2)
+# ╔═╡ 0d2f1e9f-e740-47f6-998c-f9da661dff10
+let
+	xs = dpsirange
+	ys = stack(extract.(Ref(mmp_q), [sys_q.Q_C1, sys_q.SQ_C1, sys_q.QH2_C1, sys_q.I_C1]), dims=2)
+	pl1 = plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "I_C1"], title="Q site model", legend=:left, ylims=(0, 17μM))
+	ys2 = stack(extract.(Ref(mmp_m), [sys_m.Q_C1, sys_m.SQ_C1, sys_m.QH2_C1, sys_m.Iq_C1]), dims=2)
+	pl2 = plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "I_C1"], title="M model", ylims=(0, 17μM))
+	plot(pl1, pl2)
+end |> PNG
 
-# Flavin site
-ys = stack(extract.(Ref(sim_q), [sys.FMN, sys.FMNsq, sys.FMNH, sys.FMN_NAD, sys.FMNH_NADH, sys.FMN_NADH, sys.FMNH_NAD]), dims=2)
-pl1 = plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH" "FMN_NADH" "FMNH_NAD"], title="Q site model", legend=:right)
+# ╔═╡ 7c7a793a-befb-443b-9af9-051a217b5646
+md"""
+### MMP vs F site status
+"""
 
-ys = stack(extract.(Ref(sim_m), [markevich.FMN, markevich.FMNsq, markevich.FMNH, markevich.FMN_NAD, markevich.FMNH_NADH, markevich.FMN_NADH, markevich.FMNH_NAD]), dims=2)
-pl2 = plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH" "FMN_NADH" "FMNH_NAD"], title="M model", legend=:right)
+# ╔═╡ a3b060b3-b2b8-439e-9659-77a85e5ef87c
+let
+	xs = dpsirange
+	ys = stack(extract.(Ref(mmp_q), [sys_q.FMN, sys_q.FMNsq, sys_q.FMNH, sys_q.FMN_NAD, sys_q.FMNH_NADH, sys_q.FMN_NADH, sys_q.FMNH_NAD]), dims=2)
+	pl1 = plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH" "FMN_NADH" "FMNH_NAD"], title="Q site model", legend=:right)
+	
+	ys = stack(extract.(Ref(mmp_m), [sys_m.FMN, sys_m.FMNsq, sys_m.FMNH, sys_m.FMN_NAD, sys_m.FMNH_NADH, sys_m.FMN_NADH, sys_m.FMNH_NAD]), dims=2)
+	pl2 = plot(xs, ys, xlabel="MMP (mV)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH" "FMN_NADH" "FMNH_NAD"], title="M model", legend=:right)
+	
+	plot(pl1, pl2) 
+end |> PNG
 
-plot(pl1, pl2)
+# ╔═╡ 077bc541-a191-4171-8a30-a7881ece3f7e
+md"""
+### MMP vs ROS production
+"""
 
-# MMP vs ROS production
-xs = dpsirange
-ys_g = extract(sim_g, gauthier.vROSC1)
-ys_m = extract(sim_m, markevich.vROSC1)
-ys_q = extract(sim_q, sys.vROSC1)
-plot(xs, [ys_g ys_m ys_q], xlabel="MMP (mV)", ylabel="ROS production (μM/ms)", label=["Gauthier" "Markevich" "Q site"])
+# ╔═╡ 44ff5991-1b2f-4a15-b767-2a1ab95a6296
+let
+	xs = dpsirange
+	ys_g = extract(mmp_g, sys_g.vROSC1)
+	ys_m = extract(mmp_m, sys_m.vROSC1)
+	ys_q = extract(mmp_q, sys_q.vROSC1)
+	plot(xs, [ys_g ys_m ys_q], xlabel="MMP (mV)", ylabel="ROS production (mM/s)", label=["Gauthier" "Markevich" "Q site"])
+end |> PNG
 
-# ## Varying NADH
-nadhrange = 10μM:10μM:2990μM
+# ╔═╡ 646b8cbb-24f3-4319-a537-2e3a645d97bb
+md"""
+## Varying NADH
+"""
+
+# ╔═╡ 6e7724bf-2a7a-4857-98a3-ff4b573a046f
+nadhrange = 10:10:2990
+
+# ╔═╡ 4ecd3d6f-08a3-47fe-8b0c-245d6b1ba0f2
 alter_nadh = (prob, i, repeat) -> begin
-    prob.ps[nadh] = nadhrange[i]
+    prob.ps[nadh] = nadhrange[i] * μM
     prob.ps[nad] = 3000μM - prob.ps[nadh]
     prob
 end
 
-eprob_q = EnsembleProblem(prob_q; prob_func=alter_nadh)
-@time sim_q = solve(eprob_q, alg, ealg; trajectories=length(nadhrange), abstol=1e-8, reltol=1e-8)
+# ╔═╡ 0a0ed00d-e9cc-45a7-9ac8-d9ac342ea0d4
+@time nad_q = solve(EnsembleProblem(prob_q; prob_func=alter_nadh), alg, ealg; trajectories=length(nadhrange), abstol=1e-8, reltol=1e-8)
 
-eprob_g = EnsembleProblem(prob_g; prob_func=alter_nadh)
-@time sim_g = solve(eprob_g, alg, ealg; trajectories=length(nadhrange), abstol=1e-8, reltol=1e-8)
+# ╔═╡ b1bc0a77-4176-4865-a35a-4054b0c00050
+@time nad_g = solve(EnsembleProblem(prob_g; prob_func=alter_nadh), alg, ealg; trajectories=length(nadhrange), abstol=1e-8, reltol=1e-8)
 
-eprob_m = EnsembleProblem(prob_m; prob_func=alter_nadh)
-@time sim_m = solve(eprob_m, alg, ealg; trajectories=length(nadhrange), abstol=1e-8, reltol=1e-8)
+# ╔═╡ f149b683-50b1-435e-944f-f7155c0b26ce
+@time nad_m = solve(EnsembleProblem(prob_m; prob_func=alter_nadh), alg, ealg; trajectories=length(nadhrange), abstol=1e-8, reltol=1e-8)
 
-# NADH vs turnover
-xs = nadhrange
-ys_g = extract(sim_g, gauthier.vNADHC1)
-ys_m = extract(sim_m, markevich.vNADHC1)
-ys_q = extract(sim_q, sys.vNADHC1)
+# ╔═╡ a0756738-fed4-40e9-bd80-1c35b7a3340f
+md"""
+### NADH vs turnover
+"""
 
-plot(xs, [ys_g ys_m ys_q], xlabel="NADH (μM)", ylabel="NADH rate (mM/s)", label=["Gauthier" "Markevich" "Q site"])
+# ╔═╡ ab4eb5e8-e97d-4221-8400-48935532a12c
+let
+	xs = nadhrange
+	ys_g = extract(nad_g, sys_g.vNADHC1)
+	ys_m = extract(nad_m, sys_m.vNADHC1)
+	ys_q = extract(nad_q, sys_q.vNADHC1)
+	
+	plot(xs, [ys_g ys_m ys_q], xlabel="NADH (μM)", ylabel="NADH rate (mM/s)", label=["Gauthier" "Markevich" "Q site"]) 
+end |> PNG
 
-#---
-ys = [extract(sim_m, markevich.N2r_C1) extract(sim_q, sys.N2r_C1)]
-plot(xs, ys, xlabel="NADH (μM)", ylabel="NADH rate (mM/s)", label=["Markevich" "Q site"])
+# ╔═╡ cdd88f99-d491-479d-a44d-c7d164af0792
+let
+	xs = nadhrange
+	ys = [extract(nad_m, sys_m.N2r_C1) extract(nad_q, sys_q.N2r_C1)] ./ μM
+	plot(xs, ys, xlabel="NADH (μM)", ylabel="Reduced N2 (μM)", label=["Markevich" "Q site"])
+end |> PNG
 
-# NADH vs ROS production
-xs = nadhrange
-ys = [extract(sim_g, gauthier.vROSC1) extract(sim_m, markevich.vROSC1) extract(sim_q, sys.vROSC1)]
-plot(xs, ys, xlabel="NADH (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "Q site"])
+# ╔═╡ b59c9225-b585-4572-a277-0fef35ceb4f5
+md"""
+### NADH vs ROS production
+"""
 
-#---
-ys = stack(extract.(Ref(sim_q), [sys.Q_C1, sys.SQ_C1, sys.QH2_C1, sys.I_C1]), dims=2)
-pl1 = plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "I_C1"], title="Q site", legend=:top, ylims=(0, 17))
+# ╔═╡ 92583a37-230a-4384-9d98-7f2deb8c6738
+let
+	xs = nadhrange
+	ys = [extract(nad_g, sys_g.vROSC1) extract(nad_m, sys_m.vROSC1) extract(nad_q, sys_q.vROSC1)]
+	plot(xs, ys, xlabel="NADH (μM)", ylabel="ROS production (mM/s)", label=["Gauthier" "Markevich" "Q site"])
+end |> PNG
 
-#---
-ys = stack(extract.(Ref(sim_m), [markevich.Q_C1, markevich.SQ_C1, markevich.QH2_C1, markevich.Iq_C1]), dims=2)
-pl2 = plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "I_C1"], title="M model", ylims=(0, 17))
+# ╔═╡ 95b38367-025f-46d7-a695-0ce3cb4c4228
+let
+	xs = nadhrange
+	ys = stack(extract.(Ref(nad_q), [sys_q.Q_C1, sys_q.SQ_C1, sys_q.QH2_C1, sys_q.I_C1]), dims=2) .* 1000
+	pl1 = plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration (μM)", label=["Q_C1" "SQ_C1" "QH2_C1" "I_C1"], title="Q site", legend=:top, ylims=(0, 17))
+	
+	ys = stack(extract.(Ref(nad_m), [sys_m.Q_C1, sys_m.SQ_C1, sys_m.QH2_C1, sys_m.Iq_C1]), dims=2) .* 1000
+	pl2 = plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "I_C1"], title="M model", ylims=(0, 17))
+	
+	plot(pl1, pl2)
+end |> PNG
 
-#---
-plot(pl1, pl2)
+# ╔═╡ 2e506373-1fc3-4494-b155-17f4b8228693
+md"""
+## Varying Q/QH2
+"""
 
-#---
-ys = stack(extract.(Ref(sim_m), [markevich.FMN, markevich.FMNsq, markevich.FMNH, markevich.FMN_NAD, markevich.FMNH_NADH]), dims=2)
-pl1 = plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH"], legend=:topleft, title="M model")
+# ╔═╡ d994343f-d56f-4777-9582-69a3459564f6
+qh2range = 10:10:1990
 
-ys = stack(extract.(Ref(sim_q), [sys.FMN, sys.FMNsq, sys.FMNH, sys.FMN_NAD, sys.FMNH_NADH]), dims=2)
-pl2 = plot(xs, ys, xlabel="NADH (μM)", ylabel="Concentration", label=["FMN" "FMNsq" "FMNH" "FMN_NAD" "FMNH_NADH"], title="Q model")
-
-plot(pl1, pl2)
-
-# ## Varying Q
-qh2range = 10μM:10μM:1990μM
+# ╔═╡ 53ef8337-eeb8-4560-ab64-8ed88cb9aa01
 alter_qh2 = (prob, i, repeat) -> begin
-    prob.ps[QH2_n] = qh2range[i]
+    prob.ps[QH2_n] = qh2range[i] * μM
     prob.ps[Q_n] = 2000μM - prob.ps[QH2_n]
     prob
 end
 
-eprob_q = EnsembleProblem(prob_q; prob_func=alter_qh2)
-eprob_g = EnsembleProblem(prob_g; prob_func=alter_qh2)
-eprob_m = EnsembleProblem(prob_m; prob_func=alter_qh2)
-@time sim_q = solve(eprob_q, alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
-@time sim_g = solve(eprob_g, alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
-@time sim_m = solve(eprob_m, alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
+# ╔═╡ 05f56cd1-862d-4f83-b617-d368b94ecc37
+@time qh2_q = solve(EnsembleProblem(prob_q; prob_func=alter_qh2), alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
 
-# QH2 vs NADH turnover
-xs = qh2range
-ys = [extract(sim_g, gauthier.vNADHC1) extract(sim_m, markevich.vNADHC1) extract(sim_q, sys.vNADHC1)]
-plot(xs, ys, xlabel="QH2 (μM)", ylabel="NADH rate (mM/s)", label=["Gauthier" "Markevich" "Q site"])
+# ╔═╡ 72135403-f863-4b1a-8e8b-25cac207712a
+@time qh2_g = solve(EnsembleProblem(prob_g; prob_func=alter_qh2), alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
 
-# QH2 vs ROS production
-# Gauthier model is sensitive to high QH2 because of slow NAD binding
-xs = qh2range
-ys = [extract(sim_g, gauthier.vROSC1) extract(sim_m, markevich.vROSC1) extract(sim_q, sys.vROSC1)]
-plot(xs, ys, xlabel="QH2 (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "Q site"])
+# ╔═╡ 531937c3-9334-4860-8ea0-b4ccb1d10b58
+@time qh2_m = solve(EnsembleProblem(prob_m; prob_func=alter_qh2), alg, ealg; trajectories=length(qh2range), abstol=1e-8, reltol=1e-8)
 
-#---
-ys = stack(extract.(Ref(sim_q), [sys.Q_C1, sys.SQ_C1, sys.QH2_C1, sys.I_C1]), dims=2)
-pl1 = plot(xs, ys, xlabel="QH2 (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "I_C1"], title="Q site", legend=:top, ylims=(0, 17))
+# ╔═╡ 44554235-3a11-4f42-94b5-1c65a3ae500a
+md"""
+### QH2 vs turnover
+"""
 
-#---
-ys = stack(extract.(Ref(sim_m), [markevich.Q_C1, markevich.SQ_C1, markevich.QH2_C1, markevich.Iq_C1]), dims=2)
-pl2 = plot(xs, ys, xlabel="QH2 (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "I_C1"], title="Markevich", legend=:top, ylims=(0, 17))
+# ╔═╡ f99bdd9c-bbab-4630-9c04-dd58730e4811
+let
+	xs = qh2range
+	ys = [extract(qh2_g, sys_g.vNADHC1) extract(qh2_m, sys_m.vNADHC1) extract(qh2_q, sys_q.vNADHC1)]
+	plot(xs, ys, xlabel="QH2 (μM)", ylabel="NADH rate (mM/s)", label=["Gauthier" "Markevich" "Q site"])
+end |> PNG
 
-#---
-plot(pl1, pl2)
+# ╔═╡ ba831dcf-3986-4c2d-8687-f3f31c00dd8f
+md"""
+### QH2 vs ROS production
+"""
 
-#---
-@unpack C1_1, C1_3, C1_4, C1_5, C1_6, C1_7 = gauthier
-ys = stack(extract.(Ref(sim_g), [C1_3, C1_4]), dims=2)
-plot(xs, ys, xlabel="QH2 (μM)", ylabel="Conc (μM)", label=["C1_3" "C1_4"], lw=1.5)
+# ╔═╡ f2d2545b-1660-481a-abe4-9adb0ca919e3
+let
+	xs = qh2range
+	ys = [extract(qh2_g, sys_g.vROSC1) extract(qh2_m, sys_m.vROSC1) extract(qh2_q, sys_q.vROSC1)]
+	plot(xs, ys, xlabel="QH2 (μM)", ylabel="ROS production", label=["Gauthier" "Markevich" "Q site"])
+end |> PNG
+
+# ╔═╡ fd238756-307d-42fa-87fd-e7d5d41f670b
+let
+	xs = qh2range
+	ys = stack(extract.(Ref(qh2_q), [sys_q.Q_C1, sys_q.SQ_C1, sys_q.QH2_C1, sys_q.I_C1]), dims=2) .* 1000
+	pl1 = plot(xs, ys, xlabel="QH2 (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "I_C1"], title="Q site", legend=:top, ylims=(0, 17))
+	
+	ys = stack(extract.(Ref(qh2_m), [sys_m.Q_C1, sys_m.SQ_C1, sys_m.QH2_C1, sys_m.Iq_C1]), dims=2) .* 1000
+	pl2 = plot(xs, ys, xlabel="QH2 (μM)", ylabel="Concentration", label=["Q_C1" "SQ_C1" "QH2_C1" "I_C1"], title="Markevich", legend=:top, ylims=(0, 17))
+	
+	plot(pl1, pl2)
+end |> PNG
+
+# ╔═╡ 2772584f-c7d3-4051-bc26-700c75b97070
+md"""
+Gauthier model is sensitive to high QH2 because of slow NAD binding.
+"""
+
+# ╔═╡ d38e6ec8-1ca5-4c5a-8de5-d51149c0ce72
+let
+	@unpack C1_1, C1_3, C1_4, C1_5, C1_6, C1_7 = sys_g
+	xs = qh2range
+	ys = stack(extract.(Ref(qh2_g), [C1_3, C1_4]), dims=2) .* 1000
+	plot(xs, ys, xlabel="QH2 (μM)", ylabel="Conc (μM)", label=["C1_3" "C1_4"], lw=1.5)
+end |> PNG
+
+# ╔═╡ Cell order:
+# ╠═edece65e-8635-11f0-39b5-c5c17d0ad6f0
+# ╠═6e998cd6-a007-45aa-b05b-4439da7c371d
+# ╠═a43f0927-bc4d-45d4-bdf8-626de501c8cf
+# ╠═9e16194f-f20c-41f5-a271-b8aee964b0df
+# ╟─f01351ba-e5d6-42e1-90b3-aed341352f3e
+# ╠═91e8801e-0aaa-454f-8a52-7fbf7f70072c
+# ╠═68cf8251-063d-4130-abef-a931172d6b1f
+# ╠═a793d5fe-64f8-4fbe-9297-df7ee8ba96e1
+# ╠═a235d169-0f16-442b-b8d3-0c6990e702d0
+# ╠═a5cdf926-3462-4445-b647-cb808486f242
+# ╠═848ab4e3-d35a-4696-97e1-c78a24f1b400
+# ╠═d20a3185-b1d8-4eca-ac3a-b5cad7ce929a
+# ╠═a588058f-cbbc-4e71-ac78-f9f78648586e
+# ╠═144490e3-7e81-4ea4-946c-1198acfabe47
+# ╠═14fc9ce7-085d-4679-a868-9f2d2cb8124a
+# ╠═10c4c6a4-adba-43f9-8b19-0a5af2bd6ceb
+# ╠═25f1b5ca-fa1b-4d3b-ac5b-53a51d025eae
+# ╠═0f7aa8de-c7fc-4b00-b76f-e598e7ea1beb
+# ╠═80b2e8ac-857b-4f5d-883a-89587d06ff13
+# ╠═1fca3b81-1811-4596-9640-df0bac1907c2
+# ╠═9d52ce00-9edb-42f1-8036-ea8262623d74
+# ╠═1d7b6c29-2f8c-4115-b76c-c71c4fbe63ae
+# ╠═7ab2c8ac-4376-4fa4-8f80-b1f91547d5f1
+# ╠═2d841c84-a71c-4cee-8557-03c0e8e6faff
+# ╠═95765fe6-a0ee-4938-8a1e-c968839a8500
+# ╠═0a187444-73b1-48fb-8a6a-5a59d1f2ef8a
+# ╠═681583a3-f37a-4eb2-aa68-3a8686e3de3d
+# ╠═0d2f1e9f-e740-47f6-998c-f9da661dff10
+# ╠═7c7a793a-befb-443b-9af9-051a217b5646
+# ╠═a3b060b3-b2b8-439e-9659-77a85e5ef87c
+# ╠═077bc541-a191-4171-8a30-a7881ece3f7e
+# ╠═44ff5991-1b2f-4a15-b767-2a1ab95a6296
+# ╠═646b8cbb-24f3-4319-a537-2e3a645d97bb
+# ╠═6e7724bf-2a7a-4857-98a3-ff4b573a046f
+# ╠═4ecd3d6f-08a3-47fe-8b0c-245d6b1ba0f2
+# ╠═0a0ed00d-e9cc-45a7-9ac8-d9ac342ea0d4
+# ╠═b1bc0a77-4176-4865-a35a-4054b0c00050
+# ╠═f149b683-50b1-435e-944f-f7155c0b26ce
+# ╠═a0756738-fed4-40e9-bd80-1c35b7a3340f
+# ╠═ab4eb5e8-e97d-4221-8400-48935532a12c
+# ╠═cdd88f99-d491-479d-a44d-c7d164af0792
+# ╠═b59c9225-b585-4572-a277-0fef35ceb4f5
+# ╠═92583a37-230a-4384-9d98-7f2deb8c6738
+# ╠═95b38367-025f-46d7-a695-0ce3cb4c4228
+# ╠═2e506373-1fc3-4494-b155-17f4b8228693
+# ╠═d994343f-d56f-4777-9582-69a3459564f6
+# ╠═53ef8337-eeb8-4560-ab64-8ed88cb9aa01
+# ╠═05f56cd1-862d-4f83-b617-d368b94ecc37
+# ╠═72135403-f863-4b1a-8e8b-25cac207712a
+# ╠═531937c3-9334-4860-8ea0-b4ccb1d10b58
+# ╠═44554235-3a11-4f42-94b5-1c65a3ae500a
+# ╠═f99bdd9c-bbab-4630-9c04-dd58730e4811
+# ╠═ba831dcf-3986-4c2d-8687-f3f31c00dd8f
+# ╠═f2d2545b-1660-481a-abe4-9adb0ca919e3
+# ╠═fd238756-307d-42fa-87fd-e7d5d41f670b
+# ╠═2772584f-c7d3-4051-bc26-700c75b97070
+# ╠═d38e6ec8-1ca5-4c5a-8de5-d51149c0ce72
