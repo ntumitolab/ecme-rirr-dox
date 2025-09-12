@@ -138,6 +138,7 @@ jobs:
       with:
         folder: .
         branch: ipynb
+        single-commit: true
         commit-message: ${{ github.event.head_commit.message }}
 
   # Deployment job
