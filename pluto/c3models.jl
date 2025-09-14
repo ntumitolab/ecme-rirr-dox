@@ -588,10 +588,8 @@ md"""
 Assuming electron transfer between Qo-bL-bH are fast and there are the following reactions
 
 1. ``\ce{QH2 + CytC^3+ + b_L = Q^{-}b_L + CytC^2+ + 2H^+}``
-2. ``\ce{b_H^- + Q_n = b_H + Q_n^-}``
-3. ``\ce{b_H^- + Q_n^- + 2H^+ = b_H + QH2}``
-4. ``\ce{Qb_L^* = Q_p + b_L^*}``
-4. ``\ce{Q^{-}b_L^* + O2 = Qb_L^* + O2^-}``
+2. ``\ce{b_H^-Q_n^- + 2H^+ = b_H + QH2}``
+3. ``\ce{Q^{-}b_L^* + O2 = Q + b_L^* + O2^-}``
 """
 
 # ╔═╡ 0c97fae0-034c-4d61-b3ea-90bcef259715
@@ -618,9 +616,9 @@ function c3_equlibrium(;
 		rhoC3 = 325μM    ## Complex III activity
         Q_T = 4mM        ## Total CoQ pool
 		## Association constant of Q/QH2 at the Qo site
-		KA_Qo = inv(1mM) 
+		KA_Qp = inv(1mM) 
 		## Association constant of Q/QH2 at the Qi site
-		KA_Qi = inv(45μM)
+		KD_Qn = 400μM
 		## Redox potentials
 		EmQp = +60mV
 		EmSQp_QH2p = +290mV
@@ -637,6 +635,7 @@ function c3_equlibrium(;
         EmO2 = -160mV
 		## Precalulated fractions from redox potentials
 		rQp_SQp = exp(iVT * EmQp_SQp) 
+		rQn_SQn = exp(iVT * EmQn_SQn) 
 		rbL_bHo = exp(iVT * EmbL_bHo)
         rbL_bHr = exp(iVT * EmbL_bHr)
         rbH_bLo = exp(iVT * EmbH_bLo)
@@ -644,22 +643,15 @@ function c3_equlibrium(;
 		## v3: QH2 + FeS + bL = SQbL + FeS- + 2H+
 		K03_C3 = 60Hz / mM
         KEQ3_C3 = exp(iVT * (EmFeS - EmSQp_QH2p)) # -10mV
-		## v7: bH- + Q = bH + Q-
-		K07_OX_C3 = 13.33Hz / mM
-        K07_RD_C3 = 1.67Hz / mM
-        KEQ7_OX_C3 = exp(iVT * (EmQn_SQn - EmbH_bLo)) ## +30mV
-        KEQ7_RD_C3 = exp(iVT * (EmQn_SQn - EmbH_bLr)) ## +90mV
-		## v8: bH- + Q- + 2H+ = bH + QH2
+		## v8: bH-Q- + 2H+ = bH + QH2
         K08_OX_C3 = 83.33Hz / mM
         K08_RD_C3 = 8.33Hz / mM
-        KEQ8_OX_C3 = exp(iVT * (EmSQn_QH2n - EmbH_bLo)) # +130mV
-        KEQ8_RD_C3 = exp(iVT * (EmSQn_QH2n - EmbH_bLr)) # +190mV
+        KEQ8_OX_C3 = exp(iVT * (EmSQn_QH2n - EmbH_bLo)) * KD_Qn # +130mV
+        KEQ8_RD_C3 = exp(iVT * (EmSQn_QH2n - EmbH_bLr)) * KD_Qn # +190mV
 		K09_C3 = 832.48Hz / mM
         KEQ9_C3 = exp(iVT * (Emcytc1 - EmFeS))  # -35mV
         K010_C3 = 28.33Hz / mM
         KEQ10_C3 = exp(iVT * (EmO2 - EmQp_SQp)) # +10mV
-		K11_C3 = 1e5Hz
-		rKEQ11_C3 = KA_Qo
         K33_C3 = 2469.13Hz / mM
         KEQ33_C3 = exp(iVT * (Emcytc - Emcytc1)) # +20mV
 	end
@@ -669,27 +661,33 @@ function c3_equlibrium(;
         QH2_n(t)
         QH2_p(t)
         Q_p(t)
-		## States use the format (Qo, bL, bH)
+		## States use the format (Qo, bL, bH, Qi)
 		## 0-electron states
 		C3_0(t)
-		C3_0Q(t)
-		C3_n00(t)
-		C3_000(t)
+		C3_0000(t)
 		## 1-electron states
 		C3_1(t)
-		C3_1Q(t)
-		C3_n10(t)
-		C3_n01(t)
-		C3_100(t)
-		C3_010(t)
-		C3_001(t)
+		C3_1000(t)
+		C3_0100(t)
+		C3_0010(t)
+		C3_0001(t)
 		## 2-electron states
 		C3_2(t)
-		C3_2Q(t)
-		C3_n11(t)
-		C3_110(t)
-		C3_101(t)
-		C3_011(t)
+		C3_1100(t)
+		C3_1010(t)
+		C3_1001(t)
+		C3_0110(t)
+		C3_0101(t)
+		C3_0011(t)
+		## 3-electron states
+		C3_3(t)
+		C3_1110(t)
+		C3_1101(t)
+		C3_1011(t)
+		C3_0111(t)
+		## 4-electron states (?)
+		C3_4(t)
+		C3_1111(t)
 		## Bound ubiquinone in C3
 		SQp(t)
 		SQn(t)
@@ -714,142 +712,111 @@ function c3_equlibrium(;
 	## Normalized proton concentration
     fHm = h_m * inv(1E-7Molar)
     fHi = h_i * inv(1E-7Molar)
-
+	fQo = Q_p * KA_Qp
+	fQi = Q_n / KD_Qn
 	## State occupancy weights
-	## (Qo, bL, bH) = (n/0/1, 0/1, 0/1)
+	## (Qo, bL, bH, Qi) = (0/1, 0/1, 0/1, 0/1)
 	## The dielectric distance is (0.25, 0.5, 0.25)
-	w_n00 = 1
-	w_000 = 1
-	w_n10 = rbL_bHo * fdpsiC3^2
-	w_n01 = rbH_bLo
-	w_100 = rQp_SQp * fdpsiC3^3
-	w_010 = rbL_bHo * fdpsiC3^2
-	w_001 = rbH_bLo
-	w_n11 = 1
-	w_110 = rQp_SQp * rbL_bHo * fdpsiC3^(3) # * fdpsiC3^(2+3-2)
-	w_101 = rQp_SQp * rbH_bLo * fdpsiC3^(1) # * fdpsiC3^(3-2)
-	w_011 = rbL_bHr * rbH_bLr # * fdpsiC3^(2-2)
+	w_0000 = 1
+	w_1000 = fQo * rQp_SQp * fdpsiC3^2
+	w_0100 = rbL_bHo * fdpsiC3
+	w_0010 = rbH_bLo / fdpsiC3
+	w_0001 = fQi * rQn_SQn / fdpsiC3^2
+	w_1100 = w_1000 * w_0100
+	w_1010 = w_1000 * w_0010
+	w_1001 = w_1000 * w_0001
+	w_0110 = rbL_bHr * fdpsiC3 * rbH_bLr / fdpsiC3
+	w_0101 = w_0100 * w_0001
+	w_0011 = w_0010 * w_0001
+	w_1110 = w_1000 * w_0110
+	w_1101 = w_1100 * w_0001
+	w_1011 = w_1000 * w_0011
+	w_0111 = w_0110 * w_0001
 
-	den1 = w_n10 + w_n01
-	den1q = w_100 + w_010 + w_001
-	den2q = w_110 + w_101 + w_011
+	den1 = w_1000 + w_0100 + w_0010 + w_0001
+	den2 = w_1100 + w_1010 + w_1001 + w_0110 + w_0101 + w_0011
+	den3 = w_1110 + w_1101 + w_1101 + w_0111
 
-	## QH2 + n0x + FeS = 10x + FeS- + 2H+
+	## QH2 + 00xx + FeS = 10xx + FeS- + 2H+
 	## Only oxidized bL are eligible for the reaction
 	k3 = K03_C3 * KEQ3_C3 * QH2_p * KA_Qo * fes_ox * (1 - MYXOTHIAZOLE_BLOCK)
 	km3 = K03_C3 * fes_rd * fHi^2 * (1 - MYXOTHIAZOLE_BLOCK)
-	v3_n00 = k3 * C3_n00 - km3 * C3_100
-	v3_n01 = k3 * C3_n01 - km3 * C3_101
-	v3 = v3_n00 + v3_n01
+	v01 = k3 * C3_0000 - km3 * C3_1000
+	v12 = k3 * (C3_0010 + C3_0001) - km3 * (C3_1010 + C3_1001)
+	v23 = k3 * C3_0011 - km3 * C3_1011
 
-	## xx1 + Q = xx0 + Q-
-	## xx1 + Q- + 2H+ = xx0 + QH2
+	## xx11 + 2H+ = xx00 + QH2
 	Qi_avail = (C3_CONC - SQn) / C3_CONC * (1 - ANTIMYCIN_BLOCK)
     el7 = exp(-iVT * 0.25 * 0.5 * dpsi)
     er7 = exp(iVT * 0.25 * (1 - 0.5) * dpsi)
-	k7ox = K07_OX_C3 * KEQ7_OX_C3 * Qi_avail * el7 * Q_n
-	km7ox = K07_OX_C3 * er7 * SQn
-	k7rd = K07_RD_C3 * KEQ7_RD_C3 * Qi_avail * el7 * Q_n
-	km7rd = K07_RD_C3 * er7 * SQn
-	k8ox = K08_OX_C3 * KEQ8_OX_C3 * el7 * fHm^2 * SQn
+	k8ox = K08_OX_C3 * KEQ8_OX_C3 * el7 * fHm^2
 	km8ox = K08_OX_C3 * er7 * Qi_avail * QH2_n
-	k8rd = K08_RD_C3 * KEQ8_RD_C3 * el7 * fHm^2 * SQn
+	k8rd = K08_RD_C3 * KEQ8_RD_C3 * el7 * fHm^2
 	km8rd = K08_RD_C3 * er7 * Qi_avail * QH2_n
 
-	v7_n01 = k7ox * C3_n01 - km7ox * C3_n00
-	v7_001 = k7ox * C3_001 - km7ox * C3_000
-	v7_n11 = k7rd * C3_n11 - km7rd * C3_n10
-	v7_011 = k7rd * C3_011 - km7rd * C3_010
-	v7_101 = k7ox * C3_101 - km7ox * C3_100
-	v7 = v7_n01 + v7_001 + v7_n11 + v7_011 + v7_101
+	v20 = k8ox * C3_0011 - km8ox * C3_0000
+	v31ox = k8ox * C3_1011 - km8ox * C3_1000
+	v31rd = k8rd * C3_0111 - km8rd * C3_0100
 
-	v8_n01 = k8ox * C3_n01 - km8ox * C3_n00
-	v8_001 = k8ox * C3_001 - km8ox * C3_000
-	v8_n11 = k8rd * C3_n11 - km8rd * C3_n10
-	v8_011 = k8rd * C3_011 - km8rd * C3_010
-	v8_101 = k8ox * C3_101 - km8ox * C3_100
-	v8 = v8_n01 + v8_001 + v8_n11 + v8_011 + v8_101
-
-	## 1xx + O2 = 0xx + O2-
+	## 1xxx + O2 = 0xxx + Q + O2-
 	k10 = K010_C3 * KEQ10_C3 * O2
-	km10 = K010_C3 * sox_m
-	v10_100 = k10 * C3_100 - km10 * C3_000
-	v10_110 = k10 * C3_110 - km10 * C3_010
-	v10_101 = k10 * C3_101 - km10 * C3_001
-	v10 = v10_100 + v10_110 + v10_101
-
-	## 0xx = Q + nxx
-	k11 = K11_C3
-	km11 = K11_C3 * rKEQ11_C3 * Q_p
-	v11_000 = k11 * C3_000 - km11 * C3_n00
-	v11_010 = k11 * C3_010 - km11 * C3_n10
-	v11_001 = k11 * C3_001 - km11 * C3_n01
-	v11_011 = k11 * C3_011 - km11 * C3_n11
-	v11 = v11_000 + v11_010 + v11_001 + v11_011
+	km10 = K010_C3 * Q_p * KA_Qp * sox_m
+	v32 = k10 * (C3_1110 + C3_1101 + C3_1011) - km10 * (C3_0110 + C3_0101 + C3_0011)
+	v21 = k10 * (C3_1100 + C3_1010 + C3_1001) - km10 * (C3_0100 + C3_0010 + C3_0001)
+	v10 = k10 * C3_1000 - km10 * C3_0000
 
 	## v9: ET from fes to cytc1
     v9 = K09_C3 * (KEQ9_C3 * fes_rd * cytc1_ox - fes_ox * cytc1_rd)
     ## v33: ET from cytc1 to cytc
     v33 = K33_C3 * (KEQ33_C3 * cytc1_rd * cytc_ox - cytc1_ox * cytc_rd)
 
-	dC3_n00 = v11_000 + v8_n01 + v7_n01 -v3_n00
-	dC3_000 = -v11_000 + v10_100 + v8_001 + v7_001
-	dC3_n10 = v11_010 + v7_n11 + v8_n11
-	dC3_n01 = v11_001 - v8_n01 - v7_n01 - v3_n01
-	dC3_100 = -v10_100 + v8_101 + v7_101 + v3_n00
-	dC3_010 = -v11_010 + v10_110 + v8_011 + v7_011
-	dC3_001 = -v11_001 + v10_101 - v7_001 - v8_001
-	dC3_n11 = v11_011 - v7_n11 - v8_n11
-	dC3_110 = -v10_110
-	dC3_101 = -v7_101 - v8_101 - v10_101 + v3_n01
-	dC3_011 = -v11_011 - v7_011 - v8_011
-	
 	eqs = [
-		## D(C3_0) ~ dC3_n00,
-		D(C3_0Q) ~ dC3_000,
-		D(C3_1) ~ dC3_000 + dC3_n01,
-		D(C3_1Q) ~ dC3_100 + dC3_010 + dC3_001,
-		D(C3_2) ~ dC3_n11,
-		D(C3_2Q) ~ dC3_110 + dC3_101 + dC3_011,
+		## D(C3_0) ~ -v01 + v20,
+		D(C3_1) ~ v01 - v12 + v31ox + v31rd,
+		D(C3_2) ~ v12 - v23 - v20,
+		D(C3_3) ~ v23 - v31ox - v31rd,
 		D(fes_ox) ~ v9 - v3,
         D(cytc1_ox) ~ v33 - v9,
-		D(SQn) ~ v7 - v8,
-		C3_CONC ~ C3_0 + C3_0Q + C3_1 + C3_1Q + C3_2 + C3_2Q,
+		SQn ~ C3_0001 + C3_1001 + C3_0101 + C3_0011 + C3_1101 + C3_1011 + C3_0111,
+		SQp ~ C3_1000 + C3_1100 + C3_1010 + C3_1001 + C3_1110 + C3_1101 + C3_1011,
+		C3_CONC ~ C3_0 + C3_1 + C3_2 + C3_3,
 		C3_CONC ~ fes_ox + fes_rd,
 		C3_CONC ~ cytc1_ox + cytc1_rd,
 		Q_n ~ 0.5 * UQ,
 		Q_p ~ 0.5 * UQ,
 		QH2_n ~ 0.5 * UQH2,
 		QH2_p ~ 0.5 * UQH2,
-		fdpsiC3 ~ exp(iVT * dpsi / 4), 
-		C3_n00 ~ C3_0,
-		C3_000 ~ C3_0Q,
-		C3_n10 ~ C3_1 * w_n10 / den1,
-		C3_n01 ~ C3_1 * w_n01 / den1,
-		C3_100 ~ C3_1Q * w_100 / den1q,
-		C3_010 ~ C3_1Q * w_010 / den1q,
-		C3_001 ~ C3_1Q * w_001 / den1q,
-		C3_n11 ~ C3_2,
-		C3_110 ~ C3_2Q * w_110 / den2q,
-		C3_101 ~ C3_2Q * w_101 / den2q,
-		C3_011 ~ C3_2Q * w_011 / den2q,
-		fracbLrd ~ (C3_n10 + C3_010 + C3_n11 + C3_110 + C3_011) / C3_CONC,
-		fracbHrd ~ (C3_n01 + C3_001 + C3_n11 + C3_101 + C3_011) / C3_CONC,
+		fdpsiC3 ~ exp(iVT * dpsi / 4),
+		C3_0000 ~ C3_0,
+		C3_1000 ~ C3_1 * w_1000 / den1,
+		C3_0100 ~ C3_1 * w_0100 / den1,
+		C3_0010 ~ C3_1 * w_0010 / den1,
+		C3_0001 ~ C3_1 * w_0001 / den1,
+		C3_1100 ~ C3_2 * w_1100 / den2,
+		C3_1010 ~ C3_2 * w_1010 / den2,
+		C3_1001 ~ C3_2 * w_1001 / den2,
+		C3_0110 ~ C3_2 * w_0110 / den2,
+		C3_0101 ~ C3_2 * w_0101 / den2,
+		C3_0011 ~ C3_2 * w_0011 / den2,
+		C3_1110 ~ C3_3 * w_1110 / den3,
+		C3_1101 ~ C3_3 * w_1101 / den3,
+		C3_1011 ~ C3_3 * w_1011 / den3,
+		C3_0111 ~ C3_3 * w_0111 / den3,
+		fracbLrd ~ (C3_0100 + C3_1100 + C3_0110 + C3_0101 + C3_1110 + C3_1101 + C3_0111) / C3_CONC,
+		fracbHrd ~ (C3_0010 + C3_1010 + C3_0110 + C3_0011 + C3_1110 + C3_1011 + C3_0111) / C3_CONC,
+		## TODO: derive Q binding/unbinding rates
 		vQpC3 ~ v11,
-		vQH2pC3 ~ -v3,
+		vQH2pC3 ~ -v01 - v12 - v23,
 		vQnC3 ~ -v7,
-		vQH2nC3 ~ v8,	
-		vROSC3 ~ v10,
-        vHresC3 ~ v3,
+		vQH2nC3 ~ v20 + v31ox + v31rd,	
+		vROSC3 ~ v32 + v21 + v10,
+        vHresC3 ~ vQH2nC3,
 	]
 	
 	return System(eqs, t; name, defaults=[
-		SQn => 0,
-		C3_0Q => 0,
 		C3_1 => 0,
-		C3_1Q => 0,
 		C3_2 => 0,
-		C3_2Q => 0, 
+		C3_3 => 0, 
 		fes_ox=>C3_CONC, 
 		cytc1_ox=>C3_CONC
 	])
