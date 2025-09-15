@@ -15,7 +15,6 @@ begin
 	using PlutoUI
 	using OrdinaryDiffEq
 	using SteadyStateDiffEq
-	using ForwardDiff
 	using Plots
 	using NaNMath
 	using DisplayAs: PNG
@@ -585,7 +584,7 @@ end
 md"""
 ### Rapid equlibrium model
 
-Assuming electron transfer between Qo-bL-bH are fast and there are the following reactions
+Assuming electron transfer between Qo-bL-bH-Qi and quinone binding/unbinding are fast and there are the following reactions
 
 1. ``\ce{QH2 + CytC^3+ + b_L = Q^{-}b_L + CytC^2+ + 2H^+}``
 2. ``\ce{b_H^-Q_n^- + 2H^+ = b_H + QH2}``
@@ -616,9 +615,9 @@ function c3_equlibrium(;
 		rhoC3 = 325μM    ## Complex III activity
         Q_T = 4mM        ## Total CoQ pool
 		## Association constant of Q/QH2 at the Qo site
-		KA_Qp = inv(1mM) 
+		KA_Qo = inv(1mM) 
 		## Association constant of Q/QH2 at the Qi site
-		KD_Qn = 400μM
+		KA_Qi = inv(400μM)
 		## Redox potentials
 		EmQp = +60mV
 		EmSQp_QH2p = +290mV
@@ -646,8 +645,8 @@ function c3_equlibrium(;
 		## v8: bH-Q- + 2H+ = bH + QH2
         K08_OX_C3 = 83.33Hz / mM
         K08_RD_C3 = 8.33Hz / mM
-        KEQ8_OX_C3 = exp(iVT * (EmSQn_QH2n - EmbH_bLo)) * KD_Qn # +130mV
-        KEQ8_RD_C3 = exp(iVT * (EmSQn_QH2n - EmbH_bLr)) * KD_Qn # +190mV
+        KEQ8_OX_C3 = exp(iVT * (EmSQn_QH2n - EmbH_bLo)) / KA_Qi # +130mV
+        KEQ8_RD_C3 = exp(iVT * (EmSQn_QH2n - EmbH_bLr)) / KA_Qi # +190mV
 		K09_C3 = 832.48Hz / mM
         KEQ9_C3 = exp(iVT * (Emcytc1 - EmFeS))  # -35mV
         K010_C3 = 28.33Hz / mM
@@ -712,8 +711,8 @@ function c3_equlibrium(;
 	## Normalized proton concentration
     fHm = h_m * inv(1E-7Molar)
     fHi = h_i * inv(1E-7Molar)
-	fQo = Q_p * KA_Qp
-	fQi = Q_n / KD_Qn
+	fQo = Q_p * KA_Qo
+	fQi = Q_n * KA_Qi
 	## State occupancy weights
 	## (Qo, bL, bH, Qi) = (0/1, 0/1, 0/1, 0/1)
 	## The dielectric distance is (0.25, 0.5, 0.25)
@@ -760,7 +759,7 @@ function c3_equlibrium(;
 
 	## 1xxx + O2 = 0xxx + Q + O2-
 	k10 = K010_C3 * KEQ10_C3 * O2
-	km10 = K010_C3 * Q_p * KA_Qp * sox_m
+	km10 = K010_C3 * Q_p * KA_Qo * sox_m
 	v32 = k10 * (C3_1110 + C3_1101 + C3_1011) - km10 * (C3_0110 + C3_0101 + C3_0011)
 	v21 = k10 * (C3_1100 + C3_1010 + C3_1001) - km10 * (C3_0100 + C3_0010 + C3_0001)
 	v10 = k10 * C3_1000 - km10 * C3_0000
@@ -775,7 +774,7 @@ function c3_equlibrium(;
 		D(C3_1) ~ v01 - v12 + v31ox + v31rd,
 		D(C3_2) ~ v12 - v23 - v20,
 		D(C3_3) ~ v23 - v31ox - v31rd,
-		D(fes_ox) ~ v9 - v3,
+		D(fes_ox) ~ v9 - (v01 + v12 + v23),
         D(cytc1_ox) ~ v33 - v9,
 		SQn ~ C3_0001 + C3_1001 + C3_0101 + C3_0011 + C3_1101 + C3_1011 + C3_0111,
 		SQp ~ C3_1000 + C3_1100 + C3_1010 + C3_1001 + C3_1110 + C3_1101 + C3_1011,
@@ -805,12 +804,12 @@ function c3_equlibrium(;
 		fracbLrd ~ (C3_0100 + C3_1100 + C3_0110 + C3_0101 + C3_1110 + C3_1101 + C3_0111) / C3_CONC,
 		fracbHrd ~ (C3_0010 + C3_1010 + C3_0110 + C3_0011 + C3_1110 + C3_1011 + C3_0111) / C3_CONC,
 		## TODO: derive Q binding/unbinding rates
-		vQpC3 ~ v11,
+		vQpC3 ~ - (D(C3_1) * (w_1000) / den1 + D(C3_2) * (w_1100 + w_1010 + w_1001) / den2 + D(C3_3) * (w_1110 + w_1101 + w_1011) / den3),
 		vQH2pC3 ~ -v01 - v12 - v23,
-		vQnC3 ~ -v7,
+		vQnC3 ~ - (D(C3_1) * (w_0001) / den1 + D(C3_2) * (w_1001 + w_0101 + w_0011) / den2 + D(C3_3) * (w_1101 + w_1011 + w_0111) / den3),
 		vQH2nC3 ~ v20 + v31ox + v31rd,	
 		vROSC3 ~ v32 + v21 + v10,
-        vHresC3 ~ vQH2nC3,
+        vHresC3 ~ 2 * vQH2nC3,
 	]
 	
 	return System(eqs, t; name, defaults=[
