@@ -30,10 +30,15 @@ end
 
 Based on the `Gauthier, 2013` model
 ===#
+using Symbolics
+using Groebner
+using Random
 
 @variables a12 a21 a65 a56 a61 a16 a23 a32 a34 a43 a47 a74 a57 a75 a42 a24
 
 @variables I1 I2 I3 I4 I5 I6 I7
+
+vars_c1g = [I1, I2, I3, I4, I5, I6, I7]
 
 eqs_c1g = let
     v12 = I1 * a12 - I2 * a21
@@ -55,4 +60,6 @@ eqs_c1g = let
     [d1, d2, d3, d4, d5, d6, I1 + I2 + I3 + I4 + I5 + I6 + I7 - 1]
 end
 
-@time sol_c1g = Symbolics.symbolic_solve(eqs_c1g, [I1, I2, I3, I4, I5, I6, I7])
+@time sol_c1g = Symbolics.symbolic_solve(shuffle(eqs_c1g), vars_c1g)
+
+Symbolics.simplify(sol_c1g[1]; expand=true, threaded=true)
