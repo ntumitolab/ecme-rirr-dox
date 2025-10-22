@@ -36,9 +36,9 @@ using Random
 
 @variables a12 a21 a65 a56 a61 a16 a23 a32 a34 a43 a47 a74 a57 a75 a42 a24
 
-@variables I1 I2 I3 I4 I5 I6 # I7 = 1
+@variables I1 I2 I3 I4 I5 I6 I7
 
-vars_c1g = [I1, I2, I3, I4, I5, I6]
+vars_c1g = [I1, I2, I3, I4, I5, I6, I7]
 
 eqs_c1g = let I7 = 1
     v12 = I1 * a12 - I2 * a21
@@ -57,9 +57,7 @@ eqs_c1g = let I7 = 1
     d6 = v56 - v61
     d7 = v47 - v75
     @assert d1 + d2 + d3 + d4 + d5 + d6 + d7 == 0
-    [d1, d2, d3, d4, d5, d6]
+    [d1, d2, d3, d4, d5, d6, sum(vars_c1g)-1]
 end
 
-@time sol_c1g = Symbolics.symbolic_solve(eqs_c1g, vars_c1g)
-
-Symbolics.simplify(sol_c1g[1]; expand=true, threaded=true)
+@time sol_c1g = Symbolics.symbolic_solve(eqs_c1g, vars_c1g)[1]
