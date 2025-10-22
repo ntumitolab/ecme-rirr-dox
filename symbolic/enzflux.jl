@@ -32,7 +32,6 @@ Based on the `Gauthier, 2013` model
 ===#
 using Symbolics
 using Groebner
-using Random
 
 @variables a12 a21 a65 a56 a61 a16 a23 a32 a34 a43 a47 a74 a57 a75 a42 a24
 
@@ -61,3 +60,33 @@ eqs_c1g = let I7 = 1
 end
 
 @time sol_c1g = Symbolics.symbolic_solve(eqs_c1g, vars_c1g)[1]
+
+# ## Complex I simplified Markevich model
+using Symbolics
+using Groebner
+
+@variables b12 b21 b23 b32 b34 b43 b41 b14
+vars_c1m = @variables C1 C1_Q C1_SQ C1_QH2
+
+eqs_c1m = let
+    v12 = C1 * b12 - C1_Q * b21
+    v23 = C1_Q * b23 - C1_SQ * b32
+    v34 = C1_SQ * b34 - C1_QH2 * b43
+    v41 = C1_QH2 * b41 - C1 * b14
+
+    d1 = -v12 + v41
+    d2 = v12 - v23
+    d3 = v23 - v34
+    d4 = v34 - v41
+
+    @assert d1 + d2 + d3 + d4 == 0
+
+    [d1, d2, d3, d4, sum(vars_c1m) - 1]
+end
+
+@time sol = Symbolics.symbolic_solve(eqs_c1m, vars_c1m)[1]
+
+# Weights of all 7 states
+for k in vars_c1m
+    println(k, " = ", numerator(sol[k]))
+end
