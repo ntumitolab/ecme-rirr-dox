@@ -74,7 +74,7 @@ Based on the `Gauthier, 2013` model
 """
 
 # ╔═╡ 1d917445-fad8-4c18-966c-cddcabecc7b1
-@time mat_c1g = let
+mat_c1g = let
 	@variables a12 a21 a65 a56 a61 a16 a23 a32 a34 a43 a47 a74 a57 a75 a42 a24
 	mat = fill(Num(0), 7, 7)
 	accumulate_rate!(mat, a12, 1, 2)
@@ -96,7 +96,7 @@ Based on the `Gauthier, 2013` model
 end
 
 # ╔═╡ 64988977-3254-4ec2-8ca8-d218ea6dfabf
-f1 = det(skip_colrow(mat_c1g, 1)) |> expand
+@time weights_c1g = [det(skip_colrow(mat_c1g, i)) |> expand |> simplify for i in 1:7]
 
 # ╔═╡ 8971a26d-201f-4629-b110-eef37938e113
 md"""
@@ -106,7 +106,7 @@ Four-state Q-site reaction cycle
 """
 
 # ╔═╡ bc695d80-28ca-4d9f-a1a1-ae05cd2a873a
-@time mat_c1q = let
+mat_c1q = let
 	@variables b12 b21 b23 b32 b34 b43 b41 b14
 	mat = fill(Num(0), 4, 4)
 	accumulate_rate!(mat, b12, 1, 2)
@@ -118,6 +118,9 @@ Four-state Q-site reaction cycle
 	accumulate_rate!(mat, b41, 4, 1)
 	accumulate_rate!(mat, b14, 1, 4)
 end
+
+# ╔═╡ 78ea90cc-95ad-4838-a967-21ba012cda5d
+@time weights_c1q = [det(skip_colrow(mat_c1q, i)) |> expand |> simplify for i in 1:4]
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1238,5 +1241,6 @@ version = "17.5.0+2"
 # ╠═64988977-3254-4ec2-8ca8-d218ea6dfabf
 # ╠═8971a26d-201f-4629-b110-eef37938e113
 # ╠═bc695d80-28ca-4d9f-a1a1-ae05cd2a873a
+# ╠═78ea90cc-95ad-4838-a967-21ba012cda5d
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
