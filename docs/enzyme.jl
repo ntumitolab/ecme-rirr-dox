@@ -23,6 +23,11 @@ end
 ## SOD model McAdam model
 
 From `McAdam, 1977`
+
+k1: EA + O2- => EB + O2
+k1: EB + O2- => EA + H2O2
+k3: EB + O2- => EC
+k5: EC => EA
 ===#
 
 @variables k1 k3 k5 sox
@@ -42,10 +47,10 @@ From `McAdam, 1977`
     fC = det(skip_colrow(mat, 3))
 
 	sol_sod = Dict(
-        :A => fA |> expand |> simplify,
-        :B => fB |> expand |> simplify,
-        :C => fC |> expand |> simplify,
-		:DEN => (fA + fB + fC) |> expand |> simplify
+        :A => fA |> expand,
+        :B => fB |> expand,
+        :C => fC |> expand,
+		:DEN => (fA + fB + fC) |> expand
     )
 end
 
@@ -72,9 +77,9 @@ mat_c1q = let
 end
 
 #---
-@time weights_c1q = [(-1)^(4-1) * det(skip_colrow(mat_c1q, i)) |> expand |> simplify for i in 1:4]
+@time weights_c1q = [(-1)^(4-1) * det(skip_colrow(mat_c1q, i)) |> expand for i in 1:4]
 # Total weight
-@time total_weight_c1q = sum(weights_c1q) |> expand |> simplify
+@time total_weight_c1q = sum(weights_c1q)
 
 #===
 ## Complex I Gauthier model
@@ -104,7 +109,7 @@ mat_c1g = let
 end
 
 #---
-@time weights_c1g = [(-1)^(7-1) * det(skip_colrow(mat_c1g, i)) |> expand |> simplify for i in 1:7]
+@time weights_c1g = [(-1)^(7-1) * det(skip_colrow(mat_c1g, i)) |> expand for i in 1:7]
 
 # Total weight
 @time total_weight_c1g = sum(weights_c1g)
