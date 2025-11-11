@@ -21,6 +21,7 @@ project:
     - file: docs/hypoxia-reperfusion.ipynb
     - file: docs/c1-test.ipynb
     - file: docs/c3-test.ipynb
+    - file: docs/enzyme.ipynb
 site:
   template: book-theme
   # options:
