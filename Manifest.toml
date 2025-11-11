@@ -564,7 +564,7 @@ version = "1.10.0"
     Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [[deps.ECMEDox]]
-deps = ["DiffEqCallbacks", "DisplayAs", "ModelingToolkit", "NaNMath", "NonlinearSolve", "OrdinaryDiffEq", "Plots", "ProgressLogging", "SteadyStateDiffEq", "Symbolics"]
+deps = ["DiffEqCallbacks", "DisplayAs", "LinearAlgebra", "ModelingToolkit", "NaNMath", "NonlinearSolve", "OrdinaryDiffEq", "Plots", "ProgressLogging", "SteadyStateDiffEq", "Symbolics"]
 path = "."
 uuid = "1437dc8d-fd17-40e7-b0f7-451a5e40c249"
 version = "0.4.0"
