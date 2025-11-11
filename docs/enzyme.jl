@@ -20,14 +20,14 @@ function accumulate_rate!(mat, rate, src::Int, dst::Int)
 end
 
 #===
-## SOD model McAdam model
+## SOD McAdam model
 
 From `McAdam, 1977`
 
-k1: EA + O2- => EB + O2
-k1: EB + O2- => EA + H2O2
-k3: EB + O2- => EC
-k5: EC => EA
+- k1: EA + O2- => EB + O2
+- k1: EB + O2- => EA + H2O2
+- k3: EB + O2- => EC
+- k5: EC => EA
 ===#
 
 @variables k1 k3 k5 sox
