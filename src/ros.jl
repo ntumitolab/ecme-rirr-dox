@@ -98,6 +98,5 @@ end
 
 "ROS diffusion and detox system"
 function get_ros_sys(; dpsi, sox_m, nadph_i=75μM, V_MITO_V_MYO=0.615, name=:rossys)
-    @unpack eqs_ros = get_ros_eqs(; dpsi, sox_m, nadph_i, V_MITO_V_MYO)
-    return System(eqs_ros, t; name)
+    return create_system(get_ros_eqs; dpsi, sox_m, nadph_i, V_MITO_V_MYO, name)
 end

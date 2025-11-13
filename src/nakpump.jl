@@ -18,6 +18,5 @@ end
 
 "Na-K pump"
 function get_inak_sys(; atp_i, adp_i, vm, na_i, na_o, k_o, name=:naksys)
-    @unpack eqs_nak = get_inak_eqs(; atp_i, adp_i, vm, na_i, na_o, k_o)
-    return System(eqs_nak, t; name)
+    return create_system(get_inak_eqs; atp_i, adp_i, vm, na_i, na_o, k_o, name)
 end

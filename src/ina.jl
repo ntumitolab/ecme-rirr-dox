@@ -44,6 +44,5 @@ end
 
 "Sodium and background currents"
 function get_ina_sys(; na_i, na_o, ca_i, ca_o, vm, name=:inasys)
-    @unpack eqs_ina = get_ina_eqs(; na_i, na_o, ca_i, ca_o, vm)
-    return System(eqs_ina, t; name)
+    return create_system(get_ina_eqs; na_i, na_o, ca_i, ca_o, vm, name)
 end

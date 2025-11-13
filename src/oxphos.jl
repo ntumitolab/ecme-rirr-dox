@@ -918,17 +918,15 @@ function get_etc_sys(;
     CYANIDE_BLOCK=0,
     name=:etcsys)
 
-    @independent_variables t
-    @unpack eqs_etc = get_etc_eqs(;
+    return create_system(get_etc_eqs;
         DOX, MT_PROT, O2, nad_m, nadh_m,
         dpsi, sox_m, suc, fum, oaa, h_i, h_m,
         ROTENONE_BLOCK,
         ANTIMYCIN_BLOCK,
         MYXOTHIAZOL_BLOCK,
         STIGMATELLIN_BLOCK,
-        CYANIDE_BLOCK)
-
-    return System(eqs_etc, t; name)
+        CYANIDE_BLOCK,
+        name)
 end
 
 function get_c5_eqs(; dpsi, atp_i, adp_i, atp_m, adp_m,
@@ -1011,8 +1009,7 @@ function get_c5_eqs(; dpsi, atp_i, adp_i, atp_m, adp_m,
 end
 
 function get_c5_sys(; dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m=8.6512mM, MT_PROT=1, C5_INHIB=1, use_mg=false, mg_i=1mM, mg_m=0.4mM, name=:c5sys)
-    @unpack eqs_c5 = get_c5_eqs(;
+    return create_system(get_c5_eqs;
         dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m,
-        MT_PROT, C5_INHIB, use_mg, mg_i, mg_m)
-    return System(eqs_c5, t; name)
+        MT_PROT, C5_INHIB, use_mg, mg_i, mg_m, name)
 end

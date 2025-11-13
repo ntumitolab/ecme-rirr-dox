@@ -74,6 +74,5 @@ end
 
 "Mitochondrial calcium handling"
 function get_mitoca_sys(; na_i, ca_m, ca_i, dpsi, name=:mitocasys)
-    @unpack eqs_mitoca = get_mitoca_eqs(; na_i, ca_m, ca_i, dpsi)
-    return System(eqs_mitoca, t; name)
+    return create_system(get_mitoca_eqs; na_i, ca_m, ca_i, dpsi, name)
 end
