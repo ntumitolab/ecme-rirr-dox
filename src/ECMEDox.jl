@@ -5,8 +5,6 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 using OrdinaryDiffEq
 using NaNMath
 
-const System = ODESystem
-
 export build_model, build_u0, build_stim_callbacks
 
 include("utils.jl")

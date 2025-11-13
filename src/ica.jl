@@ -48,5 +48,6 @@ end
 
 "Calcium recycle currents"
 function get_jca_sys(; atp_i, adp_i, ca_i, ca_nsr, ca_o, na_i, na_o, vm, name=:caresys)
-    return create_system(get_jca_eqs; atp_i, adp_i, ca_i, ca_nsr, ca_o, na_i, na_o, vm, name)
+    @unpack eqs_jca = get_jca_eqs(; atp_i, adp_i, ca_i, ca_nsr, ca_o, na_i, na_o, vm)
+    return System(eqs_jca, t; name)
 end

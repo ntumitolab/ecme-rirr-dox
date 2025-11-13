@@ -84,5 +84,6 @@ end
 
 "Sarcomere force generation and ATP consumption"
 function get_force_sys(; atp_i, adp_i, ca_i, name=:forcesys)
-    return create_system(get_force_eqs; atp_i, adp_i, ca_i, name)
+    @unpack eqs_force = get_force_eqs(; atp_i, adp_i, ca_i)
+    return System(eqs_force, t; name)
 end

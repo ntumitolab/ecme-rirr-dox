@@ -45,5 +45,6 @@ end
 
 "Potassium currents, Zhou 2009 version"
 function get_ik_sys(; na_i, na_o, k_i, k_o, mg_i, vm, atp_i, adp_i, name=:iksys)
-    return create_system(get_ik_eqs; na_i, na_o, k_i, k_o, mg_i, vm, atp_i, adp_i, name)
+    @unpack eqs_ik = get_ik_eqs(; na_i, na_o, k_i, k_o, mg_i, vm, atp_i, adp_i)
+    return System(eqs_ik, t; name)
 end

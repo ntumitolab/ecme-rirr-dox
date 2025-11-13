@@ -112,5 +112,6 @@ function get_cicr16_eqs(; vm, ca_ss, ca_i, ca_jsr, ca_nsr, k_i, ca_o, k_o)
 end
 
 function get_cicr16_sys(; vm, ca_ss, ca_i, ca_jsr, ca_nsr, k_i, ca_o, k_o, name=:cicr16sys)
-    return create_system(get_cicr16_eqs; vm, ca_ss, ca_i, ca_jsr, ca_nsr, k_i, ca_o, k_o, name)
+    @unpack eqs_cicr16 = get_cicr16_eqs(; vm, ca_ss, ca_i, ca_jsr, ca_nsr, k_i, ca_o, k_o)
+    return System(eqs_cicr16, t; name)
 end

@@ -179,17 +179,3 @@ function build_stim_callbacks(sym, endtime; period=1second, duty=0.5ms, starttim
     fallevents = PresetTimeCallback(ts .+ duty, fall!)
     return CallbackSet(riseevents, fallevents)
 end
-
-"""
-Create an ODESystem from equations obtained from a `get_*_eqs` function.
-
-    create_system(eqs_func, args...; name, kwargs...)
-
-This helper reduces code duplication across all `get_*_sys` functions.
-"""
-function create_system(eqs_func, args...; name, kwargs...)
-    result = eqs_func(args...; kwargs...)
-    eqs_key = first(filter(k -> startswith(string(k), "eqs_"), keys(result)))
-    eqs = getproperty(result, eqs_key)
-    return System(eqs, t; name)
-end

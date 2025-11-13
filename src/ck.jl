@@ -37,5 +37,6 @@ end
 
 "Creatine kinase (CK)"
 function get_ck_sys(; atp_i, adp_i, name=:cksys)
-    return create_system(get_ck_eqs; atp_i, adp_i, name)
+    @unpack eqs_ck = get_ck_eqs(; atp_i, adp_i)
+    return System(eqs_ck, t; name)
 end
