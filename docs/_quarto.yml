@@ -1,35 +1,33 @@
 # https://quarto.org/docs/projects/quarto-projects.html
 project:
-  type: book
+  type: website
   output-dir: ../_site
 
-# https://quarto.org/docs/books/
-book:
-  title: ECMC-RORR-DOX
-  author: "Wen-Wei Tseng"
-  repo-url: https://github.com/ntumitolab/ecme-rirr-dox
-  site-url: https://ntumitolab.github.io/ecme-rirr-dox/
+# https://quarto.org/docs/websites/
+website:
+  title: Quarto Julia Template
   page-navigation: true
-  bread-crumbs: true
-  chapters:
-    - index.ipynb
-    - c1-test.ipynb
-    - c3-test.ipynb
-    - dox.ipynb
-    - hypoxia-reperfusion.ipynb
-  appendices:
-    - model-desc.qmd
-    - enzyme.ipynb
+  back-to-top-navigation: true
+  repo-url: https://github.com/ntumitolab/ecme-rirr-dox
+  site-url: https://ntumitolab.github.io/ecme-rirr-dox
+  sidebar:
+    style: docked
+    search: true
+    contents: auto
+    tools:
+      - icon: github
+        href: https://github.com/ntumitolab/ecme-rirr-dox
 
 # bibliography: references.bib
 
 # https://quarto.org/docs/output-formats/html-basics.html
 format:
   html:
-    code-link: true
+    toc: true
     theme:
       light: cosmo
-      dark: cyborg
+      dark: darkly
+    # css: styles.css
 
 # Default options
 # notebook-links: true
