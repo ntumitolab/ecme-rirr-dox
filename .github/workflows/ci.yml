@@ -18,7 +18,7 @@ env:
   JULIA_NUM_THREADS: 'auto'
   # JULIA_CPU_TARGET: 'generic;icelake-server,clone_all;znver3,clone_all'
   NBCACHE: '.cache'
-  LITERATE_PROC: '6'
+  LITERATE_PROC: '4'
   PY_VER: '3.13'
 
 jobs:
