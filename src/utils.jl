@@ -52,7 +52,6 @@ const KA_ADP = 4.17E-7 * Molar
 const KMG_ATP = 6.46E-5 * Molar
 const KMG_ADP = 5.62E-4 * Molar
 const KA_SUC = 6.3E-6 * Molar
-const KA_H2O = 1E-14 * Molar
 const iKWATER = inv(KWATER)
 const iKA_PI = inv(KA_PI)
 const iKA_ATP = inv(KA_ATP)
@@ -60,7 +59,6 @@ const iKA_ADP = inv(KA_ADP)
 const iKMG_ATP = inv(KMG_ATP)
 const iKMG_ADP = inv(KMG_ADP)
 const iKA_SUC = inv(KA_SUC)
-const iKA_H2O = inv(KA_H2O)
 
 #===
 Commonly-used functions

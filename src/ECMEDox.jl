@@ -5,6 +5,7 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 using OrdinaryDiffEq
 using NaNMath
 using DiffEqCallbacks
+using ComponentArrays
 
 export build_model, build_u0, build_stim_callbacks
 
