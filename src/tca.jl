@@ -1,4 +1,16 @@
 # TCA cycle model
+"Citrate concentration from total TCA pool"
+_cit(TCA_T, isoc, oaa, akg, scoa, suc, fum, mal) = TCA_T - isoc - oaa - akg - scoa - suc - fum - mal
+_cit(u, p, t) = _cit(p.TCA_T, u.isoc, u.oaa, u.akg, u.scoa, u.suc, u.fum, u.mal)
+
+"Citrate synthase rate"
+function vCS(u, p, t)
+    vmax = p.KCAT_CS * p.ET_CS
+    A = u.oaa / p.KM_OAA_CS
+    B = p.ACCOA / p.KM_ACCOA_CS
+    return vmax * A * B / (1 + A + B + A * B)
+end
+
 function get_tca_eqs(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Molar, pi_m=8mM, mg_m=0.4mM, use_mg=false)
     @parameters begin
         ## Total TCA metabolite pool
