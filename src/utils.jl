@@ -1,5 +1,3 @@
-using DiffEqCallbacks
-
 #===
 Physical constants and common functions
 ===#
@@ -82,11 +80,13 @@ Logistic sigmoid function.
 expit(x, a=one(x), b=one(x)) = a / (b + exp(-x))
 
 """
-Relative exponential function.
-
-    exprel(x) = x / (exp(x) - 1)
+Returns `x / (exp(x) - 1)`, handling x is zero.
 """
 exprel(x) = x / expm1(x)
+function exprel(x::Real)
+    res = x / expm1(x)
+    return iszero(x) ? one(res) : res
+end
 
 #=
 Get propotions of AXP from dissociation constants
