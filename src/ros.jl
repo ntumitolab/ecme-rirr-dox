@@ -1,6 +1,4 @@
-#=
-ROS scavenging system
-=#
+# ROS transport and scavenging systems
 
 """
 Rate of superoxide dismutase. Based on (McAdam, 1977)
