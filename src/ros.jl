@@ -19,12 +19,12 @@ get_default_sod_params() = ComponentArray(;
     ET_SOD_M = 0.3μM             # Mitochondrial SOD concentration # (Kembro, 2013)
 )
 
-function vSODi(sox_i, h2o2_i, p=get_default_sod_params())
+function vSODi(; sox_i, h2o2_i, p=get_default_sod_params())
     @unpack K1_SOD, K3_SOD, K5_SOD, KI_H2O2_SOD, ET_SOD_I = p
     return _vsod(sox_i, h2o2_i, K1_SOD, K3_SOD, K5_SOD, KI_H2O2_SOD, ET_SOD_I)
 end
 
-function vSODm(sox_m, h2o2_m, p=get_default_sod_params())
+function vSODm(; sox_m, h2o2_m, p=get_default_sod_params())
     @unpack K1_SOD, K3_SOD, K5_SOD, KI_H2O2_SOD, ET_SOD_M = p
     return _vsod(sox_m, h2o2_m, K1_SOD, K3_SOD, K5_SOD, KI_H2O2_SOD, ET_SOD_M)
 end
@@ -41,10 +41,10 @@ get_default_gpx_params() = ComponentArray(;
 )
 
 "Glutathione peroxidase rate (cytosolic)"
-vGPXi(h2o2_i, gsh_i, p=get_default_gpx_params()) = dalziel(h2o2_i, gsh_i, p.ET_GPXI, p.PHI2_GPX, p.PHI1_GPX)
+vGPXi(; h2o2_i, gsh_i, p=get_default_gpx_params()) = dalziel(h2o2_i, gsh_i, p.ET_GPXI, p.PHI2_GPX, p.PHI1_GPX)
 
 "Glutathione peroxidase rate (mitochondrial)"
-vGPXm(h2o2_m, gsh_m, p=get_default_gpx_params()) = dalziel(h2o2_m, gsh_m, p.ET_GPXM, p.PHI2_GPX, p.PHI1_GPX)
+vGPXm(; h2o2_m, gsh_m, p=get_default_gpx_params()) = dalziel(h2o2_m, gsh_m, p.ET_GPXM, p.PHI2_GPX, p.PHI1_GPX)
 
 get_default_tpx_params() = ComponentArray(;
     PHI1_TPX = 3.83mM * ms,  # Dalziel constant of TPX
@@ -72,10 +72,10 @@ get_default_gr_params() = ComponentArray(;
 )
 
 "GR (glutathion reductace) rate (cytosolic)"
-vGRi(nadph_i, gssg_i, p=get_default_gr_params()) = p.ET_GRi * p.K1_GR * hil(nadph_i, p.KM_NADPH_GR) * hil(gssg_i, p.KM_GSSG_GR)
+vGRi(; nadph_i, gssg_i, p=get_default_gr_params()) = p.ET_GRi * p.K1_GR * hil(nadph_i, p.KM_NADPH_GR) * hil(gssg_i, p.KM_GSSG_GR)
 
 "GR (glutathion reductace) rate (mitochondrial)"
-vGRm(nadph_m, gssg_m, p=get_default_gr_params()) = p.ET_GRm * p.K1_GR * hil(nadph_m, p.KM_NADPH_GR) * hil(gssg_m, p.KM_GSSG_GR)
+vGRm(; nadph_m, gssg_m, p=get_default_gr_params()) = p.ET_GRm * p.K1_GR * hil(nadph_m, p.KM_NADPH_GR) * hil(gssg_m, p.KM_GSSG_GR)
 
 get_default_tr_params() = ComponentArray(;
     K1_TR = 22.75Hz,          # Catalytic constant of TR
@@ -88,10 +88,10 @@ get_default_tr_params() = ComponentArray(;
 )
 
 "TR (thioredoxin reductase) rate (cytosolic)"
-vTRi(nadph_i, trxss_i, p=get_default_tr_params()) = p.ET_TRi * p.K1_TR * hil(nadph_i, p.KM_NADPH_TR) * hil(trxss_i, p.KM_TRXSS_TR)
+vTRi(; nadph_i, trxss_i, p=get_default_tr_params()) = p.ET_TRi * p.K1_TR * hil(nadph_i, p.KM_NADPH_TR) * hil(trxss_i, p.KM_TRXSS_TR)
 
 "TR (thioredoxin reductase) rate (mitochondrial)"
-vTRm(nadph_m, trxss_m, p=get_default_tr_params()) = p.ET_TRm * p.K1_TR * hil(nadph_m, p.KM_NADPH_TR) * hil(trxss_m, p.KM_TRXSS_TR)
+vTRm(; nadph_m, trxss_m, p=get_default_tr_params()) = p.ET_TRm * p.K1_TR * hil(nadph_m, p.KM_NADPH_TR) * hil(trxss_m, p.KM_TRXSS_TR)
 
 get_default_cat_params() = ComponentArray(;
     K1_CAT = 17 / (mM * ms),  # Catalytic constant of Catalase
@@ -100,7 +100,7 @@ get_default_cat_params() = ComponentArray(;
 )
 
 "Catalase rate (cytosolic)"
-vCATi(h2o2_i, p=get_default_cat_params()) = 2 * p.K1_CAT * p.ET_CATi * h2o2_i * exp(-p.FR_CAT * h2o2_i)
+vCATi(; h2o2_i, p=get_default_cat_params()) = 2 * p.K1_CAT * p.ET_CATi * h2o2_i * exp(-p.FR_CAT * h2o2_i)
 
 get_default_imac_params() = ComponentArray(;
     A_IMAC = 0.001,                  # Basal IMAC conductance factor
@@ -114,7 +114,7 @@ get_default_imac_params() = ComponentArray(;
 )
 
 "Redox-sensitive IMAC (Inner mitochondrial anion channel) from Cortassa et al. (2004)"
-function vIMAC(dpsi, sox_i, sox_m, p=get_default_imac_params())
+function vIMAC(; dpsi, sox_i, sox_m, p=get_default_imac_params())
     @unpack A_IMAC, B_IMAC, KCC_SOX_IMAC, GL_IMAC, G_MAX_IMAC, k_IMAC, DPSI_OFFSET_IMAC, J_IMAC = p
     ΔVROS = nernst(sox_i, sox_m, -1)
     faIMAC = A_IMAC + B_IMAC * hil(sox_i, KCC_SOX_IMAC)
