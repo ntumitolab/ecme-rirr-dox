@@ -308,7 +308,7 @@ function get_eqs_c3(;
         SQp(t) = 0μM
         fes_ox(t) = C3_CONC
         fes_rd(t) ## Conserved
-        cytc1_ox(t) = C3_CONC
+        cytc1_ox(t)
         cytc1_rd(t) ## Conserved
         blo_bho(t) = C3_CONC
         blr_bho(t) = 0
@@ -782,7 +782,7 @@ function get_etc_eqs(;
     @variables begin
         fes_ox(t) = C3_CONC
         fes_rd(t) # Conserved
-        cytc1_ox(t) = C3_CONC
+        cytc1_ox(t)
         cytc1_rd(t) # Conserved
         blo_bho(t) = C3_CONC
         blr_bho(t) = 0
