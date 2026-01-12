@@ -24,11 +24,11 @@ get_default_cicr16_params() = ComponentArray(;
 )
 
 _c0_lcc(c1_lcc, c2_lcc, c3_lcc, c4_lcc, o_lcc, cca0_lcc, cca1_lcc, cca2_lcc, cca3_lcc, cca4_lcc) = 1 - (c1_lcc + c2_lcc + c3_lcc + c4_lcc + o_lcc + cca0_lcc + cca1_lcc + cca2_lcc + cca3_lcc + cca4_lcc)
-_c0_lcc(u::ComponentArray) = _c0_lcc(u.c1_lcc, u.c2_lcc, u.c3_lcc, u.c4_lcc, u.o_lcc, u.cca0_lcc, u.cca1_lcc, u.cca2_lcc, u.cca3_lcc, u.cca4_lcc)
+_c0_lcc(u) = _c0_lcc(u.c1_lcc, u.c2_lcc, u.c3_lcc, u.c4_lcc, u.o_lcc, u.cca0_lcc, u.cca1_lcc, u.cca2_lcc, u.cca3_lcc, u.cca4_lcc)
 
 function cicr16_rates!(D, u, p, t)
     @unpack A_LCC, B_LCC, γ_LCC, ω_LCC, f_LCC, g_LCC = p
-    @unpack vm, ca_ss, c0_lcc, c1_lcc, c2_lcc, c3_lcc, c4_lcc, o_lcc, cca0_lcc, cca1_lcc, cca2_lcc, cca3_lcc, cca4_lcc = u
+    @unpack vm, ca_ss, c1_lcc, c2_lcc, c3_lcc, c4_lcc, o_lcc, cca0_lcc, cca1_lcc, cca2_lcc, cca3_lcc, cca4_lcc = u
 
     ## Calcium activation / inactivation rates
     ω, f, g = ω_LCC, f_LCC, g_LCC
@@ -37,6 +37,7 @@ function cicr16_rates!(D, u, p, t)
     α′ = A_LCC * α
     β′ = B_LCC * β
     γ = γ_LCC * ca_ss
+    c0_lcc = _c0_lcc(u)
     vc0c1 = 4α * c0_lcc - β * c1_lcc
     vc1c2 = 3α * c1_lcc - 2β * c2_lcc
     vc2c3 = 2α * c2_lcc - 3β * c3_lcc
