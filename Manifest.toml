@@ -250,9 +250,9 @@ version = "1.3.0+1"
 
 [[deps.ComponentArrays]]
 deps = ["Adapt", "ArrayInterface", "ChainRulesCore", "ConstructionBase", "Functors", "LinearAlgebra", "StaticArrayInterface", "StaticArraysCore"]
-git-tree-sha1 = "29dfb059630454c0282779d58e1a8539573b5945"
+git-tree-sha1 = "4b5762f1e3102ea84a3fd05440acc83ec7fbf201"
 uuid = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
-version = "0.15.30"
+version = "0.15.31"
 
     [deps.ComponentArrays.extensions]
     ComponentArraysGPUArraysExt = "GPUArrays"
@@ -503,7 +503,7 @@ uuid = "7c1d4256-1411-5781-91ec-d7bc3513ac07"
 version = "0.6.4"
 
 [[deps.ECMEDox]]
-deps = ["ComponentArrays", "DiffEqCallbacks", "DisplayAs", "ForwardDiff", "JSON", "Latexify", "LinearAlgebra", "Literate", "NaNMath", "OrdinaryDiffEq", "Plots", "ProgressLogging", "SimpleUnPack", "SteadyStateDiffEq", "Symbolics"]
+deps = ["ComponentArrays", "DiffEqCallbacks", "DisplayAs", "ForwardDiff", "JSON", "Latexify", "LinearAlgebra", "Literate", "NaNMath", "NonlinearSolve", "OrdinaryDiffEq", "Plots", "ProgressLogging", "SimpleUnPack", "SteadyStateDiffEq", "Symbolics"]
 path = "."
 uuid = "1437dc8d-fd17-40e7-b0f7-451a5e40c249"
 version = "0.4.0"
@@ -1748,9 +1748,9 @@ version = "0.6.12"
 
 [[deps.RecursiveArrayTools]]
 deps = ["Adapt", "ArrayInterface", "DocStringExtensions", "GPUArraysCore", "LinearAlgebra", "PrecompileTools", "RecipesBase", "StaticArraysCore", "SymbolicIndexingInterface"]
-git-tree-sha1 = "448d9141fb2d429f528f1896f773ccdccc1dcab3"
+git-tree-sha1 = "31b3d7b7e14faad39583475b89aadbd9c3e7ef8b"
 uuid = "731186ca-8d62-57ce-b412-fbd966d074cd"
-version = "3.43.0"
+version = "3.44.0"
 
     [deps.RecursiveArrayTools.extensions]
     RecursiveArrayToolsFastBroadcastExt = "FastBroadcast"
@@ -2049,9 +2049,9 @@ version = "0.34.9"
 
 [[deps.SteadyStateDiffEq]]
 deps = ["ConcreteStructs", "DiffEqBase", "DiffEqCallbacks", "LinearAlgebra", "NonlinearSolveBase", "Reexport", "SciMLBase"]
-git-tree-sha1 = "10947da4f1b823ed43890bddda7e8d19dde89e2e"
+git-tree-sha1 = "7b32737ebda77355ee61cfa9e59d376de3604629"
 uuid = "9672c7b4-1e72-59bd-8a11-6ac3964bc41f"
-version = "2.8.0"
+version = "2.9.0"
 
 [[deps.StrideArraysCore]]
 deps = ["ArrayInterface", "CloseOpenIntervals", "IfElse", "LayoutPointers", "LinearAlgebra", "ManualMemory", "SIMDTypes", "Static", "StaticArrayInterface", "ThreadingUtilities"]
