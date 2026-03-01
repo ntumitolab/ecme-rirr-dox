@@ -321,7 +321,6 @@ function get_eqs_c3(;
         vCytcC3(t)
     end
 
-    lut = Dict()
     ## Split of electrical potentials
     δ₁_C3 = 0.5
     δ₂_C3 = 0.5

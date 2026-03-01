@@ -13,6 +13,11 @@ bcl = 1.0second
 u0 = build_u0(sys)
 sts = unknowns(sys)
 alg = KenCarp47()
+
+for eq in equations(sys)
+    println(eq)
+end
+
 @unpack iStim = sys
 callback = build_stim_callbacks(iStim, tend; period=bcl)
 prob = ODEProblem(sys, u0, tend)
