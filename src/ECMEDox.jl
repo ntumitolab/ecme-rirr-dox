@@ -22,9 +22,9 @@ include("transmito.jl")
 include("u0.jl")
 
 function build_model(; name=:ecmesys, bcl=0second, istim=-80μAcm⁻², tstart=0second, tend=10second, duty=0.5ms, use_mg=false, simplify=true)
+    @discretes iStim(t) = 0μAcm⁻²   # Stimulation current
     @parameters begin
-        iStim(t) = 0μAcm⁻²          # Stimulation current
-        DOX = 0mM                # Doxorubicin concentration
+        DOX = 0mM                   # Doxorubicin concentration
         kdiffO2 = 1000Hz            # Oxygen diffusion rate
         MT_PROT = 1                 # OXPHOS protein content
         ΣA_m = 1.01mM               # Mitochondrial ATP + ADP pool (Gauthier-2013)
