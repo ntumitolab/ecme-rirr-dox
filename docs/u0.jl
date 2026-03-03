@@ -12,7 +12,7 @@ bcl = 1.0second
 @time @named sys = build_model()
 u0 = build_u0(sys)
 sts = unknowns(sys)
-alg = KenCarp47()
+alg = FBDF()
 
 for eq in equations(sys)
     println(eq)
