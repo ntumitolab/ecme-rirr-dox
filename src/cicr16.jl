@@ -67,6 +67,7 @@ function get_cicr16_eqs(; vm, ca_ss, ca_i, ca_jsr, ca_nsr, k_i, ca_o, k_o)
     α′ = A_LCC * α
     β′ = B_LCC * β
     γ = γ_LCC * ca_ss
+
     rs_lcc = Dict()
     add_rate!(rs_lcc, 4α, c0_lcc, β, c1_lcc)
     add_rate!(rs_lcc, 3α, c1_lcc, 2β, c2_lcc)

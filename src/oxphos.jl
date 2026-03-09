@@ -1,3 +1,4 @@
+# TODO: split the big function
 # Complex I using a simplified Markevich model
 # Rapid equlibrium in the flavin site
 # QSSA for the catalytic cycle in the quinone site
@@ -182,8 +183,8 @@ function get_c1_eqs(;
     return (; eqs_c1, vQC1, vNADHC1, vROSIf, vROSIq, vROSC1, vQH2C1, vHresC1, vNADC1, TNC1)
 end
 
-## Complex II (SDH)
-## Reversible rapid equlibrium random Bi-Bi enzyme catalytic mechanism
+# Complex II (SDH)
+# Reversible rapid equlibrium random Bi-Bi enzyme catalytic mechanism
 function get_c2_eqs(;
     Q_n,
     QH2_n,
@@ -451,7 +452,7 @@ function get_etc_eqs(;
         Q_n(t) = 1805μM
         QH2_n(t) = 123μM
         QH2_p(t) = 123μM
-        Q_p(t) ## Qtotal - Qn - QH2n - QH2p - SQn - SQp
+        Q_p(t) ## Conserved: Qtotal - Qn - QH2n - QH2p - SQn - SQp
         SQn(t) = 142μM
         SQp(t) = 0μM
     end
@@ -917,7 +918,6 @@ function get_etc_sys(;
     CYANIDE_BLOCK=0,
     name=:etcsys)
 
-    @independent_variables t
     @unpack eqs_etc = get_etc_eqs(;
         DOX, MT_PROT, O2, nad_m, nadh_m,
         dpsi, sox_m, suc, fum, oaa, h_i, h_m,

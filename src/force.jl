@@ -44,15 +44,15 @@ function get_force_eqs(; atp_i, adp_i, ca_i)
         x_p1(t) = 0
         x_p2(t) = 0
         x_p3(t) = 0
-        x_n0(t) # Conserved ~ 1
+        x_n0(t) ## Conserved
         x_n1(t) = 0
         force(t)
         force_normal(t)
         vAm(t)
         ltr_ca(t) = 9μM
         htr_ca(t) = 132μM
-        ltr_free(t) # Conserved = ΣLTRPN - ltr_ca
-        htr_free(t) # Conserved = ΣHTRPN - htr_free
+        ltr_free(t) ## Conserved = ΣLTRPN - ltr_ca
+        htr_free(t) ## Conserved = ΣHTRPN - htr_free
         Jtrpn(t)
     end
 

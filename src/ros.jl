@@ -1,7 +1,3 @@
-#=
-ROS scavenging system
-=#
-
 """
 Rate of superoxide dismutase. Based on (McAdam, 1977)
 The activity will be capped at high concentrations of SOX.
@@ -69,13 +65,13 @@ function get_ros_eqs(; dpsi, sox_m, nadph_i=75μM, V_MITO_V_MYO=0.615)
         vSOD_i(t)
         vGPX_i(t)
         vGR_i(t)
-        vCAT(t)     # Catalase flux
-        vTrROS(t)   # SOX flux via IMAC
-        vIMAC(t)    # IMAC ion flux
-        gIMAC(t)    # IMAC conductance
-        fvIMAC(t)  # IMAC activated by voltage
-        faIMAC(t)  # IMAC activated by ROS
-        ΔVROS(t)    # Reversal potential of ROS
+        vCAT(t)     ## Catalase flux
+        vTrROS(t)   ## SOX flux via IMAC
+        vIMAC(t)    ## IMAC ion flux
+        gIMAC(t)    ## IMAC conductance
+        fvIMAC(t)   ## IMAC activated by voltage
+        faIMAC(t)   ## IMAC activated by SOX
+        ΔVROS(t)    ## Nernst potential of SOX
     end
     eqs_ros = [
         ΔVROS ~ nernst(sox_i, sox_m, -1),
