@@ -27,7 +27,7 @@ using OrdinaryDiffEq
 using SteadyStateDiffEq
 using Plots
 using NaNMath
-using ECMEDox: mV, mM, μM, Molar, Hz, iVT
+using Model: mV, mM, μM, Molar, Hz, iVT
 
 # ## Candidates
 # ### Gauthier's semiforward model

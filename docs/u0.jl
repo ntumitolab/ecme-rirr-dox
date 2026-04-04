@@ -3,8 +3,8 @@
 using OrdinaryDiffEq
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
-using ECMEDox
-using ECMEDox: second, mM, Hz, μM, mV
+using Model
+using Model: second, mM, Hz, μM, mV
 using Plots
 #---
 tend = 1000.0second

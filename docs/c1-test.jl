@@ -7,7 +7,7 @@ using OrdinaryDiffEq
 using SteadyStateDiffEq
 using Plots
 using NaNMath
-using ECMEDox: iVT, mV, μM, mM, Molar, Hz
+using Model: iVT, mV, μM, mM, Molar, Hz
 
 # ## Candidates
 # ### Gauthier 2012
