@@ -19,6 +19,7 @@ include("tca.jl")
 include("ros.jl")
 include("oxphos.jl")
 include("transmito.jl")
+include("precompile.jl")
 include("u0.jl")
 
 function build_model(; name=:ecmesys, bcl=0second, istim=-80μAcm⁻², tstart=0second, tend=10second, duty=0.5ms, use_mg=false, simplify=true)
