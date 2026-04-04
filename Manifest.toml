@@ -2,7 +2,7 @@
 
 julia_version = "1.12.5"
 manifest_format = "2.0"
-project_hash = "6f6ca8625638b24e191826e4496fb382566ce9df"
+project_hash = "795c0d138a552577b6e7c453f388118746a8c7f0"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "f7304359109c768cf32dc5fa2d371565bb63b68a"
@@ -537,7 +537,7 @@ uuid = "7c1d4256-1411-5781-91ec-d7bc3513ac07"
 version = "0.6.5"
 
 [[deps.ECMEDox]]
-deps = ["DiffEqCallbacks", "DisplayAs", "ForwardDiff", "Latexify", "LinearAlgebra", "ModelingToolkit", "NaNMath", "NonlinearSolve", "OrdinaryDiffEq", "Plots", "ProgressLogging", "SteadyStateDiffEq", "Symbolics"]
+deps = ["DiffEqCallbacks", "DisplayAs", "ForwardDiff", "Latexify", "LinearAlgebra", "ModelingToolkit", "NaNMath", "OrdinaryDiffEq", "Plots", "ProgressLogging", "SteadyStateDiffEq", "Symbolics"]
 path = "."
 uuid = "1437dc8d-fd17-40e7-b0f7-451a5e40c249"
 version = "0.4.0"
@@ -1435,9 +1435,9 @@ version = "2.19.0"
 
 [[deps.NonlinearSolveFirstOrder]]
 deps = ["ADTypes", "ArrayInterface", "CommonSolve", "ConcreteStructs", "FiniteDiff", "ForwardDiff", "LineSearch", "LinearAlgebra", "LinearSolve", "MaybeInplace", "NonlinearSolveBase", "PrecompileTools", "Reexport", "SciMLBase", "SciMLJacobianOperators", "Setfield", "StaticArraysCore"]
-git-tree-sha1 = "ae36a13005343aed5e731f146637f61a54702444"
+git-tree-sha1 = "eea7cbe389b168c77df7ff779fb7277019c685c8"
 uuid = "5959db7a-ea39-4486-b5fe-2dd0bf03d60d"
-version = "2.1.0"
+version = "2.0.0"
 
 [[deps.NonlinearSolveQuasiNewton]]
 deps = ["ArrayInterface", "CommonSolve", "ConcreteStructs", "LinearAlgebra", "LinearSolve", "MaybeInplace", "NonlinearSolveBase", "PrecompileTools", "Reexport", "SciMLBase", "SciMLOperators", "StaticArraysCore"]

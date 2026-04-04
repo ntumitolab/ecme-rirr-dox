@@ -25,7 +25,6 @@ using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
 using OrdinaryDiffEq
 using SteadyStateDiffEq
-using NonlinearSolve
 using Plots
 using NaNMath
 using ECMEDox: mV, mM, μM, Molar, Hz, iVT

@@ -3,7 +3,6 @@
 # ## Load packages
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
-using NonlinearSolve
 using OrdinaryDiffEq
 using SteadyStateDiffEq
 using Plots
