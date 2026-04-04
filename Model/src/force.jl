@@ -39,24 +39,26 @@ function get_force_eqs(; atp_i, adp_i, ca_i)
         K½_TRPN = hil((1.7 - 0.8 * (SL - 1.7) / 0.6), K_CA_TRPN)
     end
 
-    @variables begin
+    sts = @variables begin
         x_p0(t) = 0
         x_p1(t) = 0
         x_p2(t) = 0
         x_p3(t) = 0
-        x_n0(t) ## Conserved
         x_n1(t) = 0
+        ltr_ca(t) = 9μM
+        htr_ca(t) = 132μM
+    end
+
+    @variables begin
+        x_n0(t) ## Conserved
+        ltr_free(t) ## Conserved = ΣLTRPN - ltr_ca
+        htr_free(t) ## Conserved = ΣHTRPN - htr_ca
+        k_np_trop(t)
         force(t)
         force_normal(t)
         vAm(t)
-        ltr_ca(t) = 9μM
-        htr_ca(t) = 132μM
-        ltr_free(t) ## Conserved = ΣLTRPN - ltr_ca
-        htr_free(t) ## Conserved = ΣHTRPN - htr_free
         Jtrpn(t)
     end
-
-    k_np_trop = K_PN_TROP * NaNMath.pow(ltr_ca / (ΣLTRPN * K½_TRPN), N_TROP)
 
     rs = Dict()
     add_rate!(rs, F01_AM, x_p0, G01_SL_AM, x_p1)
@@ -65,21 +67,23 @@ function get_force_eqs(; atp_i, adp_i, ca_i)
     add_rate!(rs, K_PN_TROP, x_p0, k_np_trop, x_n0)
     add_rate!(rs, K_PN_TROP, x_p1, k_np_trop, x_n1)
     add_rate!(rs, G01_OFF_AM, x_n1, 0, x_n0)
+    add_rate!(rs, K_P_LTRPN * ca_i, ltr_free, K_M_LTRPN * (1 - 2 / 3 * force_normal), ltr_ca)
+    add_rate!(rs, K_P_HTRPN * ca_i, htr_free, K_M_HTRPN, htr_ca)
 
-    des = [D(x) ~ rs[x] for x in (x_p0, x_p1, x_p2, x_p3, x_n1)]
+    des = [D(x) ~ rs[x] for x in sts]
+    coneqs = [
+        1~x_p0 + x_p1 + x_p2 + x_p3 + x_n0 + x_n1,
+        ΣLTRPN ~ ltr_ca + ltr_free,
+        ΣHTRPN ~ htr_ca + htr_free,
+    ]
     eqs = [
+        k_np_trop ~ K_PN_TROP * NaNMath.pow(ltr_ca / (ΣLTRPN * K½_TRPN), N_TROP),
         force ~ ζ_AM * (x_p1 + x_n1 + 2 * x_p2 + 3 * x_p3) * iDEN_FORCE,
         force_normal ~ (x_p1 + x_p2 + x_p3 + x_n1) * iDEN_FORCE_N,
         vAm ~ V_MAX_AM / (F01_AM + F12_AM + F23_AM) * hil(atp_i * hil(KI_ADP_AM, adp_i), KM_ATP_AM) * (F01_AM * x_p0 + F12_AM * x_p1 + F23_AM * x_p2),
-        ΣLTRPN ~ ltr_ca + ltr_free,
-        ΣHTRPN ~ htr_ca + htr_free,
-        D(ltr_ca) ~ K_P_LTRPN * ca_i * ltr_free - K_M_LTRPN * ltr_ca * (1 - 2 / 3 * force_normal),
-        D(htr_ca) ~ K_P_HTRPN * ca_i * htr_free - K_M_HTRPN * htr_ca,
         Jtrpn ~ D(ltr_ca) + D(htr_ca),
-        1 ~ x_p0 + x_p1 + x_p2 + x_p3 + x_n0 + x_n1,
     ]
-    eqs_force = [des; eqs]
-    return (; eqs_force, vAm, Jtrpn)
+    return (; eqs_force= [des; eqs; coneqs], vAm, Jtrpn)
 end
 
 "Sarcomere force generation and ATP consumption"

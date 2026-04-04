@@ -25,33 +25,34 @@ function get_cicr16_eqs(; vm, ca_ss, ca_i, ca_jsr, ca_nsr, k_i, ca_o, k_o)
         KC_M_RYR = 8E-4kHz
     end
 
-    @variables begin
-        # State transition rates
-        α_lcc(t)
-        β_lcc(t)
-        # Closed LCC state
-        c0_lcc(t) # Conserved
+    ## State variables
+    sts = @variables begin
         c1_lcc(t) = 0
         c2_lcc(t) = 0
         c3_lcc(t) = 0
         c4_lcc(t) = 0
-        # Opened LCC state
         o_lcc(t) = 0
-        # Ca-inhibited LCC states
         cca0_lcc(t) = 0
         cca1_lcc(t) = 0
         cca2_lcc(t) = 0
         cca3_lcc(t) = 0
         cca4_lcc(t) = 0
-        # Voltage-gated LCC
         x_yca(t) = 1
+        po1_ryr(t) = 0
+        po2_ryr(t) = 0
+        pc2_ryr(t) = 0
+    end
+
+    ## Derived variables
+    @variables begin
+        # LCC
+        α_lcc(t)
+        β_lcc(t)
+        c0_lcc(t)
         y_inf(t)
         τ_yca(t)
         # RyR
-        po1_ryr(t) = 0
-        po2_ryr(t) = 0
-        pc1_ryr(t) ## Conserved
-        pc2_ryr(t) = 0
+        pc1_ryr(t)
         # Currents
         ICaMax(t)
         ICaK(t)
@@ -68,32 +69,33 @@ function get_cicr16_eqs(; vm, ca_ss, ca_i, ca_jsr, ca_nsr, k_i, ca_o, k_o)
     β′ = B_LCC * β
     γ = γ_LCC * ca_ss
 
-    rs_lcc = Dict()
-    add_rate!(rs_lcc, 4α, c0_lcc, β, c1_lcc)
-    add_rate!(rs_lcc, 3α, c1_lcc, 2β, c2_lcc)
-    add_rate!(rs_lcc, 2α, c2_lcc, 3β, c3_lcc)
-    add_rate!(rs_lcc, α, c3_lcc, 4β, c4_lcc)
-    add_rate!(rs_lcc, f, c4_lcc, g, o_lcc)
-    add_rate!(rs_lcc, 4α′, cca0_lcc, β′, cca1_lcc)
-    add_rate!(rs_lcc, 3α′, cca1_lcc, 2β′, cca2_lcc)
-    add_rate!(rs_lcc, 2α′, cca2_lcc, 3β′, cca3_lcc)
-    add_rate!(rs_lcc, α′, cca3_lcc, 4β′, cca4_lcc)
-    add_rate!(rs_lcc, γ, c0_lcc, ω, cca0_lcc)
-    add_rate!(rs_lcc, A_LCC * γ, c1_lcc, B_LCC * ω, cca1_lcc)
-    add_rate!(rs_lcc, A_LCC^2 * γ, c2_lcc, B_LCC^2 * ω, cca2_lcc)
-    add_rate!(rs_lcc, A_LCC^3 * γ, c3_lcc, B_LCC^3 * ω, cca3_lcc)
-    add_rate!(rs_lcc, A_LCC^4 * γ, c4_lcc, B_LCC^4 * ω, cca4_lcc)
-    lcceqs = [ D(x) ~ rs_lcc[x] for x in (c1_lcc, c2_lcc, c3_lcc, c4_lcc, o_lcc, cca0_lcc, cca1_lcc, cca2_lcc, cca3_lcc, cca4_lcc) ]
+    rxns = Dict()
+    add_rate!(rxns, 4α, c0_lcc, β, c1_lcc)
+    add_rate!(rxns, 3α, c1_lcc, 2β, c2_lcc)
+    add_rate!(rxns, 2α, c2_lcc, 3β, c3_lcc)
+    add_rate!(rxns, α, c3_lcc, 4β, c4_lcc)
+    add_rate!(rxns, f, c4_lcc, g, o_lcc)
+    add_rate!(rxns, 4α′, cca0_lcc, β′, cca1_lcc)
+    add_rate!(rxns, 3α′, cca1_lcc, 2β′, cca2_lcc)
+    add_rate!(rxns, 2α′, cca2_lcc, 3β′, cca3_lcc)
+    add_rate!(rxns, α′, cca3_lcc, 4β′, cca4_lcc)
+    add_rate!(rxns, γ, c0_lcc, ω, cca0_lcc)
+    add_rate!(rxns, A_LCC * γ, c1_lcc, B_LCC * ω, cca1_lcc)
+    add_rate!(rxns, A_LCC^2 * γ, c2_lcc, B_LCC^2 * ω, cca2_lcc)
+    add_rate!(rxns, A_LCC^3 * γ, c3_lcc, B_LCC^3 * ω, cca3_lcc)
+    add_rate!(rxns, A_LCC^4 * γ, c4_lcc, B_LCC^4 * ω, cca4_lcc)
 
-    rs_ryr = Dict()
-    add_rate!(rs_ryr, KA_P_RYR * ca_ss^4, pc1_ryr, KA_M_RYR, po1_ryr)
-    add_rate!(rs_ryr, KB_P_RYR * ca_ss^3, po1_ryr, KB_M_RYR, po2_ryr)
-    add_rate!(rs_ryr, KC_P_RYR, po1_ryr, KC_M_RYR, pc2_ryr)
-    ryreqs = [D(x) ~ rs_ryr[x] for x in (po1_ryr, po2_ryr, pc2_ryr)]
+    add_rate!(rxns, KA_P_RYR * ca_ss^4, pc1_ryr, KA_M_RYR, po1_ryr)
+    add_rate!(rxns, KB_P_RYR * ca_ss^3, po1_ryr, KB_M_RYR, po2_ryr)
+    add_rate!(rxns, KC_P_RYR, po1_ryr, KC_M_RYR, pc2_ryr)
 
-    eqs = [
+    rxneqs = [D(x) ~ rxns[x] for x in sts]
+    coneqs = [
         1 ~ c0_lcc + c1_lcc + c2_lcc + c3_lcc + c4_lcc + o_lcc + cca0_lcc + cca1_lcc + cca2_lcc + cca3_lcc + cca4_lcc,
         1 ~ pc1_ryr + po1_ryr + po2_ryr + pc2_ryr,
+    ]
+
+    eqs = [
         α_lcc ~ 0.4kHz * exp((vm + 2mV) * inv(10mV)),
         β_lcc ~ 0.05kHz * exp(-(vm + 2mV) * inv(13mV)),
         y_inf ~ expit(-(vm + 55mV) * inv(7.5mV)) + 0.5 * expit((vm - 21mV) * inv(6mV)),
@@ -107,9 +109,7 @@ function get_cicr16_eqs(; vm, ca_ss, ca_i, ca_jsr, ca_nsr, k_i, ca_o, k_o)
         Jxfer ~ R_XFER * (ca_ss - ca_i),
     ]
 
-    eqs_cicr16 = [ryreqs; lcceqs; eqs]
-
-    return (; eqs_cicr16, ICaL, ICaK, Jrel, Jtr, Jxfer)
+    return (; eqs_cicr16= [rxneqs; coneqs; eqs], ICaL, ICaK, Jrel, Jtr, Jxfer)
 end
 
 function get_cicr16_sys(; vm, ca_ss, ca_i, ca_jsr, ca_nsr, k_i, ca_o, k_o, name=:cicr16sys)
