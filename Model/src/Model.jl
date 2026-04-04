@@ -1,4 +1,4 @@
-module ECMEDox
+module Model
 
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
@@ -141,4 +141,4 @@ function build_model(; name=:ecmesys, bcl=0second, istim=-80μAcm⁻², tstart=0
     return sys
 end # build_model()
 
-end # module ECMEDox
+end # module Model
