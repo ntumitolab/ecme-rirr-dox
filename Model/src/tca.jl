@@ -118,13 +118,13 @@ function get_tca_eqs(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
     end
 
     sts = @variables begin
-        oaa(t) = 11.6μM     ## oxaloacetate
-        isocitrate(t) = 51.6μM    ## isocitrate
-        akg(t) = 51μM       ## alpha-ketoglutarate
-        scoa(t) = 35μM      ## succinyl-CoA
-        succinate(t) = 1.9μM      ## succinate
-        fumarate(t) = 175μM      ## fumarate
-        malate(t) = 160μM      ## malate
+        oaa(t) = 11.6μM             ## oxaloacetate
+        isocitrate(t) = 51.6μM      ## isocitrate
+        akg(t) = 51μM               ## alpha-ketoglutarate
+        scoa(t) = 35μM              ## succinyl-CoA
+        succinate(t) = 1.9μM        ## succinate
+        fumarate(t) = 175μM         ## fumarate
+        malate(t) = 160μM           ## malate
     end
 
     @variables begin
