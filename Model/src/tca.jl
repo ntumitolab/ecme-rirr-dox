@@ -2,12 +2,12 @@
 _vcs(kcat, et, oaa, ACCOA, km_oaa, km_accoa) = kcat * et * oaa * ACCOA / ((km_oaa + oaa) * (km_accoa + ACCOA))
 
 # Aconitase
-_vaco(kf, rkeq, cit, isoc) = kf * (cit - isoc * rkeq)
+_vaco(kf, rkeq, citrate, isocitrate) = kf * (citrate - isocitrate * rkeq)
 
 # IDH3 (Isocitrate dehydrogenase, NADH-producing)
-function _vidh3(kcat, et, isoc, km_isoc, adp, km_adp, ca, km_ca, nad, km_nad, nadh, ki_nadh)
+function _vidh3(kcat, et, isocitrate, km_isoc, adp, km_adp, ca, km_ca, nad, km_nad, nadh, ki_nadh)
     vmax = kcat * et
-    A = (isoc / km_isoc)^2 * (1 + adp / km_adp) * (1 + ca / km_ca)
+    A = (isocitrate / km_isoc)^2 * (1 + adp / km_adp) * (1 + ca / km_ca)
     B = nad * ki_nadh / (km_nad * (ki_nadh + nadh))
     H = 1 + h_m / KH1_IDH + KH2_IDH / h_m
     return vmax * A * B / (H * A * B + A + B + 1)
@@ -24,35 +24,34 @@ function _vkgdh(kcat, et, akg, km_akg, nad_m, km_nad, mg_m, km_mg, ca_m, km_ca, 
 end
 
 # SL (Succinyl-coA lyase)
-_vsl(kf, rkeq, scoa, adp_m, pi_m, suc, atp_m, COA) = kf * (scoa * adp_m * pi_m - suc * atp_m * COA * rkeq)
+_vsl(kf, rkeq, scoa, adp_m, pi_m, succinate, atp_m, COA) = kf * (scoa * adp_m * pi_m - succinate * atp_m * COA * rkeq)
 
 # SL (Succinyl-coA lyase) with binding polynomials
-function _vsl_poly(kf, rkeq, scoa, adp_m, pi_m, suc, atp_m, COA, h_m, mg_m)
+function _vsl_poly(kf, rkeq, scoa, adp_m, pi_m, succinate, atp_m, COA, h_m, mg_m)
     atp4, hatp, mgatp, atp_poly = breakdown_atp(atp_m, h_m, mg_m)
     adp3, hadp, mgadp, adp_poly = breakdown_adp(adp_m, h_m, mg_m)
     pi_poly = pipoly(h_m)
     suc_poly = sucpoly(h_m)
     rkeq = rkeq * (adp_poly * pi_poly) / (atp_poly * suc_poly)
-    return kf * (scoa * adp_m * pi_m - suc * (atp4 + hatp) * COA * rkeq)
+    return kf * (scoa * adp_m * pi_m - succinate * (atp4 + hatp) * COA * rkeq)
 end
 
 # Fumarate hydratase
-_vfh(kf, req, fum, mal) = kf * (fum - mal * req)
+_vfh(kf, req, fumarate, malate) = kf * (fumarate - malate * req)
 
 # Malate dehydrogenase (reversible)
-# TODO: add H+ dependence
-# TODO: vMAX vs VF vs VB
-function _vmdh_rev(kcat, et, oaa, km_oaa, mal, km_mal, nad, km_nad, nadh, km_nadh)
-    vmax = kcat * et
-    f_ha = K_OFFSET_MDH + (KH1_MDH * KH2_MDH / (KH1_MDH * KH2_MDH + KH2_MDH * h_m + h_m^2))
-    f_hi = (h_m^2 / (h_m^2 + h_m * KH3_MDH + KH3_MDH * KH4_MDH))^2
+function _vmdh_reverisble(vf, vb, oaa, km_oaa, malate, km_mal, nad_m, km_nad, nadh_m, km_nadh, h_m, koffset, kh1, kh2, kh3, kh4)
+    f_ha = koffset + (kh1 * kh2 / (kh1 * kh2 + kh2 * h_m + h_m^2))
+    f_hi = (h_m^2 / (h_m^2 + h_m * kh3 + kh3 * kh4))^2
     f_h = f_ha * f_hi
-    f_nad = nad_m / KM_NAD_MDH
-    f_mal = mal / KM_MAL_MDH
-    f_oaa = oaa / KM_OAA_MDH
-    f_nadh = nadh_m / KM_NADH_MDH
-    v_mdh = f_h * (VF_MDH * f_nad * f_mal - VR_MDH * f_oaa * f_nadh) / (1 + f_nad + f_nad * f_mal + f_oaa * f_nadh + f_nadh)
+    f_nad = nad_m / km_nad
+    f_mal = malate / km_mal
+    f_oaa = oaa / km_oaa
+    f_nadh = nadh_m / km_nadh
+    return f_h * (vf * f_nad * f_mal - vb * f_oaa * f_nadh) / (1 + f_nad + f_nad * f_mal + f_oaa * f_nadh + f_nadh)
 end
+
+_vast_reverisble(kf, oaa, glu, akg, asp, keq) = kf * (oaa * glu - akg * asp / keq)
 
 # TCA cycle model
 function get_tca_eqs(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Molar, pi_m=8mM, mg_m=0.4mM, use_mg=false)
@@ -110,7 +109,7 @@ function get_tca_eqs(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
         KM_MAL_MDH = 450μM
         KM_OAA_MDH = 7μM
         KM_NADH_MDH = 17μM
-        VR_MDH = VF_MDH * KM_OAA_MDH * KM_NADH_MDH / (KEQ_MDH * KM_NAD_MDH * KM_MAL_MDH)
+        VR_MDH = VF_MDH * (KM_OAA_MDH * KM_NADH_MDH) / (KEQ_MDH * KM_NAD_MDH * KM_MAL_MDH)
         ### AAT (alanine aminotransferase, aka AST)
         KF_AAT = 21.4Hz / mM
         KEQ_AAT = 6.6
@@ -120,12 +119,12 @@ function get_tca_eqs(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
 
     sts = @variables begin
         oaa(t) = 11.6μM     ## oxaloacetate
-        isoc(t) = 51.6μM    ## isocitrate
+        isocitrate(t) = 51.6μM    ## isocitrate
         akg(t) = 51μM       ## alpha-ketoglutarate
         scoa(t) = 35μM      ## succinyl-CoA
-        suc(t) = 1.9μM      ## succinate
-        fum(t) = 175μM      ## fumarate
-        mal(t) = 160μM      ## malate
+        succinate(t) = 1.9μM      ## succinate
+        fumarate(t) = 175μM      ## fumarate
+        malate(t) = 160μM      ## malate
     end
 
     @variables begin
@@ -138,56 +137,34 @@ function get_tca_eqs(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
         vMDH(t)
         vAAT(t)
         vSDH(t)
-        cit(t) ## Conserved = TCA_T - isoc - oaa - akg - scoa - suc - fum - mal
+        citrate(t) ## Conserved = TCA_T - isocitrate - oaa - akg - scoa - succinate - fumarate - malate
     end
-
-    v_cs = _vcs(KCAT_CS, ET_CS, oaa, ACCOA, KM_OAA_CS, KM_ACCOA_CS)
-    v_aco = _vaco(KF_ACO, rKEQ_ACO, cit, isoc)
-    v_idh3 = _vidh3(KCAT_IDH, ET_IDH, isoc, KM_ISOC_IDH, adp_m, KM_ADP_IDH, ca_m, KM_CA_IDH, nad_m, KM_NAD_IDH, nadh_m, KI_NADH_IDH)
-    v_kgdh = _vkgdh(KCAT_KGDH, ET_KGDH, akg, KM_AKG_KGDH, nad_m, KM_NAD_KGDH, mg_m, KM_MG_KGDH, ca_m, KM_CA_KGDH, h_m, KH1_KGDH, KH2_KGDH, NI_AKG_KGDH)
 
     if use_mg
-        v_sl = _vsl_poly(KF_SL, rKEQ_SL, scoa, adp_m, pi_m, suc, atp_m, COA, h_m, mg_m)
+        v_sl = _vsl_poly(KF_SL, rKEQ_SL, scoa, adp_m, pi_m, succinate, atp_m, COA, h_m, mg_m)
     else
-        v_sl = _vsl(KF_SL, rKEQ_SL, scoa, adp_m, pi_m, suc, atp_m, COA)
+        v_sl = _vsl(KF_SL, rKEQ_SL, scoa, adp_m, pi_m, succinate, atp_m, COA)
     end
-
-    v_fh = _vfh(KF_FH, rKEQ_FH, fum, mal)
-    ## Malate dehydrogenase (reversible)
-    v_mdh = let
-        vmax = KCAT_MDH * ET_MDH
-        f_ha = K_OFFSET_MDH + (KH1_MDH * KH2_MDH / (KH1_MDH * KH2_MDH + KH2_MDH * h_m + h_m^2))
-        f_hi = (h_m^2 / (h_m^2 + h_m * KH3_MDH + KH3_MDH * KH4_MDH))^2
-        f_h = f_ha * f_hi
-        f_nad = nad_m / KM_NAD_MDH
-        f_mal = mal / KM_MAL_MDH
-        f_oaa = oaa / KM_OAA_MDH
-        f_nadh = nadh_m / KM_NADH_MDH
-        v_mdh = f_h * (VF_MDH * f_nad * f_mal - VR_MDH * f_oaa * f_nadh) / (1 + f_nad + f_nad * f_mal + f_oaa * f_nadh + f_nadh)
-    end
-    ## AST (reversible)
-    v_aat = KF_AAT * (oaa * GLU - akg * ASP / KEQ_AAT)
 
     eqs_tca = [
-        TCA_T ~ cit + isoc + oaa + akg + scoa + suc + fum + mal,
-        vCS ~ v_cs,
-        vACO ~ v_aco,
-        vIDH ~ v_idh3,
-        vKGDH ~ v_kgdh,
+        TCA_T ~ citrate + isocitrate + oaa + akg + scoa + succinate + fumarate + malate,
+        vCS ~ _vcs(KCAT_CS, ET_CS, oaa, ACCOA, KM_OAA_CS, KM_ACCOA_CS),
+        vACO ~ _vaco(KF_ACO, rKEQ_ACO, citrate, isocitrate),
+        vIDH ~ _vidh3(KCAT_IDH, ET_IDH, isocitrate, KM_ISOC_IDH, adp_m, KM_ADP_IDH, ca_m, KM_CA_IDH, nad_m, KM_NAD_IDH, nadh_m, KI_NADH_IDH),
+        vKGDH ~ _vkgdh(KCAT_KGDH, ET_KGDH, akg, KM_AKG_KGDH, nad_m, KM_NAD_KGDH, mg_m, KM_MG_KGDH, ca_m, KM_CA_KGDH, h_m, KH1_KGDH, KH2_KGDH, NI_AKG_KGDH),
         vSL ~ v_sl,
-        vFH ~ v_fh,
-        vMDH ~ v_mdh,
-        vAAT ~ v_aat,
-        D(isoc) ~ vACO - vIDH,
+        vFH ~ _vfh(KF_FH, rKEQ_FH, fumarate, malate),
+        vMDH ~ _vmdh_reverisble(VF_MDH, VR_MDH, oaa, KM_OAA_MDH, malate, KM_MAL_MDH, nad_m, KM_NAD_MDH, nadh_m, KM_NADH_MDH, h_m, K_OFFSET_MDH, KH1_MDH, KH2_MDH, KH3_MDH, KH4_MDH),
+        vAAT ~ _vast_reverisble(KF_AAT, oaa, GLU, akg, ASP, KEQ_AAT),
+        D(isocitrate) ~ vACO - vIDH,
         D(akg) ~ vIDH - vKGDH + vAAT,
         D(scoa) ~ vKGDH - vSL,
-        D(suc) ~ vSL - vSDH,
-        D(fum) ~ vSDH - vFH,
-        D(mal) ~ vFH - vMDH,
+        D(succinate) ~ vSL - vSDH,
+        D(fumarate) ~ vSDH - vFH,
+        D(malate) ~ vFH - vMDH,
         D(oaa) ~ vMDH - vCS - vAAT,
     ]
-
-    return (; eqs_tca, vIDH, vKGDH, vMDH, vSL, suc, fum, oaa)
+    return (; eqs_tca, vIDH, vKGDH, vMDH, vSL, succinate, fumarate, oaa)
 end
 
 function get_tca_sys(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Molar, pi_m=8mM, mg_m=0.4mM, use_mg=false, name=:tcasys)

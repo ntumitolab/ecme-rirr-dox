@@ -1,5 +1,5 @@
 "NADPH generation (Gauthier 2013)"
-function get_nadph_sys(h_m, isoc, akg, ΔμH; name=:nadphsys)
+function get_nadph_sys(h_m, isocitrate, akg, ΔμH; name=:nadphsys)
     @parameters begin
         KM_H_IDH2 = 0.5mM  # Dissociation constant for H+ of IDH2
         KM_ISOC_IDH2 = 0.045mM  # Dissociation constant for isocitrate of IDH2
@@ -31,7 +31,7 @@ function get_nadph_sys(h_m, isoc, akg, ΔμH; name=:nadphsys)
 
     v_idh2 = let
         f_h = hil(KM_H_IDH2, h_m)
-        f_isoc = isoc / KM_ISOC_IDH2
+        f_isoc = isocitrate / KM_ISOC_IDH2
         f_nadp = nadp_m / (KM_NADP_IDH2 * hil(nadp_m, KI_NADP_IDH2))
         f_akg = akg / KM_AKG_IDH2
         f_nadph = nadph_m / KM_NADPH_IDH2

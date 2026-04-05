@@ -432,14 +432,14 @@ ODEs in the citric acid cycle.
 
 $$
 \begin{align}
-\frac{d [ISOC]}{dt} &= J_{ACO} -J_{IDH3} \\
+\frac{d [isocitrate]}{dt} &= J_{ACO} -J_{IDH3} \\
 \frac{d [\alpha KG]}{dt} &= J_{IDH3} - J_{KGDH} + J_{AAT}  \\
 \frac{d [SCoA]}{dt} &= J_{KGDH} - J_{SL}  \\
-\frac{d [SUC]}{dt} &= J_{SL} - J_{SDH} \\
-\frac{d [FUM]}{dt} &= J_{SDH} - J_{FH}  \\
-\frac{d [MAL]}{dt} &= J_{FH} - J_{MDH}  \\
+\frac{d [succinate]}{dt} &= J_{SL} - J_{SDH} \\
+\frac{d [fumarate]}{dt} &= J_{SDH} - J_{FH}  \\
+\frac{d [malate]}{dt} &= J_{FH} - J_{MDH}  \\
 \frac{d [OAA]}{dt} & = J_{MDH} - J_{CS} - J_{AAT}  \\
-\Sigma_{CAC} &= \mathrm{[CIT]} + \mathrm{[ISOC]} + \mathrm{[\alpha KG]} + \mathrm{[SCoA]} + \mathrm{[SUC] }+ \mathrm{[FUM]} + \mathrm{[MAL]} + \mathrm{[OAA]} \\
+\Sigma_{CAC} &= \mathrm{[citrate]} + \mathrm{[isocitrate]} + \mathrm{[\alpha KG]} + \mathrm{[SCoA]} + \mathrm{[succinate] }+ \mathrm{[fumarate]} + \mathrm{[malate]} + \mathrm{[OAA]} \\
 \Sigma{[N]} &= [NAD] + [NADH]
 \end{align}
 $$
@@ -469,7 +469,7 @@ $$
 ### Aconitase (ACO)
 
 $$
-J_{ACO} = k_f^{ACO} (\mathrm{[CIT]} - \mathrm{[ISOC]} / K_{eq}^{ACO})
+J_{ACO} = k_f^{ACO} (\mathrm{[citrate]} - \mathrm{[isocitrate]} / K_{eq}^{ACO})
 $$
 
 | Parameter      | Value | Unit | Description                  |
@@ -484,7 +484,7 @@ $$
 J_{IDH3} &= \frac{k_{cat}^{IDH3} E_T^{IDH3} AB}{f_H AB + f_i B + f_a A + f_a f_i} \\
 f_H & = 1 + \frac{[H^+]_m}{K_{H1}^{IDH3}} + \frac{K_{H2}^{IDH3}}{[H^+]_m}  \\
 A &= [NAD] / K_{NAD}^{IDH3} \\
-B &= ([ISOC] / K_{ISOC}^{IDH3})^2  \\
+B &= ([isocitrate] / K_{isocitrate}^{IDH3})^2  \\
 f_a &= \frac{K_A^{IDH3}}{K_A^{IDH3} + [ADP]_m} \frac{K_{CA}^{IDH3}}{K_{CA}^{IDH3} + [Ca^{2+}]_m}  \\
 f_i &= 1 + \frac{[NADH]}{K_{NADH}^{IDH3}}  \\
 \end{align}
@@ -497,7 +497,7 @@ $$
 | $K_{H1}^{IDH3}$   | 1     | nM   | Ionization constant of IDH3       |
 | $K_{H2}^{IDH3}$   | 900   | nM   | Ionization constant of IDH3       |
 | $K_{NAD}^{IDH3}$  | 923   | μM   | Michaelis constant for NAD        |
-| $K_{ISOC}^{IDH3}$ | 1520  | μM   | Michaelis constant for isocitrate |
+| $K_{isocitrate}^{IDH3}$ | 1520  | μM   | Michaelis constant for isocitrate |
 | $K_A^{IDH3}$      | 620   | μM   | Activation constant by ADP        |
 | $K_{CA}^{IDH3}$   | 500   | nM   | Activation constant for calcium   |
 | $K_{NADH}^{IDH3}$ | 190   | μM   | Inhibition constant by NADH       |
@@ -530,7 +530,7 @@ $$
 
 $$
 \begin{align}
-J_{SL} &= k_f^{SL} ([SCoA][ADP]_m[Pi]_m - [SUC][ATP]_m[CoA]/K_{eq}^{SL}) \\
+J_{SL} &= k_f^{SL} ([SCoA][ADP]_m[Pi]_m - [succinate][ATP]_m[CoA]/K_{eq}^{SL}) \\
 \end{align}
 $$
 
@@ -547,7 +547,7 @@ See OXPHOS part: complex II (Succinate dehydrogenase).
 ### Fumarate hydratase (FH)
 
 $$
-J_{FH} = k_f^{FH} (\mathrm{[FUM]} - \mathrm{[MAL]} / K_{eq}^{FH})
+J_{FH} = k_f^{FH} (\mathrm{[fumarate]} - \mathrm{[malate]} / K_{eq}^{FH})
 $$
 
 | Parameter     | Value | Unit | Description           |
@@ -559,8 +559,8 @@ $$
 
 $$
 \begin{align}
-J_{MDH} &= \frac{k_{cat}^{MDH} E_T^{MDH} f_{mal}f_{nad} f_a f_i}{(1+f_{mal})(1+f_{nad})}  \\
-f_{mal} &= \frac{[MAL]}{K_{MAL}^{MDH}}\frac{K_{OAA}^{MDH}}{K_{OAA}^{MDH} + [OAA]}  \\
+J_{MDH} &= \frac{k_{cat}^{MDH} E_T^{MDH} f_{malate}f_{nad} f_a f_i}{(1+f_{malate})(1+f_{nad})}  \\
+f_{malate} &= \frac{[malate]}{K_{malate}^{MDH}}\frac{K_{OAA}^{MDH}}{K_{OAA}^{MDH} + [OAA]}  \\
 f_{nad} &= [NAD] / K_{NAD}^{MDH}  \\
 f_a &= k_{offset}^{MDH} + \left( 1 + \frac{[H^+]_m}{K_{H1}^{MDH}} (1 + \frac{[H^+]_m}{K_{H2}^{MDH}})    \right)^{-1}  \\
 f_i &= \left( 1 + \frac{K_{H3}^{MDH}}{[H^+]_m} (1 + \frac{K_{H4}^{MDH}}{[H^+]_m})    \right)^{2}  \\
@@ -577,7 +577,7 @@ $$
 | $K_{H4}^{MDH}$     | 5.62   | nM    | Ionization constant                  |
 | $k_{offset}^{MDH}$ | 0.0399 | -     | Offset of MDH pH activation factor   |
 | $K_{NAD}^{MDH}$    | 224.4  | μM    | Michaelis constant for NAD           |
-| $K_{MAL}^{MDH}$    | 1.493  | mM    | Michaelis constant for malate        |
+| $K_{malate}^{MDH}$    | 1.493  | mM    | Michaelis constant for malate        |
 | $K_{OAA}^{MDH}$    | 31     | μM    | Inhibition constant for oxaloacetate |
 
 ### Aspartate aminotransferase (AAT)
@@ -797,8 +797,8 @@ New, reversible formulation.
 $$
 \begin{align}
 i_{OAA} &= \frac{K_{i, OAA}}{K_{i, OAA} + [OAA]} \\
-J_{SDH} &= k_{SDH} C2_{inhib} i_{OAA} ([SUC][Q]_n - [FUM][QH_2]_n / K_{eq}^{C2} )   \\
-K_{eq}^{C2} &= \exp(2(E_{m, Q}^{C2} - E_{m, SUC})/V_T)
+J_{SDH} &= k_{SDH} C2_{inhib} i_{OAA} ([succinate][Q]_n - [fumarate][QH_2]_n / K_{eq}^{C2} )   \\
+K_{eq}^{C2} &= \exp(2(E_{m, Q}^{C2} - E_{m, succinate})/V_T)
 \end{align}
 $$
 
@@ -807,7 +807,7 @@ $$
 | $k_{SDH}$       | 250   | 1 / (mM * minute) | Activity of SDH                                |
 | $K_{i, OAA}$    | 0.150 | mM                | Inhibition constant for oxaloacetate           |
 | $E_{m, Q}^{C2}$ | 100   | mV                | Midpoint potential of ubiquinone in complex II |
-| $E_{m, SUC}$    | 40    | mV                | Midpoint potential of succinate/fumarate pair  |
+| $E_{m, succinate}$    | 40    | mV                | Midpoint potential of succinate/fumarate pair  |
 
 ### Complex III (bc1 complex)
 

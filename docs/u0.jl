@@ -35,8 +35,8 @@ plot(sol, idxs=sys.vm, legend=:right, tspan=(900second, 901second))
 
 # ## Citric acid cycle metabolites
 # Citrate and isocitrate have the highest concentrations.
-@unpack cit, isoc, oaa, akg, scoa, suc, fum, mal = sys
-plot(sol, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal], legend=:right, title="CAC metabolites")
+@unpack citrate, isocitrate, oaa, akg, scoa, succinate, fumarate, malate = sys
+plot(sol, idxs=[citrate, isocitrate, oaa, akg, scoa, succinate, fumarate, malate], legend=:right, title="CAC metabolites")
 
 # ## CAC flux
 @unpack vMDH, vAAT, vIDH = sys
