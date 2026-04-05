@@ -1,12 +1,22 @@
 """
 Rate of superoxide dismutase. Based on (McAdam, 1977)
-The activity will be capped at high concentrations of SOX.
 """
-function _vsod(sox, h2o2, K1, K3, K5, KI_H2O2, E0)
+function _vsod(sox, h2o2, K1, K3, K5, KI_H2O2, et)
     k3′ = K3 * (1 + h2o2 / KI_H2O2)
     denom = K5 * (2K1 + k3′) + k3′ * K1 * sox
-    return 2 * E0 * K5 * K1 * sox * (K1 + k3′) / denom
+    return 2 * et * K5 * K1 * sox * (K1 + k3′) / denom
 end
+
+"""
+Rate of GPX (glutathione peroxidase) and TPX (thioredoxin peroxidases). Based on (Zhou, 2009) and (Kembro, 2013)
+"""
+_vgpx(h2o2, gsh, et, phi1, phi2) = et * h2o2 * gsh / (phi1 * gsh + phi2 * h2o2)
+
+"""
+Rate of CAT (catalase). Based on (Zhou, 2009)
+"""
+_vcat(h2o2, et, k1, fr) = 2k1 * et * h2o2 * exp(-fr * h2o2)
+
 
 function get_ros_eqs(; dpsi, sox_m, nadph_i=75μM, V_MITO_V_MYO=0.615)
     @parameters begin
@@ -53,13 +63,18 @@ function get_ros_eqs(; dpsi, sox_m, nadph_i=75μM, V_MITO_V_MYO=0.615)
         J_IMAC = 0.5                    # Fraction of superoxide in IMAC conductance
     end
 
-    @variables begin
+    sts = @variables begin
         sox_i(t) = 1nM
+        ## sox_m(t) = 10nM ## linked to ETC
+        h2o2_m(t) = 0.76nM
         h2o2_i(t) = 0.76nM
-        # h2o2_m(t)
+        gssg_m(t) = 2.22μM
+        gssg_i(t) = 2.22μM
+    end
+
+    @variables begin
         gsh_i(t) # Conserved
         # gsh_m(t)
-        gssg_i(t) = 2.22μM
         # gssg_m(t)
         # nadph_m(t)
         vSOD_i(t)
@@ -69,20 +84,20 @@ function get_ros_eqs(; dpsi, sox_m, nadph_i=75μM, V_MITO_V_MYO=0.615)
         vTrROS(t)   ## SOX flux via IMAC
         vIMAC(t)    ## IMAC ion flux
         gIMAC(t)    ## IMAC conductance
-        fvIMAC(t)   ## IMAC activated by voltage
-        faIMAC(t)   ## IMAC activated by SOX
         ΔVROS(t)    ## Nernst potential of SOX
     end
+
+    fvIMAC = GL_IMAC + G_MAX_IMAC / (1 + exp(k_IMAC * (DPSI_OFFSET_IMAC + dpsi)))
+    faIMAC = A_IMAC + B_IMAC * hil(sox_i, KCC_SOX_IMAC)
+
     eqs_ros = [
         ΔVROS ~ nernst(sox_i, sox_m, -1),
         vTrROS ~ J_IMAC * gIMAC * (dpsi + ΔVROS),
         vIMAC ~ gIMAC * dpsi,
         gIMAC ~ fvIMAC * faIMAC,
-        fvIMAC ~ GL_IMAC + G_MAX_IMAC / (1 + exp(k_IMAC * (DPSI_OFFSET_IMAC + dpsi))),
-        faIMAC ~ A_IMAC + B_IMAC * hil(sox_i, KCC_SOX_IMAC),
         vGR_i ~ ET_GR * K1_GR * hil(nadph_i, KM_NADPH_GR) * hil(gssg_i, KM_GSSG_GR),
-        vGPX_i ~ ET_GPX * h2o2_i * gsh_i / (𝚽1_GPX * gsh_i + 𝚽2_GPX * h2o2_i),
-        vCAT ~ 2K1_CAT * ET_CAT * h2o2_i * exp(-FR_CAT * h2o2_i),
+        vGPX_i ~ _vgpx(h2o2_i, gsh_i, ET_GPX, 𝚽1_GPX, 𝚽2_GPX),
+        vCAT ~ _vcat(h2o2_i, ET_CAT, K1_CAT, FR_CAT),
         vSOD_i ~ _vsod(sox_i, h2o2_i, K1_SOD, K3_SOD, K5_SOD, KI_H2O2_SOD, ET_SOD_I),
         ΣGSH_i ~ gsh_i + 2gssg_i,
         D(sox_i) ~ V_MITO_V_MYO * vTrROS - vSOD_i,

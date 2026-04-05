@@ -9,10 +9,10 @@ function get_inak_eqs(; atp_i, adp_i, vm, na_i, na_o, k_o)
         fko_NAK = hil(k_o, KM_K_NAK)
     end
     @variables INaK(t)
-    fnai = hil(na_i, KM_NA_NAK, 1.5)
-    f_nak = inv(1.0 + 0.1245 * exp(-0.1iVT * vm) + 0.0365 * fnao_NAK * exp(-iVT * vm))
-    f_atp = hil(atp_i * hil(KI_ADP_NAK, adp_i), KM_ATP_NAK)
-    eqs_nak = [INaK ~ IMAX_NAK * fko_NAK * fnai * f_atp * f_nak]
+    fnai_nak = hil(na_i, KM_NA_NAK, 1.5)
+    fv_nak = inv(1.0 + 0.1245 * exp(-0.1iVT * vm) + 0.0365 * fnao_NAK * exp(-iVT * vm))
+    fatp_nak = hil(atp_i * hil(KI_ADP_NAK, adp_i), KM_ATP_NAK)
+    eqs_nak = [INaK ~ IMAX_NAK * fko_NAK * fnai_nak * fatp_nak * fv_nak]
     return (; eqs_nak, INaK)
 end
 

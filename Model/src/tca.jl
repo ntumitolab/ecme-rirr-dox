@@ -1,3 +1,59 @@
+# Citrate synthase
+_vcs(kcat, et, oaa, ACCOA, km_oaa, km_accoa) = kcat * et * oaa * ACCOA / ((km_oaa + oaa) * (km_accoa + ACCOA))
+
+# Aconitase
+_vaco(kf, rkeq, cit, isoc) = kf * (cit - isoc * rkeq)
+
+# IDH3 (Isocitrate dehydrogenase, NADH-producing)
+function _vidh3(kcat, et, isoc, km_isoc, adp, km_adp, ca, km_ca, nad, km_nad, nadh, ki_nadh)
+    vmax = kcat * et
+    A = (isoc / km_isoc)^2 * (1 + adp / km_adp) * (1 + ca / km_ca)
+    B = nad * ki_nadh / (km_nad * (ki_nadh + nadh))
+    H = 1 + h_m / KH1_IDH + KH2_IDH / h_m
+    return vmax * A * B / (H * A * B + A + B + 1)
+end
+
+# KGDH (alpha-ketoglutarate dehydrogenase)
+function _vkgdh(kcat, et, akg, km_akg, nad_m, km_nad, mg_m, km_mg, ca_m, km_ca, h_m, kh1, kh2, ni)
+    vmax = et * kcat
+    f_h = 1 + h_m / kh1 + kh2 / h_m
+    f_akg = NaNMath.pow(akg / km_akg, ni)
+    f_mgca = (1 + mg_m / km_mg) * (1 + ca_m / km_ca)
+    f_nad = nad_m / km_nad
+    return vmax * f_akg * f_nad * f_mgca / (f_h * f_mgca * f_akg * f_nad + f_akg + f_nad)
+end
+
+# SL (Succinyl-coA lyase)
+_vsl(kf, rkeq, scoa, adp_m, pi_m, suc, atp_m, COA) = kf * (scoa * adp_m * pi_m - suc * atp_m * COA * rkeq)
+
+# SL (Succinyl-coA lyase) with binding polynomials
+function _vsl_poly(kf, rkeq, scoa, adp_m, pi_m, suc, atp_m, COA, h_m, mg_m)
+    atp4, hatp, mgatp, atp_poly = breakdown_atp(atp_m, h_m, mg_m)
+    adp3, hadp, mgadp, adp_poly = breakdown_adp(adp_m, h_m, mg_m)
+    pi_poly = pipoly(h_m)
+    suc_poly = sucpoly(h_m)
+    rkeq = rkeq * (adp_poly * pi_poly) / (atp_poly * suc_poly)
+    return kf * (scoa * adp_m * pi_m - suc * (atp4 + hatp) * COA * rkeq)
+end
+
+# Fumarate hydratase
+_vfh(kf, req, fum, mal) = kf * (fum - mal * req)
+
+# Malate dehydrogenase (reversible)
+# TODO: add H+ dependence
+# TODO: vMAX vs VF vs VB
+function _vmdh_rev(kcat, et, oaa, km_oaa, mal, km_mal, nad, km_nad, nadh, km_nadh)
+    vmax = kcat * et
+    f_ha = K_OFFSET_MDH + (KH1_MDH * KH2_MDH / (KH1_MDH * KH2_MDH + KH2_MDH * h_m + h_m^2))
+    f_hi = (h_m^2 / (h_m^2 + h_m * KH3_MDH + KH3_MDH * KH4_MDH))^2
+    f_h = f_ha * f_hi
+    f_nad = nad_m / KM_NAD_MDH
+    f_mal = mal / KM_MAL_MDH
+    f_oaa = oaa / KM_OAA_MDH
+    f_nadh = nadh_m / KM_NADH_MDH
+    v_mdh = f_h * (VF_MDH * f_nad * f_mal - VR_MDH * f_oaa * f_nadh) / (1 + f_nad + f_nad * f_mal + f_oaa * f_nadh + f_nadh)
+end
+
 # TCA cycle model
 function get_tca_eqs(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Molar, pi_m=8mM, mg_m=0.4mM, use_mg=false)
     @parameters begin
@@ -10,7 +66,7 @@ function get_tca_eqs(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
         KM_OAA_CS = 0.64μM
         ACCOA = 1000μM
         ## ACO (aconitase)
-        KF_ACO = 12.5Hz # Zhou, 2009
+        KF_ACO = 12.5Hz # 12.5Hz (Zhou, 2009)
         rKEQ_ACO = inv(2.22)
         ## IDH3 (Isocitrate dehydrogenase, NADH-producing)
         KCAT_IDH = 43Hz ## 50Hz
@@ -62,6 +118,16 @@ function get_tca_eqs(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
         ASP = 100μM  ## Aspartate
     end
 
+    sts = @variables begin
+        oaa(t) = 11.6μM     ## oxaloacetate
+        isoc(t) = 51.6μM    ## isocitrate
+        akg(t) = 51μM       ## alpha-ketoglutarate
+        scoa(t) = 35μM      ## succinyl-CoA
+        suc(t) = 1.9μM      ## succinate
+        fum(t) = 175μM      ## fumarate
+        mal(t) = 160μM      ## malate
+    end
+
     @variables begin
         vCS(t)
         vACO(t)
@@ -72,60 +138,21 @@ function get_tca_eqs(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m=exp10(-7.6) * Mola
         vMDH(t)
         vAAT(t)
         vSDH(t)
-        oaa(t) = 11.6μM
         cit(t) ## Conserved = TCA_T - isoc - oaa - akg - scoa - suc - fum - mal
-        isoc(t) = 51.6μM    ## isocitrate
-        akg(t) = 51μM       ## alpha-ketoglutarate
-        scoa(t) = 35μM      ## succinyl-CoA
-        suc(t) = 1.9μM      ## succinate
-        fum(t) = 175μM      ## fumarate
-        mal(t) = 160μM      ## malate
-    end
-    ## Citrate synthase
-    v_cs = let
-        vmax = KCAT_CS * ET_CS
-        A = oaa / KM_OAA_CS
-        B = ACCOA / KM_ACCOA_CS
-        v_cs = vmax * A * B / (1 + A + B + A * B)
     end
 
-    ## Aconitase (reversible)
-    v_aco = KF_ACO * (cit - isoc * rKEQ_ACO)
-    ## IDH3 (Isocitrate dehydrogenase, NADH-producing)
-    v_idh3 = let
-        vmax = KCAT_IDH * ET_IDH
-        A = (isoc / KM_ISOC_IDH)^2 * (1 + adp_m / KM_ADP_IDH) * (1 + ca_m / KM_CA_IDH)
-        B = nad_m * KI_NADH_IDH / (KM_NAD_IDH * (KI_NADH_IDH + nadh_m))
-        H = 1 + h_m / KH1_IDH + KH2_IDH / h_m
-        v_idh3 = vmax * A * B / (H * A * B + A + B + 1)
+    v_cs = _vcs(KCAT_CS, ET_CS, oaa, ACCOA, KM_OAA_CS, KM_ACCOA_CS)
+    v_aco = _vaco(KF_ACO, rKEQ_ACO, cit, isoc)
+    v_idh3 = _vidh3(KCAT_IDH, ET_IDH, isoc, KM_ISOC_IDH, adp_m, KM_ADP_IDH, ca_m, KM_CA_IDH, nad_m, KM_NAD_IDH, nadh_m, KI_NADH_IDH)
+    v_kgdh = _vkgdh(KCAT_KGDH, ET_KGDH, akg, KM_AKG_KGDH, nad_m, KM_NAD_KGDH, mg_m, KM_MG_KGDH, ca_m, KM_CA_KGDH, h_m, KH1_KGDH, KH2_KGDH, NI_AKG_KGDH)
+
+    if use_mg
+        v_sl = _vsl_poly(KF_SL, rKEQ_SL, scoa, adp_m, pi_m, suc, atp_m, COA, h_m, mg_m)
+    else
+        v_sl = _vsl(KF_SL, rKEQ_SL, scoa, adp_m, pi_m, suc, atp_m, COA)
     end
-    ## Oxoglutarate dehydrogenase complex (OGDC / KGDH)
-    v_kgdh = let
-        vmax = ET_KGDH * KCAT_KGDH
-        f_h = 1 + h_m / KH1_KGDH + KH2_KGDH / h_m
-        f_akg = NaNMath.pow(akg / KM_AKG_KGDH, NI_AKG_KGDH)
-        f_mgca = (1 + mg_m / KM_MG_KGDH) * (1 + ca_m / KM_CA_KGDH)
-        f_nad = nad_m / KM_NAD_KGDH
-        vmax = ET_KGDH * KCAT_KGDH
-        v_kgdh = vmax * f_akg * f_nad * f_mgca / (f_h * f_mgca * f_akg * f_nad + f_akg + f_nad)
-    end
-    ## Succinyl-CoA lyase (reversible)
-    v_sl = let
-        if use_mg
-            atp4, hatp, _, atp_poly = breakdown_atp(atp_m, h_m, mg_m)
-            _, _, _, adp_poly = breakdown_adp(adp_m, h_m, mg_m)
-            pi_poly = pipoly(h_m)
-            suc_poly = sucpoly(h_m)
-            rkeq = rKEQ_SL * (adp_poly * pi_poly) / (atp_poly * suc_poly)
-            atp = atp4 + hatp
-        else
-            rkeq = rKEQ_SL
-            atp = atp_m
-        end
-        v_sl = KF_SL * (scoa * adp_m * pi_m - suc * atp * COA * rKEQ_SL)
-    end
-    ## Fumarate hydrase (reversible)
-    v_fh = KF_FH * (fum - mal * rKEQ_FH)
+
+    v_fh = _vfh(KF_FH, rKEQ_FH, fum, mal)
     ## Malate dehydrogenase (reversible)
     v_mdh = let
         vmax = KCAT_MDH * ET_MDH
