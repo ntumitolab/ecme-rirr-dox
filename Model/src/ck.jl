@@ -8,22 +8,29 @@ function get_ck_eqs(; atp_i, adp_i)
         ΣCR = 25mM          # Pool of creatine and creatine phosphate
         ΣA_ic = 8mM         # Pool of cytosolic ATP + ADP
     end
-    @variables begin
-        cr_ic(t)  ## Conserved
+
+    sts = @variables begin
         crp_ic(t) = 5.1291mM
-        cr_i(t)   ## Conserved
         crp_i(t) = 5.0297mM
         adp_ic(t) = 0.29mM
+    end
+
+    @variables begin
+        cr_ic(t)  ## Conserved
+        cr_i(t)   ## Conserved
         atp_ic(t)  ## Conserved
         vCK_mito(t)
         vCK_cyto(t)
         vTR_crp(t)
     end
 
-    eqs_ck = [
+    coneqs = [
         ΣCR ~ cr_ic + crp_ic,
         ΣCR ~ cr_i + crp_i,
         ΣA_ic ~ adp_ic + atp_ic,
+    ]
+
+    eqs = [
         vCK_mito ~ KCK_MT * (atp_i * cr_i - adp_i * crp_i * iKEQ_CK),
         vCK_cyto ~ KCK_IN * (atp_ic * cr_ic - adp_ic * crp_ic * iKEQ_CK),
         vTR_crp ~ KTR_CR * (crp_i - crp_ic),
@@ -32,7 +39,7 @@ function get_ck_eqs(; atp_i, adp_i)
         D(crp_ic) ~ vTR_crp + vCK_cyto
     ]
 
-    return (; eqs_ck, vCK_mito, vCK_cyto, vTR_crp)
+    return (; eqs_ck = [coneqs; eqs], vCK_mito, vCK_cyto, vTR_crp)
 end
 
 "Creatine kinase (CK)"

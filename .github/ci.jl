@@ -3,19 +3,19 @@ using Literate
 
 ENV["GKSwstype"] = "100"
 
-function main(; dopostproc=true)
+function main(; rmsvg=true)
     file = get(ENV, "NB", "test.ipynb")
     cachedir = get(ENV, "NBCACHE", ".cache")
     if endswith(file, ".jl")
-        run_literate(file; cachedir, dopostproc)
+        run_literate(file; cachedir, rmsvg)
     elseif endswith(file, ".ipynb")
         lit = to_literate(file)
-        run_literate(lit; cachedir, dopostproc)
+        run_literate(lit; cachedir, rmsvg)
     end
 end
 
-# Post-process Jupyter notebook
-function postprocess(ipynb)
+# Strip SVG output from a Jupyter notebook
+function strip_svg(ipynb)
     oldfilesize = filesize(ipynb)
     nb = open(JSON.parse, ipynb, "r")
     for cell in nb["cells"]
@@ -23,17 +23,9 @@ function postprocess(ipynb)
         for output in cell["outputs"]
             !haskey(output, "data") && continue
             datadict = output["data"]
-            ## Remove SVG to reduce file size
             if haskey(datadict, "image/png") || haskey(datadict, "image/jpeg")
                 delete!(datadict, "text/html")
                 delete!(datadict, "image/svg+xml")
-            end
-            ## Process LaTeX output, wrap in an array if needed
-            if haskey(datadict, "text/latex")
-                latexcode = datadict["text/latex"]
-                if (! (latexcode isa Vector))
-                    datadict["text/latex"] = [latexcode]
-                end
             end
         end
     end
@@ -66,11 +58,11 @@ function to_literate(nbpath; shell_or_help = r"^\s*[;?]")
     return jlpath
 end
 
-function run_literate(file; cachedir = ".cache", dopostproc=true)
+function run_literate(file; cachedir = ".cache", rmsvg = true)
     outpath = joinpath(abspath(pwd()), cachedir, dirname(file))
     mkpath(outpath)
     ipynb = Literate.notebook(file, dirname(file); mdstrings=true, execute=true)
-    dopostproc && postprocess(ipynb)
+    rmsvg && strip_svg(ipynb)
     cp(ipynb, joinpath(outpath, basename(ipynb)); force=true)
     return ipynb
 end

@@ -1,3 +1,4 @@
+# TODO: split the big function
 # Complex I using a simplified Markevich model
 # Rapid equlibrium in the flavin site
 # QSSA for the catalytic cycle in the quinone site
@@ -182,13 +183,13 @@ function get_c1_eqs(;
     return (; eqs_c1, vQC1, vNADHC1, vROSIf, vROSIq, vROSC1, vQH2C1, vHresC1, vNADC1, TNC1)
 end
 
-## Complex II (SDH)
-## Reversible rapid equlibrium random Bi-Bi enzyme catalytic mechanism
+# Complex II (SDH)
+# Reversible rapid equlibrium random Bi-Bi enzyme catalytic mechanism
 function get_c2_eqs(;
     Q_n,
     QH2_n,
-    suc,
-    fum,
+    succinate,
+    fumarate,
     oaa,
     DOX=0μM,                    ## Doxorubicin concentration
     MT_PROT=1,                  ## OXPHOS protein content scale factor
@@ -205,7 +206,7 @@ function get_c2_eqs(;
         KM_Q_C2 = 0.3μM
         KM_FUM_C2 = 25μM
         KM_QH2_C2 = 1.5μM
-        ## midpoint potential of FUM -> SUC
+        ## midpoint potential of fumarate -> succinate
         Em_FUM_SUC = 40mV
         ## midpoint potential of Q -> QH2
         Em_Q_QH2 = 100mV
@@ -217,9 +218,9 @@ function get_c2_eqs(;
 
     @variables vSDH(t)
     C2_INHIB = hil(KI_OAA_C2, oaa) * hil(KI_DOX_C2, DOX, 3) * MT_PROT
-    A = suc / KM_SUC_C2
+    A = succinate / KM_SUC_C2
     B = Q_n / KM_Q_C2
-    P = fum / KM_FUM_C2
+    P = fumarate / KM_FUM_C2
     Q = QH2_n / KM_QH2_C2
     eqs_c2 = [vSDH ~ C2_INHIB * (VF_C2 * A * B - VR_C2 * P * Q) / ((1 + A) * (1 + B) + (1 + P) * (1 + Q) - 1)]
     return (; eqs_c2, vSDH)
@@ -321,7 +322,6 @@ function get_eqs_c3(;
         vCytcC3(t)
     end
 
-    lut = Dict()
     ## Split of electrical potentials
     δ₁_C3 = 0.5
     δ₂_C3 = 0.5
@@ -433,8 +433,8 @@ function get_etc_eqs(;
     nadh_m,                 ## NADH concentration
     dpsi,                   ## Mitochondrial membrane potential
     sox_m,                  ## Superoxide concentration in the matrix
-    suc,                    ## Succinate concentration
-    fum,                    ## Fumarate concentration
+    succinate,                    ## Succinate concentration
+    fumarate,                    ## Fumarate concentration
     oaa,                    ## Oxaloacetate concentration
     DOX=0μM,                    ## Doxorubicin concentration
     MT_PROT=1,                  ## OXPHOS protein content scale factor
@@ -452,7 +452,7 @@ function get_etc_eqs(;
         Q_n(t) = 1805μM
         QH2_n(t) = 123μM
         QH2_p(t) = 123μM
-        Q_p(t) ## Qtotal - Qn - QH2n - QH2p - SQn - SQp
+        Q_p(t) ## Conserved: Qtotal - Qn - QH2n - QH2p - SQn - SQp
         SQn(t) = 142μM
         SQp(t) = 0μM
     end
@@ -635,7 +635,7 @@ function get_etc_eqs(;
         KM_Q_C2 = 0.3μM
         KM_FUM_C2 = 25μM
         KM_QH2_C2 = 1.5μM
-        Em_FUM_SUC = 40mV       ## midpoint potential of FUM -> SUC
+        Em_FUM_SUC = 40mV       ## midpoint potential of fumarate -> succinate
         Em_Q_QH2 = 100mV        ## midpoint potential of Q -> QH2
         KEQ_C2 = exp(2iVT * (Em_Q_QH2 - Em_FUM_SUC)) ## equlibrium constant of SDH
         VR_C2 = VF_C2 * KM_FUM_C2 * KM_QH2_C2 / (KEQ_C2 * KM_SUC_C2 * KM_Q_C2)
@@ -644,9 +644,9 @@ function get_etc_eqs(;
     @variables vSDH(t)
     c2eqs = let
         C2_INHIB = hil(KI_OAA_C2, oaa) * hil(KI_DOX_C2, DOX, 3)
-        A = suc / KM_SUC_C2
+        A = succinate / KM_SUC_C2
         B = Q_n / KM_Q_C2
-        P = fum / KM_FUM_C2
+        P = fumarate / KM_FUM_C2
         Q = QH2_n / KM_QH2_C2
         [vSDH ~ C2_INHIB * (VF_C2 * A * B - VR_C2 * P * Q) / ((1 + A) * (1 + B) + (1 + P) * (1 + Q) - 1)]
     end
@@ -903,8 +903,8 @@ function get_etc_sys(;
     nadh_m,
     dpsi,                       # Mitochondrial membrane potential
     sox_m,                      # Superoxide concentration in the matrix
-    suc,                        # Succinate concentration
-    fum,                        # Fumarate concentration
+    succinate,                        # Succinate concentration
+    fumarate,                        # Fumarate concentration
     oaa,                        # Oxaloacetate concentration
     DOX=0μM,                    # Doxorubicin concentration
     MT_PROT=1,                  # OXPHOS protein content scale factor
@@ -918,10 +918,9 @@ function get_etc_sys(;
     CYANIDE_BLOCK=0,
     name=:etcsys)
 
-    @independent_variables t
     @unpack eqs_etc = get_etc_eqs(;
         DOX, MT_PROT, O2, nad_m, nadh_m,
-        dpsi, sox_m, suc, fum, oaa, h_i, h_m,
+        dpsi, sox_m, succinate, fumarate, oaa, h_i, h_m,
         ROTENONE_BLOCK,
         ANTIMYCIN_BLOCK,
         MYXOTHIAZOL_BLOCK,
