@@ -146,7 +146,6 @@ function get_c1_eqs(;
     v17 = b32b * SQ_C1 - b23b * Q_C1
     b23 = b23a + b23b
     b32 = b32a + b32b
-
     ## KA pattern
     wC1 = b21 * b32 * b41 + b21 * b32 * b43 + b21 * b34 * b41 + b23 * b34 * b41
     wC1_Q = b12 * b32 * b41 + b12 * b32 * b43 + b12 * b34 * b41 + b14 * b32 * b43
@@ -186,6 +185,8 @@ function get_c1_eqs(;
     return (; eqs_c1, vQC1, vNADHC1, vROSIf, vROSIq, vROSC1, vQH2C1, vHresC1, vNADC1, TNC1)
 end
 
+_inhibit_c2(DOX=0μM, KI_DOX_C2=2000μM) = hil(KI_DOX_C2, DOX, 3)
+
 # Complex II (SDH)
 # Reversible rapid equlibrium random Bi-Bi enzyme catalytic mechanism
 function get_c2_eqs(;
@@ -194,13 +195,11 @@ function get_c2_eqs(;
     succinate,
     fumarate,
     oaa,
-    DOX=0μM,                    ## Doxorubicin concentration
-    MT_PROT=1,                  ## OXPHOS protein content scale factor
+    C2_INHIB_DOX=_inhibit_c2(),     ## Doxorubicin concentration
+    MT_PROT=1,                      ## OXPHOS protein content scale factor
     )
 
     @parameters begin
-        ## DOX inhibition concentration (IC50) on complex II
-        KI_DOX_C2 = 2000μM
         ## Reaction rate constant of SDH (complex II)
         VF_C2 = 250mM / minute
         ## Inhibition constant for OAA
@@ -215,19 +214,21 @@ function get_c2_eqs(;
         Em_Q_QH2 = 100mV
         ## equlibrium constant of SDH
         KEQ_C2 = exp(2iVT * (Em_Q_QH2 - Em_FUM_SUC))
-        ## Haldane relationship
+        ## Reverse rate following Haldane relationship
         VR_C2 = VF_C2 * KM_FUM_C2 * KM_QH2_C2 / (KEQ_C2 * KM_SUC_C2 * KM_Q_C2)
     end
 
     @variables vSDH(t)
-    C2_INHIB = hil(KI_OAA_C2, oaa) * hil(KI_DOX_C2, DOX, 3) * MT_PROT
+    C2_INHIB = hil(KI_OAA_C2, oaa) * C2_INHIB_DOX * MT_PROT
     A = succinate / KM_SUC_C2
     B = Q_n / KM_Q_C2
     P = fumarate / KM_FUM_C2
     Q = QH2_n / KM_QH2_C2
-    eqs_c2 = [vSDH ~ C2_INHIB * (VF_C2 * A * B - VR_C2 * P * Q) / ((1 + A) * (1 + B) + (1 + P) * (1 + Q) - 1)]
+    eqs_c2 = [vSDH ~ C2_INHIB * (VF_C2 * A * B - VR_C2 * P * Q) / (1 + A + B + A * B + P + Q + P * Q)]
     return (; eqs_c2, vSDH)
 end
+
+_inhibit_c3(DOX=0μM, KI_DOX_C3=185μM) = hil(KI_DOX_C3, DOX, 3)
 
 ## Semireverse bc1 complex model adapted from Gauthier, 2013
 function get_eqs_c3(;
@@ -236,11 +237,11 @@ function get_eqs_c3(;
     cytc_rd,
     dpsi,
     sox_m,
-    DOX=0μM,                    ## Doxorubicin concentration
-    MT_PROT=1,                  ## OXPHOS protein content scale factor
-    O2=6μM,                     ## Oxygen concentration
-    h_i=exp10(-7) * Molar,      ## IMS proton concentration
-    h_m=exp10(-7.6) * Molar,    ## Matrix proton concentration
+    C3_INHIB_DOX=_inhibit_c3(),     ## Doxorubicin concentration
+    MT_PROT=1,                      ## OXPHOS protein content scale factor
+    O2=6μM,                         ## Oxygen concentration
+    h_i=exp10(-7) * Molar,          ## IMS proton concentration
+    h_m=exp10(-7.6) * Molar,        ## Matrix proton concentration
     ANTIMYCIN_BLOCK=0,
     MYXOTHIAZOL_BLOCK=0,
     STIGMATELLIN_BLOCK=0,
@@ -248,7 +249,6 @@ function get_eqs_c3(;
 
     @parameters begin
         rhoC3 = 325μM    ## Complex III activity
-        KI_DOX_C3 = 185μM  ## DOX inhibition concentration (IC50) on complex III
         Q_T = 4mM        ## Total CoQ pool
         EmQ_C3 = +60mV   ## Ubiquinone redox potential at complex III Qo
         EmSQp_QH2p = +390mV
@@ -263,6 +263,14 @@ function get_eqs_c3(;
         Emcytc1 = +245mV
         EmO2 = -160mV
         Emcytc = +255mV
+        ## Split of electrical potentials
+        δ₁_C3 = 0.5
+        δ₂_C3 = 0.5
+        δ₃_C3 = 0.5
+        ## Split of the electrical distance across the IMM
+        α_C3 = 0.25
+        β_C3 = 0.5
+        γ_C3 = 0.25
         ## QH2 + FeS + bL = Q + FeS- + bL- + 2Ho+
         K04_C3 = 50.67Hz / mM
         KEQ4_OX_C3 = exp(iVT * (EmFeS + EmbL_bHo - 2EmQ_C3))
@@ -300,7 +308,7 @@ function get_eqs_c3(;
     # TODO: QSSA for SQp (SQp proportion is very small)
     # vROS = Qp * ((k11 * O2 * k10 * bL-) - (km11 * sox * km10 * bL)) / (km10 * bL + k11 * O2)
     ## complex III inhibition by DOX and antimycin
-    C3_INHIB = hil(KI_DOX_C3, DOX, 3) * (1 - ANTIMYCIN_BLOCK)
+    C3_INHIB = _inhibit_c3(C3_INHIB_DOX) * (1 - ANTIMYCIN_BLOCK)
     C3_CONC = rhoC3 * MT_PROT
 
     @variables begin
@@ -325,14 +333,6 @@ function get_eqs_c3(;
         vCytcC3(t)
     end
 
-    ## Split of electrical potentials
-    δ₁_C3 = 0.5
-    δ₂_C3 = 0.5
-    δ₃_C3 = 0.5
-    ## Split of the electrical distance across the IMM
-    α_C3 = 0.25
-    β_C3 = 0.5
-    γ_C3 = 0.25
     ## pH factors
     fHi = h_i * inv(1E-7Molar)
     fHm = h_m * inv(1E-7Molar)
