@@ -1,25 +1,30 @@
+# OXPHOS
+# Complex I
+_redoxcycling_c1(DOX=0μM, K_RC_DOX=1000 / 15mM) = 1 + K_RC_DOX * DOX
+_inhibit_c1(DOX=0μM, KI_DOX_C1=400μM) = hil(KI_DOX_C1, DOX, 3)
+
 # TODO: split the big function
 # Complex I using a simplified Markevich model
 # Rapid equlibrium in the flavin site
 # QSSA for the catalytic cycle in the quinone site
 function get_c1_eqs(;
-    Q_n,
-    QH2_n,
+    Q_n,                    ## Ubiquinone concentration
+    QH2_n,                  ## Ubiquinol concentration
     nad_m,                  ## NAD concentration
     nadh_m,                 ## NADH concentration
     dpsi,                   ## Mitochondrial membrane potential
-    sox_m,                  ## Superoxide concentration in the matrix
-    DOX=0μM,                    ## Doxorubicin concentration
+    sox_m,                  ## Superoxide concentration in the mitochondrial matrix
     MT_PROT=1,                  ## OXPHOS protein content scale factor
     O2=6μM,                     ## Oxygen concentration
     h_i=exp10(-7) * Molar,      ## IMS proton concentration
     h_m=exp10(-7.6) * Molar,    ## Matrix proton concentration
-    ROTENONE_BLOCK=0,)
+    REDOX_CYCLING=_redoxcycling_c1(),
+    C1_INHIB_DOX =_inhibit_c1(), ## Complex I inhibition by DOX and rotenone
+    ROTENONE_BLOCK=0
+    )
 
     @parameters begin
-        K_RC_DOX = 1000 / 15mM    ## DOX redox cycling constant
         ET_C1 = 17μM              ## Activity of complex I
-        KI_DOX_C1 = 400μM         ## DOX IC50 on complex I
         Em_O2_SOX = -160mV        ## O2/Superoxide redox potential
         Em_FMN_FMNsq = -387mV     ## FMN/FMNH- avg redox potential
         Em_FMNsq_FMNH = -293mV    ## FMN semiquinone/FMNH- redox potential
@@ -63,6 +68,8 @@ function get_c1_eqs(;
         kr17_C1 = kf17_C1 / KEQ17_C1
     end
 
+    sts = @variables N2r_C1(t) = 0
+
     @variables begin
         ## Flavin site
         FMN(t)
@@ -76,7 +83,6 @@ function get_c1_eqs(;
         N3_C1(t)
         N3r_C1(t)
         N2_C1(t)
-        N2r_C1(t) = 0
         ## Quinone site
         C1(t)
         Q_C1(t)
@@ -84,7 +90,7 @@ function get_c1_eqs(;
         QH2_C1(t)
         rKEQ_N2r_SQ(t)
         ## Reaction rates
-        TNC1(t)
+        TNC1(t)  ## Turn over rates
         vQC1(t)
         vQH2C1(t)
         vNADHC1(t)
@@ -96,10 +102,7 @@ function get_c1_eqs(;
     end
 
     C1_CONC = ET_C1 * MT_PROT
-    ## complex I inhibition by DOX and rotenone
-    C1_INHIB = hil(KI_DOX_C1, DOX, 3) * (1 - ROTENONE_BLOCK)
-    ## Electron leak scaling factor from complex I
-    E_LEAK_C1 = 1 + K_RC_DOX * DOX
+    C1_INHIB = C1_INHIB_DOX * (1 - ROTENONE_BLOCK)
     ## Mitochondrial pH factor
     fhm = h_m * inv(1E-7Molar)
     ## Flavin site in rapid equilibrium
@@ -114,7 +117,7 @@ function get_c1_eqs(;
     fDen = wFMN + wFMN_NAD + wFMNH + wFMNH_NADH + wFMNsq + wFMN_NADH + wFMNH_NAD
     fC1 = C1_CONC / fDen
     ## FMNH + O2 = FMNsq + sox
-    v16 = E_LEAK_C1 * (kf16_C1 * FMNH * O2 - kr16_C1 * FMNsq * sox_m)
+    v16 = REDOX_CYCLING * (kf16_C1 * FMNH * O2 - kr16_C1 * FMNsq * sox_m)
 
     ## N3− + N2 = N3 + N2−
     v7 = kf7_C1 * N3r_C1 * N2_C1 - kr7_C1 * N3_C1 * N2r_C1

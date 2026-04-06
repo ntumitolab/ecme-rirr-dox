@@ -88,10 +88,14 @@ Relative exponential function.
 """
 exprel(x) = x / expm1(x)
 
-#=
+"""
+
+"""
+
+"""
 Get propotions of AXP from dissociation constants
 Returns AXPn-, HAXP, MgAXP, poly (the denominator polynomial)
-=#
+"""
 function _breakdown_axp(tot, h, mg, iKA, iKMG)
     poly = 1 + h * iKA + mg * iKMG
     axpn = tot / poly
