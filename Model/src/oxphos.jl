@@ -19,9 +19,9 @@ function get_c1_eqs(;
     h_i=exp10(-7) * Molar,      ## IMS proton concentration
     h_m=exp10(-7.6) * Molar,    ## Matrix proton concentration
     REDOX_CYCLING=_redoxcycling_c1(),
-    C1_INHIB_DOX =_inhibit_c1(), ## Complex I inhibition by DOX and rotenone
+    C1_INHIB_DOX=_inhibit_c1(), ## Complex I inhibition by DOX and rotenone
     ROTENONE_BLOCK=0
-    )
+)
 
     @parameters begin
         ET_C1 = 17μM              ## Activity of complex I
@@ -197,7 +197,7 @@ function get_c2_eqs(;
     oaa,
     C2_INHIB_DOX=_inhibit_c2(),     ## Doxorubicin concentration
     MT_PROT=1,                      ## OXPHOS protein content scale factor
-    )
+)
 
     @parameters begin
         ## Reaction rate constant of SDH (complex II)
@@ -245,11 +245,10 @@ function get_eqs_c3(;
     ANTIMYCIN_BLOCK=0,
     MYXOTHIAZOL_BLOCK=0,
     STIGMATELLIN_BLOCK=0,
-    )
+)
 
     @parameters begin
         rhoC3 = 325μM    ## Complex III activity
-        Q_T = 4mM        ## Total CoQ pool
         EmQ_C3 = +60mV   ## Ubiquinone redox potential at complex III Qo
         EmSQp_QH2p = +390mV
         EmQp_SQp = -270mV
@@ -311,23 +310,25 @@ function get_eqs_c3(;
     C3_INHIB = _inhibit_c3(C3_INHIB_DOX) * (1 - ANTIMYCIN_BLOCK)
     C3_CONC = rhoC3 * MT_PROT
 
-    @variables begin
-        Q_n(t) = 1805μM
-        QH2_n(t) = 123μM
-        QH2_p(t) = 123μM
-        Q_p(t) ## Q_T - Qn - QH2n - QH2p - SQn - SQp
-        SQn(t) = 142μM
-        SQp(t) = 0μM
-        fes_ox(t) = C3_CONC
-        fes_rd(t) ## Conserved
-        cytc1_ox(t) = C3_CONC
-        cytc1_rd(t) ## Conserved
-        blo_bho(t) = C3_CONC
+    sts = @variables begin
+        fes_rd(t) = 0
+        cytc1_rd(t) = 0
+        blr_bhr(t) = 0
         blr_bho(t) = 0
         blo_bhr(t) = 0
-        blr_bhr(t) ## Conserved
+    end
+
+    @variables begin
+
+        fes_ox(t) ## Conserved
+        cytc1_ox(t) ## Conserved
+        bl0_bh0(t) ## Conserved
         fracbLrd(t)
         fracbHrd(t)
+        vQpC3(t)
+        vQH2pC3(t)
+        vQnC3(t)
+        vQH2nC3(t)
         vROSC3(t)
         vHresC3(t)
         vCytcC3(t)
@@ -341,10 +342,12 @@ function get_eqs_c3(;
     v1 = vQ
     ## v2: QH2(n) = QH2(p)
     v2 = KD_Q * (QH2_n - QH2_p)
+    ## v5: Q(p) = Q(n)
+    v5 = KD_Q * (Q_p - Q_n)
     ## QH2 + FeS + bL = Q + FeS- + bL- + 2Ho+
     ## Lumped v3 and v4
-    FeS = fes_ox / C3_CONC * (1 - MYXOTHIAZOLE_BLOCK)
-    FeSm = fes_rd / C3_CONC * (1 - MYXOTHIAZOLE_BLOCK)
+    FeS = fes_ox / C3_CONC * (1 - MYXOTHIAZOL_BLOCK)
+    FeSm = fes_rd / C3_CONC * (1 - MYXOTHIAZOL_BLOCK)
     el4 = exp(-iVT * α_C3 * δ₁_C3 * dpsi)
     er4 = exp(iVT * α_C3 * (1 - δ₁_C3) * dpsi)
     k4ox = K04_C3 * KEQ4_OX_C3 * el4
@@ -352,13 +355,10 @@ function get_eqs_c3(;
     km4 = K04_C3 * er4 * fHi^2
     v4ox = k4ox * QH2_p * FeS * blo_bho - km4 * Q_p * FeSm * blr_bho
     v4rd = k4rd * QH2_p * FeS * blo_bhr - km4 * Q_p * FeSm * blr_bhr
-    ## v5: Q(p) = Q(n)
-    v5 = KD_Q * (Q_p - Q_n)
     ## v6: bL- + bH = bL + bH-
     el6 = exp(-iVT * β_C3 * δ₂_C3 * dpsi)
     er6 = exp(iVT * β_C3 * (1 - δ₂_C3) * dpsi)
     v6 = K06_C3 * (KEQ6_C3 * el6 * blr_bho - blo_bhr * er6)
-
     ## v7: bH- + Q = bH + Q-
     ## v8: bH- + Q- = bH + QH2
     Qi_avail = (C3_CONC - SQn) / C3_CONC * C3_INHIB
@@ -394,8 +394,6 @@ function get_eqs_c3(;
 
     ## v11: Qp- + O2 = Qp + O2-
     v11 = K011_C3 * (KEQ11_C3 * SQp * O2 - Q_p * sox_m)
-    ## cytc1(2+)  + cytc(3+) = cytc1(3+)  + cytc(2+)
-    v33 = K33_C3 * (KEQ33_C3 * cytc1_rd * cytc_ox - cytc1_ox * cytc_rd)
 
     ## ODEs
     dSQn = v7ox + v7rd - v8ox - v8rd
@@ -411,6 +409,9 @@ function get_eqs_c3(;
         C3_CONC ~ cytc1_ox + cytc1_rd,
         fracbLrd ~ (blr_bho + blr_bhr) / C3_CONC,
         fracbHrd ~ (blo_bhr + blr_bhr) / C3_CONC,
+        vQnC3 ~ v5 - v7ox - v7rd,
+        vQpC3 ~ v4ox + v4rd - v5 - v10ox - v10rd + v11,
+
         # D(Q_p) ~ dQp
         D(Q_n) ~ dQn,
         D(QH2_n) ~ dQH2n,
@@ -431,202 +432,123 @@ function get_eqs_c3(;
     return (; eqs_c3, vROSC3, vHresC3, vCytcC3)
 end
 
+_inhibit_c4(DOX=0μM, KI_DOX_C4=165μM) = hil(KI_DOX_C4, DOX, 3)
+
+function get_c4_eqs(;
+    dpsi,
+    cytc_ox,
+    cytc_rd,
+    O2=6μM,
+    MT_PROT=1,
+    C4_INHIB_DOX=_inhibit_c4(),
+    CYANIDE_BLOCK=0
+)
+    @parameters begin
+        rhoC4 = 325μM
+        δ₅_C4 = 0.5
+        K34_C4 = 2.9445e10Hz / mM^3 ## @pH7
+        K43_C4 = 2.9E-6Hz / mM^3
+        K35_C4 = 750Hz / mM
+        K36_C4 = 4.826e11Hz / mM
+        K63_C4 = 4.826Hz / mM
+        K37_C4 = 2.92367e6Hz
+        K73_C4 = 0.029236Hz ## @pH7
+    end
+
+    @variables begin
+        vO2(t)
+        vHresC4(t)
+        C4_Y(t)
+        C4_Yr(t)
+        C4_YO(t)
+        C4_YOH(t)
+    end
+
+    C4_CONC = rhoC4 * MT_PROT
+    C4_INHIB = C4_INHIB_DOX * (1 - CYANIDE_BLOCK) ## Cyanide is a competitive inhibitor of O2 binding to complex IV
+    aδ = exp(-iVT * δ₅_C4 * dpsi)
+    a1mδ = exp(iVT * (1 - δ₅_C4) * dpsi)
+    fHm = h_m * inv(1E-7Molar)
+    fHi = h_i * inv(1E-7Molar)
+    f_hm = fHm * aδ
+    f_hi = fHi * a1mδ
+    f_cr = cytc_rd
+    f_co = cytc_ox * a1mδ
+    a12 = K34_C4 * f_cr^3 * f_hm^4  # a12 = K34 * exp(-δ₅_C4 * 4 * vfrt) * cytc_rd^3 * h_m^4
+    a21 = K43_C4 * f_co^3 * f_hi    # K43 * exp((1 - δ₅_C4) * 4 * vfrt) * cytc_ox^3 * h_i
+    a23 = C4_INHIB * K35_C4 * O2
+    a32 = 0
+    a34 = K36_C4 * f_cr * f_hm^3    # K36 * exp(-δ₅_C4 * 3 * vfrt) * cytc_rd * h_m^3
+    a43 = K63_C4 * f_co * f_hi^2    # K63 * exp((1 - δ₅_C4) * 3 * vfrt) * cytc_ox * h_i^2
+    a41 = K37_C4 * f_hm  # K37 * exp(-δ₅_C4 * vfrt) * h_m
+    a14 = K73_C4 * f_hi  # K73 * exp((1 - δ₅_C4) * vfrt) * h_i
+
+    # Weight of each state (from KA pattern)
+    C4_e1 = a41 * a34 * (a21 + a23)
+    C4_e2 = a12 * a41 * a34
+    C4_e3 = a23 * a12 * (a41 + a43) + a43 * a14 * (a21 + a23)
+    C4_e4 = a34 * (a14 * (a21 + a23) + a23 * a12)
+    denC4 = C4_e1 + C4_e2 + C4_e3 + C4_e4
+    # Reaction rates
+    # v34 = C4_CONC * (C4_Y * a12 - C4_Yr * a21)
+    v35 = C4_CONC * C4_Yr * a23
+    # v36 = C4_CONC * (a34 * C4_YO - a43 * C4_YOH)
+    # v37 = C4_CONC * (a41 * C4_YOH - a14 * C4_Y)
+
+    c4eqs = [
+        ## C4_CONC ~ cytc_rd + cytc_ox,
+        C4_Y ~ C4_e1 / denC4,
+        C4_Yr ~ C4_e2 / denC4,
+        C4_YO ~ C4_e3 / denC4,
+        C4_YOH ~ C4_e4 / denC4,
+        vO2 ~ v35,
+        vHresC4 ~ 8 * vO2,  ## charge movement
+    ]
+    return (; c4eqs, vO2, vHresC4)
+end
+
 function get_etc_eqs(;
     nad_m,                  ## NAD concentration
     nadh_m,                 ## NADH concentration
     dpsi,                   ## Mitochondrial membrane potential
     sox_m,                  ## Superoxide concentration in the matrix
-    succinate,                    ## Succinate concentration
-    fumarate,                    ## Fumarate concentration
+    succinate,              ## Succinate concentration
+    fumarate,               ## Fumarate concentration
     oaa,                    ## Oxaloacetate concentration
-    DOX=0μM,                    ## Doxorubicin concentration
     MT_PROT=1,                  ## OXPHOS protein content scale factor
     O2=6μM,                     ## Oxygen concentration
     h_i=exp10(-7) * Molar,      ## IMS proton concentration
     h_m=exp10(-7.6) * Molar,    ## Matrix proton concentration
+    DOX = 0μM,                  ## Doxorubicin concentration
     ROTENONE_BLOCK=0,
     ANTIMYCIN_BLOCK=0,
     MYXOTHIAZOL_BLOCK=0,
     STIGMATELLIN_BLOCK=0,
     CYANIDE_BLOCK=0,)
 
+    @parameters begin
+        Q_T = 4mM        ## Total CoQ pool
+        ET_C1 = 17μM     ## Activity of complex I
+        VF_C2 = 250mM / minute ## Activity of complex II
+        rhoC3 = 325μM    ## Complex III activity
+        rhoC4 = 325μM    ## Complex IV activity
+    end
+
     ## Q cycle variables
     @variables begin
         Q_n(t) = 1805μM
         QH2_n(t) = 123μM
         QH2_p(t) = 123μM
-        Q_p(t) ## Conserved: Qtotal - Qn - QH2n - QH2p - SQn - SQp
+        Q_p(t) ## Q_T - Qn - QH2n - QH2p - SQn - SQp
         SQn(t) = 142μM
         SQp(t) = 0μM
     end
 
-    # Complex I using a simplified Markevich model
-    # Rapid equlibrium in the flavin site
-    # QSSA for the catalytic cycle in the quinone site
-    @parameters begin
-        K_RC_DOX = 1000 / 15mM    ## DOX redox cycling constant
-        ET_C1 = 17μM              ## Activity of complex I
-        KI_DOX_C1 = 400μM         ## DOX IC50 on complex I
-        Em_O2_SOX = -160mV        ## O2/Superoxide redox potential
-        Em_FMN_FMNsq = -387mV     ## FMN/FMNH- avg redox potential
-        Em_FMNsq_FMNH = -293mV    ## FMN semiquinone/FMNH- redox potential
-        Em_FMN_FMNH = -340mV      ## FMN/FMNH- avg redox potential
-        Em_NAD = -320mV           ## NAD/NADH avg redox potential
-        Em_N3 = -250mV
-        Em_N2 = -150mV             ## -150mV in B. taurus mitochondrial complex I; -80 mV in bacteria
-        Em_Q_SQ_C1 = -300mV       ## -213mV in Markevich, 2015
-        Em_SQ_QH2_C1 = +500mV     ## +800mV in Markevich, 2015
-        KI_NADH_C1 = 50μM
-        KD_NADH_C1 = 100μM
-        KI_NAD_C1 = 1000μM
-        KD_NAD_C1 = 25μM
-        ## NADH + FMN = NAD+ + FMNH-
-        KEQ_NADH_FMN = exp(2iVT * (Em_FMN_FMNH - Em_NAD))
-        ## 2FMNsq = (N1a) = FMN + FMNH- + H+
-        rKEQ_FMNsq_Dis = exp(-iVT * (Em_FMNsq_FMNH - Em_FMN_FMNsq))
-        ## FMNH- + N3 = FMNsq + N3-
-        KEQ_FMNH_N3 = exp(iVT * (Em_N3 - Em_FMNsq_FMNH))
-        ## N3- + N2 = N3 + N2-
-        kf7_C1 = 10000Hz / μM
-        KEQ7_C1 = exp(iVT * (Em_N2 - Em_N3))
-        kr7_C1 = kf7_C1 / KEQ7_C1
-        kf8_C1 = 10Hz / μM
-        KEQ8_C1 = inv(10μM)
-        kr8_C1 = kf8_C1 / KEQ8_C1
-        kf9_C1 = 4E5Hz / μM
-        KEQ9_C1 = exp(iVT * (Em_Q_SQ_C1 - Em_N2))
-        kr9_C1 = kf9_C1 / KEQ9_C1
-        kf13_C1 = 2.7e6Hz / μM
-        kf14_C1 = 1000Hz
-        KEQ14_C1 = 20μM
-        kr14_C1 = kf14_C1 / KEQ14_C1
-        kf16_C1 = 2Hz / μM          ## SOX production rate from If site
-        KEQ16_C1 = exp(iVT * (Em_O2_SOX - Em_FMNsq_FMNH))
-        kr16_C1 = kf16_C1 / KEQ16_C1
-        kf17_C1 = 0.02Hz / μM       ## SOX production rate from Iq site
-        KEQ17_C1 = exp(iVT * (Em_O2_SOX - Em_Q_SQ_C1))
-        kr17_C1 = kf17_C1 / KEQ17_C1
-    end
+    C1_CONC = ET_C1 * MT_PROT
+    C3_CONC = rhoC3 * MT_PROT
+    C4_CONC = rhoC4 * MT_PROT
 
-    ## Complex I variables
-    @variables begin
-        ## Flavin site
-        FMN(t)
-        FMN_NAD(t)
-        FMNsq(t)
-        FMNH(t)
-        FMNH_NADH(t)
-        FMN_NADH(t)
-        FMNH_NAD(t)
-        ## FeS cluster
-        N3_C1(t)
-        N3r_C1(t)
-        N2_C1(t)
-        N2r_C1(t) = 0
-        ## Quinone site
-        C1(t)
-        Q_C1(t)
-        SQ_C1(t)
-        QH2_C1(t)
-        rKEQ_N2r_SQ(t)
-        ## Reaction rates
-        TNC1(t)
-        vQC1(t)
-        vQH2C1(t)
-        vNADHC1(t)
-        vNADC1(t)
-        vROSIf(t)
-        vROSIq(t)
-        vROSC1(t)
-        vHresC1(t)
-    end
-
-    c1eqs = let
-        C1_CONC = ET_C1 * MT_PROT
-        ## complex I inhibition by DOX and rotenone
-        C1_INHIB = hil(KI_DOX_C1, DOX, 3) * (1 - ROTENONE_BLOCK)
-        ## Electron leak scaling factor from complex I
-        E_LEAK_C1 = 1 + K_RC_DOX * DOX
-        ## Mitochondrial pH factor
-        fhm = h_m * inv(1E-7Molar)
-        ## Flavin site in rapid equilibrium
-        ## Weights in the flavin site
-        wFMN = 1
-        wFMN_NAD = wFMN * nad_m / KI_NAD_C1
-        wFMN_NADH = wFMN * nadh_m / KD_NADH_C1
-        wFMNH = wFMN * (nadh_m / nad_m) * KEQ_NADH_FMN
-        wFMNH_NAD = wFMNH * nad_m / KD_NAD_C1
-        wFMNH_NADH = wFMNH * nadh_m / KI_NADH_C1
-        wFMNsq = NaNMath.sqrt(wFMN * wFMNH * rKEQ_FMNsq_Dis * fhm)
-        fDen = wFMN + wFMN_NAD + wFMNH + wFMNH_NADH + wFMNsq + wFMN_NADH + wFMNH_NAD
-        fC1 = C1_CONC / fDen
-        ## FMNH + O2 = FMNsq + sox
-        v16 = E_LEAK_C1 * (kf16_C1 * FMNH * O2 - kr16_C1 * FMNsq * sox_m)
-
-        ## N3− + N2 = N3 + N2−
-        v7 = kf7_C1 * N3r_C1 * N2_C1 - kr7_C1 * N3_C1 * N2r_C1
-        v12 = v7
-
-        ## Quinone site state transition rates
-        ## C1 + Q = Q_C1
-        b12 = kf8_C1 * Q_n * C1_INHIB
-        b21 = kr8_C1
-        v8 = b12 * C1 - b21 * Q_C1
-        ## Q_C1 + N2r = SQ_C1 + N2
-        b23a = kf9_C1 * N2r_C1
-        b32a = kr9_C1 * N2_C1
-        v9 = b23a * Q_C1 - b32a * SQ_C1
-        ## C1_SQ + N2r + 6Hm = C1_QH2 + N2 + 4Hi
-        b34 = kf13_C1 * N2r_C1 * fhm^2
-        b43 = kf13_C1 * rKEQ_N2r_SQ * N2_C1
-        v13 = b34 * SQ_C1 - b43 * QH2_C1
-        ## C1_QH2 = C1 + QH2
-        b41 = kf14_C1
-        b14 = kr14_C1 * QH2_n * C1_INHIB
-        v14 = b41 * QH2_C1 - b14 * C1
-        ## C1_SQ + O2 = C1_Q + sox
-        b32b = kf17_C1 * O2
-        b23b = kr17_C1 * sox_m
-        v17 = b32b * SQ_C1 - b23b * Q_C1
-        b23 = b23a + b23b
-        b32 = b32a + b32b
-
-        ## KA pattern
-        wC1 = b21 * b32 * b41 + b21 * b32 * b43 + b21 * b34 * b41 + b23 * b34 * b41
-        wC1_Q = b12 * b32 * b41 + b12 * b32 * b43 + b12 * b34 * b41 + b14 * b32 * b43
-        wC1_SQ = b12 * b23 * b41 + b12 * b23 * b43 + b14 * b21 * b43 + b14 * b23 * b43
-        wC1_QH2 = b12 * b23 * b34 + b14 * b21 * b32 + b14 * b21 * b34 + b14 * b23 * b34
-        qDen = wC1 + wC1_Q + wC1_SQ + wC1_QH2
-        qC1 = C1_CONC / qDen
-
-        eqs = [
-            rKEQ_N2r_SQ ~ exp(-iVT * (Em_SQ_QH2_C1 - Em_N2 - 4dpsi)) * (h_i / h_m)^4,
-            FMN ~ wFMN * fC1,
-            FMN_NAD ~ wFMN_NAD * fC1,
-            FMNH ~ wFMNH * fC1,
-            FMNsq ~ wFMNsq * fC1,
-            FMNH_NADH ~ wFMNH_NADH * fC1,
-            FMN_NADH ~ wFMN_NADH * fC1,
-            FMNH_NAD ~ wFMNH_NAD * fC1,
-            N3_C1 ~ C1_CONC * FMNsq / (FMNsq + FMNH * KEQ_FMNH_N3),
-            C1_CONC ~ N3_C1 + N3r_C1,
-            C1_CONC ~ N2_C1 + N2r_C1,
-            D(N2r_C1) ~ v7 + v12 - v9 - v13,
-            C1 ~ wC1 * qC1,
-            Q_C1 ~ wC1_Q * qC1,
-            SQ_C1 ~ wC1_SQ * qC1,
-            QH2_C1 ~ wC1_QH2 * qC1,
-            vQC1 ~ -v8,
-            vNADHC1 ~ -0.5 * (v7 + v12 + v16),
-            vROSIf ~ v16,
-            vROSIq ~ v17,
-            vROSC1 ~ vROSIf + vROSIq,
-            vQH2C1 ~ v14,
-            vHresC1 ~ 4 * v13,
-            vNADC1 ~ -vNADHC1,
-            TNC1 ~ vNADC1 / C1_CONC,
-        ]
-    end
+    @unpack eqs_c1, vQC1, vNADHC1, vROSC1, vHresC1 = get_c1_eqs(; nad_m, nadh_m, dpsi, sox_m, O2, h_i, h_m, _redoxcycling_c1(DOX), ROTENONE_BLOCK, C1_CONC)
 
     ## Complex II (SDH)
     ## Reversible rapid equlibrium random Bi-Bi enzyme catalytic mechanism
