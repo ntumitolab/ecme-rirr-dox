@@ -8,23 +8,17 @@ Complex I using a simplified Markevich model
 - QSSA for the catalytic cycle in the quinone site
 """
 function get_c1_eqs(;
-    Q_n,                    ## Ubiquinone concentration
-    QH2_n,                  ## Ubiquinol concentration
-    nad_m,                  ## NAD concentration
-    nadh_m,                 ## NADH concentration
-    dpsi,                   ## Mitochondrial membrane potential
-    sox_m,                  ## Superoxide concentration in the mitochondrial matrix
-    O2=6μM,                     ## Oxygen concentration
+    Q_n, QH2_n, nad_m, nadh_m,
+    dpsi, sox_m, O2=6μM,
     h_i=exp10(-7) * Molar,      ## IMS proton concentration
     h_m=exp10(-7.6) * Molar,    ## Matrix proton concentration
     REDOX_CYCLING=_redoxcycling_c1(),
     C1_INHIB_DOX=_inhibit_c1(), ## Complex I inhibition by DOX and rotenone
-    ROTENONE_BLOCK=0,
-    C1_CONC = 17μM                ## Activity of complex I
+    ROTENONE_BLOCK=0, MT_PROT=1,
     )
 
     @parameters begin
-        # ET_C1 = 17μM            ## Activity of complex I
+        ET_C1 = 17μM            ## Activity of complex I
         Em_O2_SOX = -160mV        ## O2/Superoxide redox potential
         Em_FMN_FMNsq = -387mV     ## FMN/FMNH- avg redox potential
         Em_FMNsq_FMNH = -293mV    ## FMN semiquinone/FMNH- redox potential
@@ -101,6 +95,7 @@ function get_c1_eqs(;
         vHresC1(t)
     end
 
+    C1_CONC = ET_C1 * MT_PROT
     C1_INHIB = C1_INHIB_DOX * (1 - ROTENONE_BLOCK)
     ## Mitochondrial pH factor
     fhm = h_m * inv(1E-7Molar)
