@@ -1,5 +1,5 @@
 "NADPH generation (Gauthier 2013)"
-function get_nadph_sys(h_m, isocitrate, akg, ΔμH; name=:nadphsys)
+function get_nadph_sys(h_m, isocitrate, akg, Δp; name=:nadphsys)
     @parameters begin
         KM_H_IDH2 = 0.5mM  # Dissociation constant for H+ of IDH2
         KM_ISOC_IDH2 = 0.045mM  # Dissociation constant for isocitrate of IDH2
@@ -42,12 +42,12 @@ function get_nadph_sys(h_m, isocitrate, akg, ΔμH; name=:nadphsys)
 
     v_thd = let
         # Corrected an error from both the paper and code from Gauthier et al.
-        vNAD = exp(iVT * X_THD * (1.0 - D_THD) * ΔμH)
+        vNAD = exp(iVT * X_THD * (1.0 - D_THD) * Δp)
         fNAD = nad_m / KM_NAD_THD
         fvNAD = fNAD * vNAD
         fNADH = nadh_m / KM_NADH_THD
         fNADP = nadp_m / KM_NADP_THD
-        vNADP = exp(iVT * X_THD * D_THD * ΔμH)
+        vNADP = exp(iVT * X_THD * D_THD * Δp)
         fvNADP = vNADP * fNADP
         fNADPH = nadph_m / KM_NADPH_THD
         denom = 1 + fNAD + fNADH + fNADP + fNADPH + (fNADPH + fvNAD) * (fNADPH + fvNADP)

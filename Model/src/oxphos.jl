@@ -49,7 +49,7 @@ function get_etc_eqs(;
         vHres ~ vHresC1 + vHresC3 + vHresC4,
     ]
 
-    eqs_etc = [eqs_c1; eqs_c2; eqs_c3; eqs_c4]
+    eqs_etc = [eqs_c1; eqs_c2; eqs_c3; eqs_c4; eqs]
     return (; eqs_etc, vHres, vROS, vSDH, vNADHC1, vO2)
 end
 
@@ -113,7 +113,7 @@ function get_c5_eqs(; dpsi, atp_i, adp_i, atp_m, adp_m,
         vHu(t)      # Porton flux via ATP synthase
         vANT(t)     # ANT reaction rate
         vHleak(t)   # Proton leak rate
-        ΔμH(t)      # proton motive force
+        Δp(t)      # proton motive force
         E_PHOS(t)   # phosphorylation potential
     end
 
@@ -154,11 +154,11 @@ function get_c5_eqs(; dpsi, atp_i, adp_i, atp_m, adp_m,
     v_ant = VMAX_ANT * (1 - f_i * f_m * exp(-iVT * dpsi)) / ((1 + f_i * exp(-iVT * H_ANT * dpsi)) * (1 + f_m))
 
     eqs_c5 = [
-        ΔμH ~ dpsi + nernst(h_i, h_m, 1),
+        Δp ~ dpsi + nernst(h_i, h_m, 1),
         E_PHOS ~ VT * NaNMath.log(AF1),
         vANT ~ v_ant,
         AF1 ~ v_af1,
-        vHleak ~ G_H_MITO * ΔμH,
+        vHleak ~ G_H_MITO * Δp,
         vC5 ~ v_c5,
         vHu ~ v_hu,
     ]
