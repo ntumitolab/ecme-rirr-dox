@@ -1,9 +1,10 @@
-module ECMEDox
+module Model
 
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
 using OrdinaryDiffEq
 using NaNMath
+using PrecompileTools
 
 export build_model, build_u0, build_stim_callbacks
 
@@ -17,14 +18,20 @@ include("force.jl")
 include("ica.jl")
 include("tca.jl")
 include("ros.jl")
+include("oxphos_c1.jl")
+include("oxphos_c2.jl")
+include("oxphos_c3.jl")
+include("oxphos_c4.jl")
+include("oxphos_c5.jl")
 include("oxphos.jl")
 include("transmito.jl")
+include("precompile.jl")
 include("u0.jl")
 
 function build_model(; name=:ecmesys, bcl=0second, istim=-80μAcm⁻², tstart=0second, tend=10second, duty=0.5ms, use_mg=false, simplify=true)
+    @discretes iStim(t) = 0μAcm⁻²   # Stimulation current
     @parameters begin
-        iStim(t) = 0μAcm⁻²          # Stimulation current
-        DOX = 0mM                # Doxorubicin concentration
+        DOX = 0mM                   # Doxorubicin concentration
         kdiffO2 = 1000Hz            # Oxygen diffusion rate
         MT_PROT = 1                 # OXPHOS protein content
         ΣA_m = 1.01mM               # Mitochondrial ATP + ADP pool (Gauthier-2013)
@@ -95,8 +102,8 @@ function build_model(; name=:ecmesys, bcl=0second, istim=-80μAcm⁻², tstart=0
     @unpack eqs_ik, IK1, IK, IKp, IKatp = get_ik_eqs(; na_i, na_o, k_i, k_o, vm, atp_i, adp_i, mg_i)
     @unpack eqs_ina, INa, INsNa, INaB, ICaB = get_ina_eqs(; na_i, na_o, ca_i, ca_o, vm)
     @unpack eqs_nak, INaK = get_inak_eqs(; atp_i, adp_i, vm, na_i, na_o, k_o)
-    @unpack eqs_tca, vIDH, vKGDH, vMDH, vSL, suc, fum, oaa = get_tca_eqs(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m, pi_m, mg_m, use_mg)
-    @unpack eqs_etc, vHres, vROS, vSDH, vNADHC1, vO2 = get_etc_eqs(; nad_m, nadh_m, dpsi, sox_m, suc, fum, oaa, DOX, MT_PROT, O2, h_i, h_m)
+    @unpack eqs_tca, vIDH, vKGDH, vMDH, vSL, succinate, fumarate, oaa = get_tca_eqs(; atp_m, adp_m, nad_m, nadh_m, ca_m, h_m, pi_m, mg_m, use_mg)
+    @unpack eqs_etc, vHres, vROS, vSDH, vNADHC1, vO2 = get_etc_eqs(; nad_m, nadh_m, dpsi, sox_m, succinate, fumarate, oaa, DOX, MT_PROT, O2, h_i, h_m)
     @unpack eqs_c5, vANT, vC5, vHu, vHleak = get_c5_eqs(; dpsi, h_i, h_m, atp_i, adp_i, atp_m, adp_m, pi_m, MT_PROT, mg_i, mg_m)
     @unpack eqs_ros, vTrROS, vIMAC, vCAT, vGPX_i, vGR_i, vSOD_i = get_ros_eqs(; dpsi, sox_m, nadph_i, V_MITO_V_MYO)
     @unpack eqs_mitoca, vUni, vNaCa = get_mitoca_eqs(; na_i, ca_m, ca_i, dpsi)
@@ -141,4 +148,4 @@ function build_model(; name=:ecmesys, bcl=0second, istim=-80μAcm⁻², tstart=0
     return sys
 end # build_model()
 
-end # module ECMEDox
+end # module Model
