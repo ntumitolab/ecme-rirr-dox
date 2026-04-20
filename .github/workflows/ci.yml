@@ -57,7 +57,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-julia-${{ steps.julia-version.outputs.resolved }}-
     - name: Setup Julia
-      uses: julia-actions/setup-julia@v2
+      uses: julia-actions/setup-julia@v3
       if: ${{ steps.cache-julia.outputs.cache-hit != 'true' }}
       with:
         version: ${{ steps.julia-version.outputs.resolved }}
@@ -106,7 +106,7 @@ jobs:
         if: ${{ steps.nb-cache.outputs.cache-hit != 'true' }}
         run: uv pip install --system -r requirements.txt
       - name: Setup Julia
-        uses: julia-actions/setup-julia@v2
+        uses: julia-actions/setup-julia@v3
         if: ${{ steps.nb-cache.outputs.cache-hit != 'true' }}
         with:
           version: ${{ needs.setup.outputs.ver }}
@@ -152,7 +152,7 @@ jobs:
       - name: Render Quarto Project
         run: quarto render docs --to html
       - name: Upload artifact for GH pages
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v5
         if: ${{ github.ref == 'refs/heads/main' }}
         with:
           path: docs/_site/
