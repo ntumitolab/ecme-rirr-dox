@@ -32,7 +32,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v7
     - name: Setup Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       id: setup-python
       with:
         python-version: ${{ env.PY_VER }}
@@ -94,7 +94,7 @@ jobs:
           path: ${{ env.NBCACHE }}
           key: notebook-${{ needs.setup.outputs.hash }}-${{ hashFiles(env.NB) }}
       - name: Setup Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         if: ${{ steps.nb-cache.outputs.cache-hit != 'true' }}
         id: setup-python
         with:
