@@ -1,0 +1,119 @@
+#===
+# Initial conditions
+
+1Hz pacing for 1000 seconds.
+===#
+
+#---
+using OrdinaryDiffEq
+using OrdinaryDiffEqSDIRK      # KenCarp47 / TRBDF2 are no longer re-exported by OrdinaryDiffEq 7
+using ModelingToolkit
+using Startup
+using Startup: second, mM, Hz, μM, mV
+using Plots
+
+#---
+tend = 1000.0second
+bcl = 1.0second
+@named sys = build_model()
+u0 = build_u0(sys)
+sts = unknowns(sys)
+alg = KenCarp47()
+@unpack iStim = sys
+callback = build_stim_callbacks(iStim, tend; period=bcl)
+prob = ODEProblem(sys, u0, tend)
+
+#---
+@time sol = solve(prob, alg; callback = callback, saveat=0.01second);
+
+#===
+A state whose default is a *symbolic* expression ends up in `bindings(sys)`, and
+ModelingToolkit then refuses an initial condition for it. The loop below warns about such
+variables so that the printed list can be pasted into `build_u0` as-is.
+===#
+
+#---
+bset = Set(keys(ModelingToolkit.bindings(sys)))
+for i in sts
+    istr = replace(string(i), "(t)" => "")
+    i in bset && @warn "sys.$istr is pinned by a model binding; delete this line before pasting into build_u0." maxlog=1
+    println("sys.", istr, " => ", sol[i][end], ",")
+end
+
+#===
+## Action potential
+===#
+
+#---
+plot(sol, idxs=sys.vm, legend=:right, tspan=(900second, 901second))
+
+#===
+## Citric acid cycle metabolites
+
+Citrate and isocitrate have the highest concentrations.
+===#
+
+#---
+@unpack cit, isoc, oaa, akg, scoa, suc, fum, mal = sys
+plot(sol, idxs=[cit, isoc, oaa, akg, scoa, suc, fum, mal], legend=:right, title="CAC metabolites")
+
+#===
+## CAC flux
+===#
+
+#---
+@unpack vMDH, vAAT, vIDH = sys
+plot(sol, idxs=[vMDH, vAAT, vIDH], legend=:right, title="CAC flux")
+
+#===
+## Q cycle
+===#
+
+#---
+@unpack Q_n, SQn, QH2_n, QH2_p, Q_p, SQp, fes_ox, fes_rd, cytc_ox, cytc_rd = sys
+plot(sol, idxs=[Q_n + Q_p, SQn, QH2_n + QH2_p, SQp], title="Q cycle", legend=:left, xlabel="Time (ms)", ylabel="Conc. (μM)")
+
+#---
+plot(sol, idxs=[fes_ox, fes_rd, cytc_ox, cytc_rd], title="Q cycle (downstream)", legend=:left, xlabel="Time (ms)", ylabel="Conc. (μM)")
+
+#===
+## Proton pumping
+===#
+
+#---
+plot(sol, idxs = [sys.vHresC1, sys.vHresC3, sys.vHresC4], ylims=(0, 3))
+
+#===
+## ROS
+===#
+
+#---
+plot(sol, idxs = [sys.sox_i, sys.sox_m], tspan=(900e3, 910e3))
+
+#---
+plot(sol, idxs = [sys.vROSIf, sys.vROSIq, sys.vROSC1, sys.vROSC3], tspan=(900e3, 910e3))
+
+#---
+plot(sol, idxs=100 * sys.vROS / (sys.vO2 + sys.vROS), title="O2 Shunt", tspan=(900e3, 910e3), ylims=(0, 5))
+
+#===
+## MMP
+===#
+
+#---
+plot(sol, idxs = [sys.dpsi], tspan=(900e3, 910e3))
+
+#---
+plot(sol, idxs = [sys.vC5], tspan=(900e3, 910e3))
+
+#===
+## Runtime information
+===#
+
+#---
+using InteractiveUtils
+InteractiveUtils.versioninfo()
+
+#---
+using Pkg
+Pkg.status()

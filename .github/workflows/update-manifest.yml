@@ -1,9 +1,9 @@
-name: Auto update Julia manifest dependencies
+name: Update Julia manifest
 
 on:
   workflow_dispatch:
-  # schedule:
-  #   - cron: '0 0 * * 0'
+  schedule:
+    - cron: '0 0 * * 0' # Every week
   push:
     branches:
       - main
@@ -22,7 +22,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04-arm
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -30,18 +30,18 @@ jobs:
         uses: julia-actions/setup-julia@v3
         with:
           version: '1'
-          arch: ${{ runner.arch }}
       - name: Update Julia dependencies
         env:
           JULIA_PKG_PRECOMPILE_AUTO: '0'
-        run: julia --project=@. --color=yes -e 'using Pkg; Pkg.status(; outdated=true); Pkg.update()'
+        # On-boarding Literate and friends
+        run: julia --project=@. --color=yes -e 'using Pkg; Pkg.add(["JSON", "Literate", "MarkdownTables", "SHA", "Tables"]); Pkg.status(; outdated=true); Pkg.update()'
       # Authenticate with a custom GitHub APP
       # https://github.com/peter-evans/create-pull-request/blob/main/docs/concepts-guidelines.md#authenticating-with-github-app-generated-tokens
       - name: Generate token for PR
         uses: actions/create-github-app-token@v3
         id: generate-token
         with:
-          app-id: ${{ env.APP_ID }}
+          client-id: ${{ env.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
       - name: Create Pull Request
         id: cpr
