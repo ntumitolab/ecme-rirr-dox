@@ -2,7 +2,7 @@
 
 julia_version = "1.13.3"
 manifest_format = "2.1"
-project_hash = "c09852daa5ace316e9ca99575230a57d98389c45"
+project_hash = "fb46e9ebf57c4d3768003c4fcc3d1710d15fd8d8"
 
 [[deps.ADTypes]]
 deps = ["PrecompileTools"]
@@ -2321,7 +2321,7 @@ version = "0.3.1"
     MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 
 [[deps.Startup]]
-deps = ["PrecompileTools"]
+deps = ["DiffEqCallbacks", "ModelingToolkit", "NaNMath", "OrdinaryDiffEq", "PrecompileTools"]
 path = "Startup"
 uuid = "ec0733a6-3166-4be9-8ea3-7416dbe7715d"
 version = "0.1.0"

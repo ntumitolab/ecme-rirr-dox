@@ -8,8 +8,8 @@ using OrdinaryDiffEq
 using ModelingToolkit
 using DiffEqCallbacks
 using Plots
-using ECMEDox
-using ECMEDox: second, Hz, μM, nM, mV
+using Startup
+using Startup: second, Hz, μM, nM, mV
 Plots.default(lw=1.5)
 
 #---

@@ -6,8 +6,8 @@
 using OrdinaryDiffEq
 using ModelingToolkit
 using Plots
-using ECMEDox
-using ECMEDox: second, mM, Hz, μM, build_stim_callbacks
+using Startup
+using Startup: second, mM, Hz, μM, build_stim_callbacks
 Plots.default(lw=1.5, size=(600, 600))
 
 #---

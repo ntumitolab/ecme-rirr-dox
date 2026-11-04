@@ -31,7 +31,7 @@ using SteadyStateDiffEq
 using NonlinearSolve
 using Plots
 using NaNMath
-using ECMEDox: mV, mM, μM, Molar, Hz, iVT
+using Startup: mV, mM, μM, Molar, Hz, iVT
 
 #===
 ### Gauthier's semiforward model

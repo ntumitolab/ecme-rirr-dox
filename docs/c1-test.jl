@@ -11,14 +11,14 @@ using OrdinaryDiffEq
 using SteadyStateDiffEq
 using Plots
 using NaNMath
-using ECMEDox: iVT, mV, μM, mM, Molar, Hz
+using Startup: iVT, mV, μM, mM, Molar, Hz
 
 #===
 ## Candidates
 ===#
 
 #===
-### Gauthier 2012 
+### Gauthier 2012
 
 Gauthier 2012 7-state QSSA model
 ===#
@@ -138,7 +138,7 @@ function c1_gauthier(; name=:c1gauthier,
 end
 
 #===
-### Markevich 2015 
+### Markevich 2015
 
 Markevich 2015 mass action law model.
 

@@ -7,8 +7,8 @@
 #---
 using OrdinaryDiffEq
 using ModelingToolkit
-using ECMEDox
-using ECMEDox: second, mM, Hz, μM, mV
+using Startup
+using Startup: second, mM, Hz, μM, mV
 using Plots
 
 #---
