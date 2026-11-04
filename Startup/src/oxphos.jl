@@ -669,7 +669,11 @@ function get_etc_eqs(;
 
     @variables begin
         cytc_rd(t) ## Conserved
-        cytc_ox(t) = C4_CONC
+        # NOTE: the default must be a *number*. A symbolic default (e.g. `C4_CONC`) is
+        # compiled into `bindings(sys)` by ModelingToolkit, which then refuses any initial
+        # condition for this state in `ODEProblem` ("Cannot merge without overriding").
+        # 325μM is `rhoC4 * MT_PROT` at the default `MT_PROT = 1`; `build_u0` overrides it.
+        cytc_ox(t) = 325μM
         vO2(t)
         vHresC4(t)
         C4_Y(t)
@@ -780,11 +784,15 @@ function get_etc_eqs(;
     C3_INHIB = hil(KI_DOX_C3, DOX, 3) * (1 - ANTIMYCIN_BLOCK)
 
     @variables begin
-        fes_ox(t) = C3_CONC
+        # NOTE: defaults must be *numbers*; a symbolic default (`C3_CONC`) becomes a
+        # `bindings(sys)` entry and then MTK rejects the initial conditions that
+        # `build_u0` supplies for these states. 325μM is `rhoC3 * MT_PROT` at the
+        # default `MT_PROT = 1`; `build_u0` overrides all four values.
+        fes_ox(t) = 325μM
         fes_rd(t) # Conserved
-        cytc1_ox(t) = C3_CONC
+        cytc1_ox(t) = 325μM
         cytc1_rd(t) # Conserved
-        blo_bho(t) = C3_CONC
+        blo_bho(t) = 325μM
         blr_bho(t) = 0
         blo_bhr(t) = 0
         blr_bhr(t) ## Conserved
