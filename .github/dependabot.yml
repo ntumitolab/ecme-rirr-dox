@@ -6,10 +6,21 @@ updates:
       interval: "weekly"
     groups:
       gha-dependencies:
-        applies-to: "version-updates"
         patterns:
           - "*"
-  - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "weekly"
+    labels:
+      - automerge
+  # - package-ecosystem: "pip"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
+  #   labels:
+  #     - automerge
+  # - package-ecosystem: "julia"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
+  #   groups:
+  #     all-julia-packages:
+  #       patterns:
+  #         - "*"

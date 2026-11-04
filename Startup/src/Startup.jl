@@ -1,5 +1,7 @@
-module ECMEDox
+module Startup
 
+# See the documentation at https://julialang.github.io/PrecompileTools.jl/stable/
+using PrecompileTools
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
 using OrdinaryDiffEq
@@ -141,4 +143,4 @@ function build_model(; name=:ecmesys, bcl=0second, istim=-80μAcm⁻², tstart=0
     return sys
 end # build_model()
 
-end # module ECMEDox
+end # module Startup
