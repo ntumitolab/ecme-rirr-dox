@@ -27,6 +27,7 @@ Reference redox potentials:
 #---
 using ModelingToolkit
 using OrdinaryDiffEq
+using OrdinaryDiffEqSDIRK      # KenCarp47 / TRBDF2 are no longer re-exported by OrdinaryDiffEq 7
 using SteadyStateDiffEq
 using NonlinearSolve
 using Plots
@@ -186,7 +187,7 @@ function c3_gauthier(;
         vHresC3 ~ v6,
         vROSC3 ~ v10,
     ]
-    return System(eqs, t; name, defaults=[
+    return System(eqs, t; name, initial_conditions=[
         SQp => 0,
         SQn => 0,
         fes_ox => C3_CONC,
@@ -307,11 +308,11 @@ function c3_semireverse(;
         Q_p(t)
         SQn(t)
         SQp(t)
-        fes_ox(t) = C3_CONC
+        fes_ox(t) = 325μM       # numeric: a symbolic default would become a binding
         fes_rd(t) ## Conserved
-        cytc1_ox(t) = C3_CONC
+        cytc1_ox(t) = 325μM       # numeric: a symbolic default would become a binding
         cytc1_rd(t) ## Conserved
-        blo_bho(t) = C3_CONC
+        blo_bho(t) = 325μM       # numeric: a symbolic default would become a binding
         blr_bho(t) = 0
         blo_bhr(t) = 0
         blr_bhr(t) ## Conserved
@@ -415,7 +416,7 @@ function c3_semireverse(;
         vHresC3 ~ v6,
         vROSC3 ~ v11,
     ]
-    return System(eqs, t; name, defaults=[
+    return System(eqs, t; name, initial_conditions=[
         SQn => 0,
         blo_bho => C3_CONC,
         blr_bho => 0,
@@ -584,7 +585,7 @@ function c3_repulsion(;
         vHresC3 ~ v6,
         vROSC3 ~ v10,
     ]
-    return System(eqs, t; name, defaults=[
+    return System(eqs, t; name, initial_conditions=[
         SQp => 0,
         SQn => 0,
         fes_ox => C3_CONC,
@@ -836,7 +837,7 @@ function c3_equlibrium(;
         vHresC3 ~ 2 * vQH2nC3,
 	]
 
-	return System(eqs, t; name, defaults=[
+	return System(eqs, t; name, initial_conditions=[
 		C3_1 => 0,
 		C3_2 => 0,
 		C3_3 => 0,
@@ -866,7 +867,9 @@ end
 alg = DynamicSS(TRBDF2())
 ealg = EnsembleThreads()
 # Utility function
-extract(sim, k) = map(s -> s[k], sim)
+# `EnsembleSolution` is a numeric (state, time, trajectory) array in SciMLBase 3;
+# the per-trajectory solutions are in `sim.u`.
+extract(sim, k) = map(s -> s[k], sim.u)
 
 #===
 ## Varying MMP
@@ -878,8 +881,8 @@ extract(sim, k) = map(s -> s[k], sim)
 
 #---
 dpsirange = 100mV:1mV:200mV
-alter_dpsi = (prob, i, repeat) -> begin
-    prob.ps[dpsi] = dpsirange[i]
+alter_dpsi = (prob, ctx) -> begin
+    prob.ps[dpsi] = dpsirange[ctx.sim_id]
     prob
 end
 
@@ -924,8 +927,8 @@ plot(xs, ys, xlabel="MMP (mV)", ylabel="ROS Rate (mM/s)", label=["G" "S" "R" "E"
 
 #---
 qh2range = 10μM:10μM:3990μM
-alter_qh2 = (prob, i, repeat) -> begin
-    prob.ps[UQH2] = qh2range[i]
+alter_qh2 = (prob, ctx) -> begin
+    prob.ps[UQH2] = qh2range[ctx.sim_id]
     prob.ps[UQ] = 4000μM - prob.ps[UQH2]
     prob
 end

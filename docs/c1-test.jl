@@ -8,6 +8,7 @@ Comparing Gauthier, Markevich, and simplified complex I models.
 using ModelingToolkit
 using NonlinearSolve
 using OrdinaryDiffEq
+using OrdinaryDiffEqSDIRK      # KenCarp47 / TRBDF2 are no longer re-exported by OrdinaryDiffEq 7
 using SteadyStateDiffEq
 using Plots
 using NaNMath
@@ -672,7 +673,9 @@ end
 
 #---
 ## Helper function
-extract(sim, k) = map(s -> s[k], sim)
+# `EnsembleSolution` is a numeric (state, time, trajectory) array in SciMLBase 3;
+# the per-trajectory solutions are in `sim.u`.
+extract(sim, k) = map(s -> s[k], sim.u)
 
 #---
 @time sys_q = c1_q(; Q_n, QH2_n, nad, nadh, dpsi, sox_m) |> mtkcompile
@@ -716,8 +719,8 @@ prob_m = SteadyStateProblem(sys_m, [
 
 #---
 dpsirange = 100mV:1mV:200mV
-alter_dpsi = (prob, i, repeat) -> begin
-    prob.ps[dpsi] = dpsirange[i]
+alter_dpsi = (prob, ctx) -> begin
+    prob.ps[dpsi] = dpsirange[ctx.sim_id]
     prob
 end
 
@@ -783,8 +786,8 @@ plot(xs, [ys_g ys_m ys_q], xlabel="MMP (mV)", ylabel="ROS production (mM/s)", la
 #---
 nadhrange = 10μM:10μM:2990μM
 
-alter_nadh = (prob, i, repeat) -> begin
-    prob.ps[nadh] = nadhrange[i]
+alter_nadh = (prob, ctx) -> begin
+    prob.ps[nadh] = nadhrange[ctx.sim_id]
     prob.ps[nad] = 3000μM - prob.ps[nadh]
     prob
 end
@@ -841,8 +844,8 @@ plot(pl1, pl2)
 #---
 qh2range = 10μM:10μM:1990μM
 
-alter_qh2 = (prob, i, repeat) -> begin
-    prob.ps[QH2_n] = qh2range[i]
+alter_qh2 = (prob, ctx) -> begin
+    prob.ps[QH2_n] = qh2range[ctx.sim_id]
     prob.ps[Q_n] = 2000μM - prob.ps[QH2_n]
     prob
 end

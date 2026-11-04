@@ -5,6 +5,7 @@
 #---
 using ProgressLogging
 using OrdinaryDiffEq
+using OrdinaryDiffEqSDIRK      # KenCarp47 / TRBDF2 are no longer re-exported by OrdinaryDiffEq 7
 using ModelingToolkit
 using DiffEqCallbacks
 using Plots
