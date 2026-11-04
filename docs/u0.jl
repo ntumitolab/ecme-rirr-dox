@@ -6,6 +6,7 @@
 
 #---
 using OrdinaryDiffEq
+using OrdinaryDiffEqSDIRK      # KenCarp47 / TRBDF2 are no longer re-exported by OrdinaryDiffEq 7
 using ModelingToolkit
 using Startup
 using Startup: second, mM, Hz, μM, mV
@@ -25,9 +26,17 @@ prob = ODEProblem(sys, u0, tend)
 #---
 @time sol = solve(prob, alg; callback = callback, saveat=0.01second);
 
+#===
+A state whose default is a *symbolic* expression ends up in `bindings(sys)`, and
+ModelingToolkit then refuses an initial condition for it. The loop below warns about such
+variables so that the printed list can be pasted into `build_u0` as-is.
+===#
+
 #---
+bset = Set(keys(ModelingToolkit.bindings(sys)))
 for i in sts
     istr = replace(string(i), "(t)" => "")
+    i in bset && @warn "sys.$istr is pinned by a model binding; delete this line before pasting into build_u0." maxlog=1
     println("sys.", istr, " => ", sol[i][end], ",")
 end
 
