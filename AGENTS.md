@@ -1,60 +1,25 @@
 # AGENTS.md
 
 ECME-RIRR: cardiomyocyte electrophysiology + bioenergetics model (Julia/ModelingToolkit) with doxorubicin perturbation.
-The deliverable is **executable Jupyter notebooks** built with Literate and published via jupyter-book (MyST) to GitHub Pages. There is no package release and no unit test suite — the notebooks *are* the tests.
 
 ## Layout
 
-- `Startup/` — the real model package (a ModelingToolkit system). One file per subsystem in `Startup/src/` (cicr16, ica, ik2009, oxphos, tca, ros, force, u0, …). `build_model()` assembles everything.
-- `docs/` — Literate notebook sources (`*.jl`) plus `index.md` (model/parameter description) and `myst.yml`. Every `.jl` here is executed by CI and rendered to the site.
-- `.github/ci.jl` — the notebook build driver (runs at repo root, not in `docs/`).
+- `Startup/` — the inner model package. `build_model()` assembles everything.
+- `docs/` — Literate notebook sources (`*.jl`) plus `index.md` (model description) and `myst.yml` for the site TOC.
+- CI (`.github/workflows/ci.yml`) runs notebooks (by `.github/ci.jl`) and builds the site by `jupyter-book`.
 - `stash/` — **read-only archive** of superseded model variants. Never edited, executed, or built by CI. Do not "fix" it; keep it as historical reference.
 
-## Required workflow
+## Workflow
 
-- Work on a feature branch and open a PR to `main`. Never push directly to `main`.
-- CI (`.github/workflows/ci.yml`) executes all notebooks and builds the site; the PR must be green.
-- Do not hand-edit `Manifest.toml`; it is pinned/updated by Pkg and the weekly `update-manifest.yml` bot PR.
+- There is no unit test suite — the notebooks *are* the tests. After any change, run the full notebook pipeline: `julia --project=@. --color=yes -p 4 .github/ci.jl`. Refer to the `repld` skill to run Julia scripts interactively.
+- **Cache gotcha:** `ci.jl` caches executed notebooks into `.cache/` keyed by the notebook source hash *only*. After editing `Startup/src/`, delete the relevant `.cache/docs/*.sha` files (or all of `.cache/`) or the changed behavior will not be exercised. CI gets this right by including `Startup/**` and the manifests in its cache key.
+- Do not hand-edit `Manifest.toml`; it is updated by Pkg — manually with `julia --project=@. --color=yes -e 'using Pkg; Pkg.update()'`, or by the weekly `update-manifest.yml` bot PR, whose command additionally runs `Pkg.add(["JSON", "Literate", "MarkdownTables", "SHA", "Tables"])` before `Pkg.update()`. Keep those packages as direct deps of the root `Project.toml`: `.github/ci.jl` does `using Tables, MarkdownTables` at top level and `using Literate, JSON` on the workers.
 
-## Commands
+## Conventions
 
-Setup (Julia 1.13; exact pin is `julia_version = "1.13.3"` in `Manifest.toml`):
-
-```sh
-julia --project=@. -e 'using Pkg; Pkg.instantiate()'
-```
-
-The root `Project.toml` is a Julia **workspace** (`[workspace] projects = ["Startup"]`), so `using Startup` works from `--project=@.` without installing Startup anywhere.
-
-Verification — always run the full notebook pipeline after any change:
-
-```sh
-julia --project=@. --color=yes -p 4 .github/ci.jl
-```
-
-- Notebooks are cached by SHA-256 of the `.jl` source into `.cache/` (gitignored); only cache misses re-execute. Env overrides: `DOCDIR` (default `docs`), `NBCACHE` (default `.cache`).
-- **Gotcha:** the local cache key is the notebook source hash *only*. After editing `Startup/src/`, delete the relevant `.cache/docs/*.sha` files (or all of `.cache/`) or changed behavior will not be exercised. CI gets this right by including `Startup/**` + manifests in its cache key.
-- Notebooks are expensive (e.g. `dox.jl` runs a 291-trajectory ensemble over 1000 s of pacing). `KenCarp47` is the standard solver; expect long runtimes.
-- Keep `.github/ci.jl`'s own imports satisfied by the root project: it does `using Tables, MarkdownTables` (and `using Literate, JSON` on the workers), so those must stay direct deps of the workspace `Project.toml` or every worker dies with "Package Tables not found in current path".
-- For quick iteration on one notebook: `Literate.notebook("docs/foo.jl", "docs"; mdstrings=true, execute=true)` — but still run the full pipeline before pushing.
-
-Site build (needs Node LTS): CI runs `.github/ci.jl`, then copies `cp -rf .cache/docs/* docs/` (the `.ipynb` outputs live in `.cache/` until copied), then `cd docs && jupyter-book build --html` with `BASE_URL` set. Only `*.jl` sources are accepted; stray `.ipynb` files in `docs/` are ignored/generated and gitignored — never commit them.
-
-## Model conventions (easy to get wrong)
-
-- **Units are plain Float64 scale constants**, defined in `Startup/src/utils.jl` (`μM = 1`, `ms = 1`, `second = 1000ms`, `mM = 1000μM`, …). This is *not* Unitful — never use `u"mM"`, `Unitful`, or unit conversions. Time is in ms, concentration in μM, potential in mV.
-- `Startup` exports only `build_model`, `build_u0`, `build_stim_callbacks`. Everything else (units, constants like `iVT`, `Faraday`) is pulled explicitly: `using Startup: second, mM, Hz, μM`.
-- `Startup/src/u0.jl` (`build_u0`) returns **hardcoded** initial conditions taken from 1000 s of 1 Hz pacing. They are regenerated by running `docs/u0.jl`, which prints `sys.name => value,` pairs to paste back into `build_u0`. Regenerate them whenever the model changes (they silently go stale: the Complex III rework moved 49 of 64 values, `nadh_m` by 35x).
-- **A state's default must be a number, never a symbolic expression.** `@variables fes_ox(t) = C3_CONC` compiles into `bindings(sys)`, and `ODEProblem`/`SteadyStateProblem` then rejects any initial condition for it: `ArgumentError: Cannot merge without overriding: common key fes_ox(t)`. Write the evaluated number instead (`fes_ox(t) = 325μM`) and let `build_u0`/`initial_conditions` override it. This applies to notebook-local systems too (`docs/c3-test.jl`).
-- `iStim` is `@discretes iStim(t) = 0μAcm⁻²`, so it lands in `ps` and `build_stim_callbacks` can switch it with `integrator.ps[iStim]`. The symbolic-event path (`build_model(; bcl > 0)`) is unsupported under MTK 11 and throws — always pace with `build_stim_callbacks(sys.iStim, tend; period = bcl)` and pass the callback to `solve`.
-- `get_c1_eqs`, `get_c2_eqs`, `get_eqs_c3`, `get_etc_sys`, `get_c5_sys` in `Startup/src/oxphos.jl` are dead code (`build_model` uses only `get_etc_eqs` and `get_c5_eqs`). `get_eqs_c3` still carries the symbolic-default pattern above; treat them as reference, not as APIs to call.
+- Keep things in one function unless composable or reusable.
+- Do not extract single-use helpers preemptively. Inline the logic at the call site unless the helper is reused, hides a genuinely complex boundary, or has a clear independent name that improves the caller.
+- Before adding complexity for a speculative or vanishingly unlikely race or security edge case, explain the concrete failure mode, likelihood, and complexity cost to the user and get their buy-in. Do not silently expand scope for theoretical robustness.
 - Notebook sources are Literate files: markdown blocks are `#===` … `===#`, code cells are separated by `#---`. `index.md` is static markdown (never executed) and feeds the site TOC alongside the built notebooks (`myst.yml`).
+- **Literate gotcha:** comments inside a code cell must start with `##` (rendered as `# ` in the output). Any line starting with a single `# ` is parsed as markdown and splits the code chunk there — if that lands inside a multiline expression, Literate cuts the block in half and execution errors.
 - Plots use GR; headless runs set `ENV["GKSwstype"] = "100"` (ci.jl does this for workers).
-
-## SciML API gotchas (ModelingToolkit 11 / OrdinaryDiffEq 7 / SciMLBase 3)
-
-- `KenCarp47` and `TRBDF2` are no longer re-exported by `OrdinaryDiffEq` 7; they live in `OrdinaryDiffEqSDIRK`, which is a direct dep — `using OrdinaryDiffEqSDIRK` in any notebook that names them.
-- Ensemble `prob_func` has the SciMLBase 3 signature `(prob, ctx) -> ...`; the trajectory index is `ctx.sim_id` (the old third `i`/`repeat` argument no longer exists — `ctx` is an `EnsembleContext`).
-- `EnsembleSolution` is now a numeric `(state, time, trajectory)` array, so `sim[i]` is a `Float64`. Reach the per-trajectory solutions through `sim.u[i]`, e.g. `plot!(fig, sim.u[i]; idxs = ...)`, `extract(sim, k) = map(s -> s[k], sim.u)`.
-- `System(eqs, t; name, defaults = [...])` was removed. Use `initial_conditions = [...]`, which sets values for states *and* parameters; `guesses = [...]` alone leaves `u0` at `-0.0`.
-- `plot(sol; idxs = (sys.t/1000, sys.dpsi))` and expression-valued `idxs` still work on a real solution — the MTK Plots recipe is fine, only ensemble indexing needed fixing.
