@@ -659,7 +659,18 @@ end
 
 #---
 alg = DynamicSS(TRBDF2())
-ealg = EnsembleThreads()
+
+## Sweep helper: mutate `prob`'s parameters in place via `alter` and solve,
+## sequentially, returning an `EnsembleSolution`-like object.
+## `EnsembleProblem` is currently unusable for MTK-built `SteadyStateProblem`
+## (MTK 11 / SciMLBase 3): each trajectory re-concretizes the symbolic problem
+## (recompiling the steady-state residual, ~0.1 s each) and the rebuilt SCC
+## lowering then fails with "Could not evaluate value of parameter t".
+## Sequential in-place solves are ~100x faster and numerically identical.
+function sweep(prob, alter, n)
+    t = @elapsed sols = [ (alter(prob, (sim_id = i,)); solve(prob, alg)) for i in 1:n ]
+    return EnsembleSolution(sols, t, true)
+end
 
 #---
 @parameters begin
@@ -725,9 +736,9 @@ alter_dpsi = (prob, ctx) -> begin
 end
 
 #---
-@time mmp_q = solve(EnsembleProblem(prob_q; prob_func=alter_dpsi), alg, ealg; trajectories=length(dpsirange))
-@time mmp_m = solve(EnsembleProblem(prob_m; prob_func=alter_dpsi), alg, ealg; trajectories=length(dpsirange))
-@time mmp_g = solve(EnsembleProblem(prob_g; prob_func=alter_dpsi), alg, ealg; trajectories=length(dpsirange))
+@time mmp_q = sweep(prob_q, alter_dpsi, length(dpsirange))
+@time mmp_m = sweep(prob_m, alter_dpsi, length(dpsirange))
+@time mmp_g = sweep(prob_g, alter_dpsi, length(dpsirange))
 
 #===
 ### MMP vs NADH turnover
@@ -793,9 +804,9 @@ alter_nadh = (prob, ctx) -> begin
 end
 
 #---
-@time nad_q = solve(EnsembleProblem(prob_q; prob_func=alter_nadh), alg, ealg; trajectories=length(nadhrange))
-@time nad_g = solve(EnsembleProblem(prob_g; prob_func=alter_nadh), alg, ealg; trajectories=length(nadhrange))
-@time nad_m = solve(EnsembleProblem(prob_m; prob_func=alter_nadh), alg, ealg; trajectories=length(nadhrange))
+@time nad_q = sweep(prob_q, alter_nadh, length(nadhrange))
+@time nad_g = sweep(prob_g, alter_nadh, length(nadhrange))
+@time nad_m = sweep(prob_m, alter_nadh, length(nadhrange))
 
 #===
 ### NADH vs turnover
@@ -851,9 +862,9 @@ alter_qh2 = (prob, ctx) -> begin
 end
 
 #---
-@time qh2_q = solve(EnsembleProblem(prob_q; prob_func=alter_qh2), alg, ealg; trajectories=length(qh2range))
-@time qh2_g = solve(EnsembleProblem(prob_g; prob_func=alter_qh2), alg, ealg; trajectories=length(qh2range))
-@time qh2_m = solve(EnsembleProblem(prob_m; prob_func=alter_qh2), alg, ealg; trajectories=length(qh2range))
+@time qh2_q = sweep(prob_q, alter_qh2, length(qh2range))
+@time qh2_g = sweep(prob_g, alter_qh2, length(qh2range))
+@time qh2_m = sweep(prob_m, alter_qh2, length(qh2range))
 
 #===
 ### QH2 vs turnover
