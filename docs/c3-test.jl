@@ -865,7 +865,19 @@ end
 
 #---
 alg = DynamicSS(TRBDF2())
-ealg = EnsembleThreads()
+
+## Sweep helper: mutate `prob`'s parameters in place via `alter` and solve,
+## sequentially, returning an `EnsembleSolution`-like object.
+## `EnsembleProblem` is currently unusable for MTK-built `SteadyStateProblem`
+## (MTK 11 / SciMLBase 3): each trajectory re-concretizes the symbolic problem
+## (recompiling the steady-state residual, ~0.1 s each) and the rebuilt SCC
+## lowering then fails with "Could not evaluate value of parameter t".
+## Sequential in-place solves are ~100x faster and numerically identical.
+function sweep(prob, alter, n)
+    t = @elapsed sols = [ (alter(prob, (sim_id = i,)); solve(prob, alg)) for i in 1:n ]
+    return EnsembleSolution(sols, t, true)
+end
+
 # Utility function
 # `EnsembleSolution` is a numeric (state, time, trajectory) array in SciMLBase 3;
 # the per-trajectory solutions are in `sim.u`.
@@ -887,16 +899,10 @@ alter_dpsi = (prob, ctx) -> begin
 end
 
 #---
-eprob_g = EnsembleProblem(prob_g; prob_func=alter_dpsi)
-eprob_r = EnsembleProblem(prob_r; prob_func=alter_dpsi)
-eprob_s = EnsembleProblem(prob_s; prob_func=alter_dpsi)
-eprob_e = EnsembleProblem(prob_e; prob_func=alter_dpsi)
-
-#---
-@time sim_g = solve(eprob_g, alg, ealg; trajectories=length(dpsirange))
-@time sim_r = solve(eprob_r, alg, ealg; trajectories=length(dpsirange))
-@time sim_s = solve(eprob_s, alg, ealg; trajectories=length(dpsirange))
-@time sim_e = solve(eprob_e, alg, ealg; trajectories=length(dpsirange))
+@time sim_g = sweep(prob_g, alter_dpsi, length(dpsirange))
+@time sim_r = sweep(prob_r, alter_dpsi, length(dpsirange))
+@time sim_s = sweep(prob_s, alter_dpsi, length(dpsirange))
+@time sim_e = sweep(prob_e, alter_dpsi, length(dpsirange))
 
 #===
 ### Plots
@@ -934,10 +940,10 @@ alter_qh2 = (prob, ctx) -> begin
 end
 
 #---
-@time qh2_g = solve(EnsembleProblem(prob_g; prob_func=alter_qh2), alg, ealg; trajectories=length(qh2range))
-@time qh2_r = solve(EnsembleProblem(prob_r; prob_func=alter_qh2), alg, ealg; trajectories=length(qh2range))
-@time qh2_s = solve(EnsembleProblem(prob_s; prob_func=alter_qh2), alg, ealg; trajectories=length(qh2range))
-@time qh2_e = solve(EnsembleProblem(prob_e; prob_func=alter_qh2), alg, ealg; trajectories=length(qh2range))
+@time qh2_g = sweep(prob_g, alter_qh2, length(qh2range))
+@time qh2_r = sweep(prob_r, alter_qh2, length(qh2range))
+@time qh2_s = sweep(prob_s, alter_qh2, length(qh2range))
+@time qh2_e = sweep(prob_e, alter_qh2, length(qh2range))
 
 #===
 ### Plots

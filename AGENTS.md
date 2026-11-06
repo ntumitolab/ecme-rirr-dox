@@ -11,7 +11,8 @@ ECME-RIRR: cardiomyocyte electrophysiology + bioenergetics model (Julia/Modeling
 
 ## Workflow
 
-- There is no unit test suite — the notebooks *are* the tests. After any change, run the full notebook pipeline: `julia --project=@. --color=yes -p 4 .github/ci.jl`. Refer to the `repld` skill to run Julia scripts interactively.
+- Use the repld skill (if available) to run Julia scripts interactively.
+- There is no unit test suite — the notebooks *are* the tests. After any change, run the full notebook pipeline: `julia --project=@. --color=yes -p 4 .github/ci.jl`.
 - **Cache gotcha:** `ci.jl` caches executed notebooks into `.cache/` keyed by the notebook source hash *only*. After editing `Startup/src/`, delete the relevant `.cache/docs/*.sha` files (or all of `.cache/`) or the changed behavior will not be exercised. CI gets this right by including `Startup/**` and the manifests in its cache key.
 - Do not hand-edit `Manifest.toml`; it is updated by Pkg — manually with `julia --project=@. --color=yes -e 'using Pkg; Pkg.update()'`, or by the weekly `update-manifest.yml` bot PR, whose command additionally runs `Pkg.add(["JSON", "Literate", "MarkdownTables", "SHA", "Tables"])` before `Pkg.update()`. Keep those packages as direct deps of the root `Project.toml`: `.github/ci.jl` does `using Tables, MarkdownTables` at top level and `using Literate, JSON` on the workers.
 
